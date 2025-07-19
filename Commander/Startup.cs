@@ -3,7 +3,6 @@ using AutoMapper;
 using Commander.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +22,7 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
+            // Use In-Memory for testing
             services.AddDbContext<InterfaceContext>(opt =>
                 opt.UseInMemoryDatabase("TestDb"));
 
@@ -32,9 +32,11 @@ namespace Commander
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+            // Test repositories
             services.AddSingleton<InterfaceRepo, TestInterfaceRepo>();
             services.AddSingleton<IDepartmentRepo, TestDepartmentRepo>();
 
+            // Enable CORS for all origins, methods, headers
             services.AddCors();
         }
 
@@ -47,13 +49,17 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            // Apply CORS policy globally
+            app.UseCors(builder =>
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader());
 
+            // Serve default file (index.html) and static files
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
             app.UseRouting();
-
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
