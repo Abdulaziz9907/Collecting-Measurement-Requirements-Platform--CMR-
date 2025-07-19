@@ -21,6 +21,7 @@ namespace Commander.Controllers
             _mapper = mapper;
         }
 
+
         // GET api/users
         [HttpGet]
         public ActionResult<IEnumerable<UserReadDto>> GetAllUsers()
