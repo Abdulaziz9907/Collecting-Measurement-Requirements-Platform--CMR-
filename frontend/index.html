@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; }
+        label, input { display: block; width: 100%; margin-bottom: 10px; }
+        button { padding: 8px 16px; }
+        #message { margin-top: 10px; color: red; }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label>Username
+            <input type="text" id="username" required>
+        </label>
+        <label>Password
+            <input type="password" id="password" required>
+        </label>
+        <button type="submit">Login</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const message = document.getElementById('message');
+        if (response.ok) {
+            const data = await response.json();
+            message.style.color = 'green';
+            message.textContent = 'Logged in as ' + data.username;
+        } else {
+            message.style.color = 'red';
+            message.textContent = 'Login failed';
+        }
+    });
+    </script>
+</body>
+</html>
