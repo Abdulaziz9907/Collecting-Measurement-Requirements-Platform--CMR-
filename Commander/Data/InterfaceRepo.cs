@@ -5,8 +5,6 @@ namespace Commander.Data
 {
     public interface InterfaceRepo
     {
-
-
         bool SaveChanges();
 
         IEnumerable<User> GetAllUsers();

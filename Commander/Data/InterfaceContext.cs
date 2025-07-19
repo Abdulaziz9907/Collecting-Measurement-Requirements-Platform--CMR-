@@ -18,18 +18,20 @@ namespace Commander.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Fix for multiple cascade paths in Notifications
+            // Fix for multiple cascade paths in Notifications:
+            // Avoid cascade from Users by using Restrict on delete.
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.Employee_id)
-                .OnDelete(DeleteBehavior.Restrict);  // Avoid cascade from Users
+                .OnDelete(DeleteBehavior.Restrict);
 
+            // Maintain cascade behavior for Standards related to Notifications.
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.Standard)
                 .WithMany(s => s.Notifications)
                 .HasForeignKey(n => n.Standard_id)
-                .OnDelete(DeleteBehavior.Cascade);  // Keep cascade from Standards
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

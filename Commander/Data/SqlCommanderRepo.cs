@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Commander.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Commander.Data
 {
@@ -11,27 +15,9 @@ namespace Commander.Data
             _context = context;
         }
 
-        public void CreateUser(User user)
+        public bool SaveChanges()
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-
-            _context.Users.Add(user);
-
-        }
-
-        public void DeleteUser(User user)
-        {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-
-            _context.Users.Remove(user);
-
-
+            return _context.SaveChanges() >= 0;
         }
 
         public IEnumerable<User> GetAllUsers()
@@ -44,14 +30,29 @@ namespace Commander.Data
             return _context.Users.FirstOrDefault(p => p.Employee_id == Employee_id);
         }
 
-        public bool SaveChanges()
+        public void CreateUser(User user)
         {
-            return _context.SaveChanges() >= 0;
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            _context.Users.Add(user);
         }
 
         public void UpdateUser(User user)
         {
-            //
+            _context.Entry(user).State = EntityState.Modified;
+        }
+
+        public void DeleteUser(User user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            _context.Users.Remove(user);
         }
     }
 }
