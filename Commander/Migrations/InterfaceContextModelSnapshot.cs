@@ -21,7 +21,7 @@ namespace Commander.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Commander.Models.Command", b =>
+            modelBuilder.Entity("Commander.Models.User", b =>
                 {
                     b.Property<int>("Employee_id")
                         .ValueGeneratedOnAdd()
@@ -60,6 +60,25 @@ namespace Commander.Migrations
                     b.HasKey("Employee_id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Commander.Models.Department", b =>
+                {
+                    b.Property<int>("Department_id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(7)
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Department_id"));
+
+                    b.Property<string>("Department_name")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Department_id");
+
+                    b.ToTable("Departments");
                 });
 #pragma warning restore 612, 618
         }

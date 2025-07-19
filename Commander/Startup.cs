@@ -35,6 +35,8 @@ namespace Commander
             services.AddControllers();
             //services.AddScoped<InterfaceRepo, TestInterfaceRepo>();
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
+            //services.AddScoped<IDepartmentRepo, TestDepartmentRepo>();
+            services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
 
 
 
