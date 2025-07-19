@@ -13,7 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-
+using AutoMapper;
+using Newtonsoft.Json.Serialization;
 
 namespace Commander
 {
@@ -32,10 +33,11 @@ namespace Commander
 
             services.AddDbContext<InterfaceContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DBConnection")));
 
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(s => s.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver());
             //services.AddScoped<InterfaceRepo, TestInterfaceRepo>();
-            services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
 
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
 
 
         }
