@@ -12,5 +12,7 @@ namespace Commander.Data
         void CreateUser(User user);
         void UpdateUser(User user);
         void DeleteUser(User user);
+
+        User? AuthenticateUser(string username, string password);
     }
 }
