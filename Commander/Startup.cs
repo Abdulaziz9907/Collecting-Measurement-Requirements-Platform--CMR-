@@ -4,8 +4,6 @@ using Commander.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,63 +14,59 @@ namespace Commander
     public class Startup
     {
         public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+            => Configuration = configuration;
 
         public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Use SQL Server database for development and tests
-            // The old in-memory test repositories were removed
+            // 1) EF Core → SQL Server
             services.AddDbContext<InterfaceContext>(opt =>
                 opt.UseSqlServer(Configuration.GetConnectionString("DBConnection")));
 
+            // 2) Controllers + Newtonsoft JSON (camel‑case)
             services.AddControllers()
-                .AddNewtonsoftJson(s =>
-                    s.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver());
+                    .AddNewtonsoftJson(opts =>
+                        opts.SerializerSettings.ContractResolver
+                             = new CamelCasePropertyNamesContractResolver());
 
+            // 3) AutoMapper + Repos
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-            // Use SQL implementations of repositories
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
 
-            // Enable CORS for all origins, methods, headers
-            services.AddCors();
+            // 4) CORS policy
+            services.AddCors(opts =>
+            {
+                opts.AddPolicy("AllowAll", builder =>
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader());
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // Developer exceptions
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
-            }
 
             app.UseHttpsRedirection();
 
-            // Apply CORS policy globally
-            app.UseCors(builder =>
-                builder.AllowAnyOrigin()
-                       .AllowAnyMethod()
-                       .AllowAnyHeader());
+            // 1) Serve your SPA from wwwroot (index.html, JS, CSS, etc.)
+            app.UseDefaultFiles();   // looks for wwwroot/index.html, default.htm, etc.
+            app.UseStaticFiles();    // serves any other assets under wwwroot/
 
-            // Serve default file (index.html) and static files from the frontend folder
-            var frontendPath = Path.Combine(env.ContentRootPath, "frontend");
-            var fileProvider = new PhysicalFileProvider(frontendPath);
-            app.UseDefaultFiles(new DefaultFilesOptions
-            {
-                FileProvider = fileProvider
-            });
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = fileProvider
-            });
-
+            // 2) Routing
             app.UseRouting();
+
+            // 3) CORS (must come after Routing, before Endpoints)
+            app.UseCors("AllowAll");
+
+            // 4) (Optional) AuthN/AuthZ
             app.UseAuthorization();
 
+            // 5) API endpoints
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
