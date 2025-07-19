@@ -24,7 +24,7 @@ namespace Commander
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<InterfaceContext>(opt =>
-                opt.UseSqlServer(Configuration.GetConnectionString("DBConnection")));
+                opt.UseInMemoryDatabase("TestDb"));
 
             services.AddControllers()
                 .AddNewtonsoftJson(s =>
@@ -32,8 +32,10 @@ namespace Commander
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-            services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
-            services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
+            services.AddSingleton<InterfaceRepo, TestInterfaceRepo>();
+            services.AddSingleton<IDepartmentRepo, TestDepartmentRepo>();
+
+            services.AddCors();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -44,6 +46,11 @@ namespace Commander
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseRouting();
 

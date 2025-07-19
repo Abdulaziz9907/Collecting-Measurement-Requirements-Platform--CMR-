@@ -21,6 +21,17 @@ namespace Commander.Controllers
             _mapper = mapper;
         }
 
+        // POST api/users/login
+        [HttpPost("login")]
+        public ActionResult<UserReadDto> Login(UserLoginDto loginDto)
+        {
+            var user = _repository.AuthenticateUser(loginDto.Username, loginDto.Password);
+            if (user == null)
+                return Unauthorized();
+
+            return Ok(_mapper.Map<UserReadDto>(user));
+        }
+
         // GET api/users
         [HttpGet]
         public ActionResult<IEnumerable<UserReadDto>> GetAllUsers()
