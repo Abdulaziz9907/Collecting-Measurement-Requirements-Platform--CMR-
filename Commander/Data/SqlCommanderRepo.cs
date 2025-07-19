@@ -54,5 +54,10 @@ namespace Commander.Data
 
             _context.Users.Remove(user);
         }
+
+        public User? AuthenticateUser(string username, string password)
+        {
+            return _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+        }
     }
 }
