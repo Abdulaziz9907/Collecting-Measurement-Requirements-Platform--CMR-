@@ -167,3 +167,5 @@ D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\bin\Deb
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\bin\Debug\net9.0\Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\bin\Debug\net9.0\Newtonsoft.Json.dll
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\bin\Debug\net9.0\Newtonsoft.Json.Bson.dll
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\bin\Debug\net9.0\Commander.staticwebassets.runtime.json
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\xi7j5a0zn1-bfpp6r1ntb.gz
