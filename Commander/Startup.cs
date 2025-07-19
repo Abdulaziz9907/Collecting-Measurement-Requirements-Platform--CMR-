@@ -22,9 +22,9 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Configure SQL Server with connection string from appsettings
+            // Use In-Memory for testing
             services.AddDbContext<InterfaceContext>(opt =>
-                opt.UseSqlServer(Configuration.GetConnectionString("DBConnection")));
+                opt.UseInMemoryDatabase("TestDb"));
 
             services.AddControllers()
                 .AddNewtonsoftJson(s =>
@@ -32,9 +32,9 @@ namespace Commander
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-            // Use SQL implementations of repositories
-            services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
-            services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
+            // Test repositories
+            services.AddSingleton<InterfaceRepo, TestInterfaceRepo>();
+            services.AddSingleton<IDepartmentRepo, TestDepartmentRepo>();
 
             // Enable CORS for all origins, methods, headers
             services.AddCors();
