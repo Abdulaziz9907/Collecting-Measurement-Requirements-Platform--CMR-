@@ -32,7 +32,7 @@ namespace Commander.Data
 
         public void CreateUser(User user)
         {
-            if(user == null)
+            if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -47,10 +47,12 @@ namespace Commander.Data
 
         public void DeleteUser(User user)
         {
-            if(user != null)
+            if (user == null)
             {
-                _context.Users.Remove(user);
+                throw new ArgumentNullException(nameof(user));
             }
+
+            _context.Users.Remove(user);
         }
     }
 }
