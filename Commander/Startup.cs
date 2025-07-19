@@ -4,6 +4,8 @@ using Commander.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -55,9 +57,17 @@ namespace Commander
                        .AllowAnyMethod()
                        .AllowAnyHeader());
 
-            // Serve default file (index.html) and static files
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
+            // Serve default file (index.html) and static files from the frontend folder
+            var frontendPath = Path.Combine(env.ContentRootPath, "frontend");
+            var fileProvider = new PhysicalFileProvider(frontendPath);
+            app.UseDefaultFiles(new DefaultFilesOptions
+            {
+                FileProvider = fileProvider
+            });
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = fileProvider
+            });
 
             app.UseRouting();
             app.UseAuthorization();
