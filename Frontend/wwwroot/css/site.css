@@ -1,3 +1,90 @@
 body {
-    padding: 1rem;
+    padding: 0;
+    margin: 0;
+    font-family: 'Cairo', Arial, sans-serif;
+    background: #f5f6fa;
+}
+
+.login-bg {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4e2a8e 0%, #7c3aed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    direction: rtl;
+}
+
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(80, 0, 120, 0.10);
+    padding: 2.5rem 2rem 2rem 2rem;
+    width: 350px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+    color: #2d1c5a;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    padding: 0.75rem;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    background: #f9f9f9;
+    direction: rtl;
+}
+
+.btn-primary {
+    background: #2d1c5a;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #4e2a8e;
+}
+
+.forgot-link {
+    color: #7c3aed;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #2d1c5a;
 }
