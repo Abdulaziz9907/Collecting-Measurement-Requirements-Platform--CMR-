@@ -26,7 +26,7 @@
   </head>
   <body>
     <h2>Login</h2>
-    <form id="loginForm">
+    <form id="loginForm" method="post">
       <label
         >Username
         <input type="text" id="username" required />
@@ -51,7 +51,7 @@
 
         try {
           // same‑origin: window.location.origin is https://localhost:5186
-          const res = await fetch(`${window.location.origin}/api/users/login`, {
+          const res = await fetch(`http://localhost:5186/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
@@ -62,7 +62,6 @@
             msg.textContent = "Login failed";
             return;
           }
-
           const data = await res.json();
           msg.style.color = "green";
           msg.textContent = `Logged in as ${data.username}`;
