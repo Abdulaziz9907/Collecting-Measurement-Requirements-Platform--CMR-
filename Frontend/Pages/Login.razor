@@ -1,0 +1,34 @@
+@using Microsoft.EntityFrameworkCore
+@page "/login"
+@inject Frontend.Data.InterfaceContext DbContext
+
+<h3>Login</h3>
+
+<div class="mb-3">
+    <label class="form-label">Username</label>
+    <input class="form-control" @bind="username" />
+</div>
+<div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" class="form-control" @bind="password" />
+</div>
+<button class="btn btn-primary" @onclick="HandleLogin">Login</button>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="mt-2 alert alert-info">@message</div>
+}
+
+@code {
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private string? message;
+
+    private async Task HandleLogin()
+    {
+        var user = await DbContext.Users
+            .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+
+        message = user != null ? "Login successful" : "Invalid credentials";
+    }
+}
