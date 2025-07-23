@@ -65,22 +65,18 @@
         </div>
         <div class="login-column">
             <div class="login-card">
-                <form class="login-form" @onsubmit="HandleLogin">
+                <form class="login-form">
                     <h2 class="login-title">تسجيل دخول</h2>
                     <div class="input-group input-group-strong">
                         <img src="images/I590_256_25_284.svg" alt="user icon" class="input-icon">
-                        <input type="text" placeholder="اسم المستخدم" @bind="username">
+                        <input type="text" placeholder="اسم المستخدم">
                     </div>
                     <div class="input-group">
                         <img src="images/I590_235_25_752.svg" alt="lock icon" class="input-icon">
-                        <input type="password" placeholder="كلمة المرور" @bind="password">
+                        <input type="password" placeholder="كلمة المرور">
                     </div>
                     <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
                     <button type="submit" class="login-button">دخول</button>
-                    @if (!string.IsNullOrEmpty(message))
-                    {
-                        <p class="login-message">@message</p>
-                    }
                 </form>
             </div>
         </div>
