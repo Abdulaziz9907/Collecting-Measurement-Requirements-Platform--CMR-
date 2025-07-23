@@ -5,7 +5,6 @@ namespace Frontend.Models
     public class User
     {
         [Key]
-        [MaxLength(7)]
         public required int Employee_id { get; set; }
 
         [MaxLength(15)]
