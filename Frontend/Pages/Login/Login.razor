@@ -77,11 +77,11 @@
                     </div>
                     <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
                     <button type="submit" class="login-button">دخول</button>
-                    @if (!string.IsNullOrEmpty(message))
-                    {
-                        <p class="login-message">@message</p>
-                    }
                 </form>
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <p class="login-message">@message</p>
+                }
             </div>
         </div>
     </div>
