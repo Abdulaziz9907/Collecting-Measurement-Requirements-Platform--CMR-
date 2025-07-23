@@ -11,14 +11,14 @@ namespace Frontend.Pages.Login
 
         protected string username = string.Empty;
         protected string password = string.Empty;
-        protected string? message;
+        protected string Message { get; set; } = string.Empty;
 
         protected async Task HandleLogin()
         {
             var user = await DbContext.Users
                 .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
 
-            message = user != null ? "تم تسجيل الدخول بنجاح" : "بيانات الدخول غير صحيحة";
+            Message = user != null ? "تم تسجيل الدخول بنجاح" : "بيانات الدخول غير صحيحة";
         }
     }
 }

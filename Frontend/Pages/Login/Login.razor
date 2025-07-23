@@ -77,9 +77,9 @@
                     </div>
                     <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
                     <button type="submit" class="login-button">دخول</button>
-                    @if (!string.IsNullOrEmpty(message))
+                    @if (!string.IsNullOrWhiteSpace(Message))
                     {
-                        <p class="login-message">@message</p>
+                        <p class="login-message">@Message</p>
                     }
                 </form>
             </div>
