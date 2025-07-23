@@ -7,7 +7,7 @@ namespace Frontend.Pages.Login
     public partial class Login : ComponentBase
     {
         [Inject]
-        public Frontend.Data.InterfaceContext DbContext { get; set; } = default!;
+        public Frontend.Data.InterfaceContext DbContext { get; set; }
 
         protected string username = string.Empty;
         protected string password = string.Empty;
