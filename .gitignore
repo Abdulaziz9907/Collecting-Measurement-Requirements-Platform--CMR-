@@ -1,0 +1,16 @@
+# Ignore node dependencies
+frontend/node_modules/
+
+# Ignore build outputs
+frontend/build/
+
+# Ignore .NET build outputs
+**/bin/
+**/obj/
+*.dll
+*.exe
+*.pdb
+
+# Secrets
+**/appsettings.json
+**/appsettings.Development.json
