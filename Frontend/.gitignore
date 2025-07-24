@@ -1,8 +1,0 @@
-#DB login credentials
-appsettings.json
-appsettings.Development.json
-bin/
-obj/
-*.dll
-*.exe
-*.pdb
