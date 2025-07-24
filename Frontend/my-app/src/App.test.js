@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import Login from './pages/desktop/login/login';
 
-test('renders learn react link', () => {
+test('renders login button', () => {
   render(<Login />);
-  // render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const button = screen.getByRole('button', { name: /دخول/i });
+  expect(button).toBeInTheDocument();
 });
