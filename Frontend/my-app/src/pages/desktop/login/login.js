@@ -4,6 +4,7 @@ import styles from './login.module.css';
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleLogin = async () => {
     try {
@@ -13,14 +14,14 @@ export default function Login() {
         body: JSON.stringify({ username, password })
       });
       if (!res.ok) {
-        alert('Login failed');
+        setMessage('فشل تسجيل الدخول');
         return;
       }
       const data = await res.json();
-      alert(`Logged in as ${data.username}`);
+      setMessage(`تم تسجيل الدخول باسم ${data.username}`);
     } catch (err) {
       console.error(err);
-      alert('Network error');
+      setMessage('خطأ في الشبكة');
     }
   };
 
@@ -28,10 +29,13 @@ export default function Login() {
     <div className={styles.contain}>
       <div className={styles['scroll-view']}>
         <div className={styles.column}>
+
+          {/* Header */}
           <div className={styles['row-view']}>
             <img
               src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/lr49i5w1_expires_30_days.png"
               className={styles.image}
+              alt="Notifications"
             />
             <div className={styles['row-view2']}>
               <div className={styles.view}>
@@ -57,8 +61,11 @@ export default function Login() {
             <img
               src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/3w0hbwu4_expires_30_days.png"
               className={styles.image2}
+              alt="Logo"
             />
           </div>
+
+          {/* Main Content */}
           <div
             className={styles['row-view3']}
             style={{
@@ -66,6 +73,7 @@ export default function Login() {
                 'url(https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/hfye9b1p_expires_30_days.png)'
             }}
           >
+            {/* Left Column */}
             <div className={styles.column3}>
               <div className={styles.view3}>
                 <span className={styles.text4}>عن التحول الرقمي</span>
@@ -77,35 +85,44 @@ export default function Login() {
                 <img
                   src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/oiayap0x_expires_30_days.png"
                   className={styles.image3}
+                  alt=""
                 />
                 <div className={styles['row-view5']}>
                   <img
                     src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/1csa65nz_expires_30_days.png"
                     className={styles.image4}
+                    alt=""
                   />
                   <img
                     src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/n7cxzp26_expires_30_days.png"
                     className={styles.image5}
+                    alt=""
                   />
                   <img
                     src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/inhn8lup_expires_30_days.png"
                     className={styles.image5}
+                    alt=""
                   />
                   <img
                     src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/rmojleul_expires_30_days.png"
                     className={styles.image5}
+                    alt=""
                   />
                   <img
                     src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/2ne99t4d_expires_30_days.png"
                     className={styles.image5}
+                    alt=""
                   />
                 </div>
                 <img
                   src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/hqgs7uof_expires_30_days.png"
                   className={styles.image3}
+                  alt=""
                 />
               </div>
             </div>
+
+            {/* Login Column */}
             <div
               className={styles.column4}
               style={{ backgroundImage: 'url(https://i.imgur.com/1tMFzp8.png)' }}
@@ -132,12 +149,17 @@ export default function Login() {
               <button className={styles.button} onClick={handleLogin}>
                 <span className={styles.text8}>دخول</span>
               </button>
+              {message && <p className={styles.message}>{message}</p>}
             </div>
+
             <img
               src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/92zky7kf_expires_30_days.png"
               className={styles['absolute-image']}
+              alt=""
             />
           </div>
+
+          {/* Footer */}
           <div className={styles.column5}>
             <div className={styles.view6}>
               <span className={styles.text9}>منصة جمع متطلبات قياس</span>
@@ -146,9 +168,11 @@ export default function Login() {
               <img
                 src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/a7xc4gag_expires_30_days.png"
                 className={styles.image6}
+                alt=""
               />
             </div>
           </div>
+
         </div>
       </div>
     </div>

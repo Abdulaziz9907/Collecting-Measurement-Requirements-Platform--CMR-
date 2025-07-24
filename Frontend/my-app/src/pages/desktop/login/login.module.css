@@ -1,7 +1,7 @@
 .absolute-image {
     position: absolute;
     top: 424px;
-    left: 0px;
+    left: 0;
     width: 100%;
     height: auto;
     object-fit: fill;
@@ -43,12 +43,13 @@
     align-items: flex-start;
 }
 
+/* CENTER login/text columns */
 .column3 {
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    margin-right: 12px;
+    align-items: center;
+    margin-right: 0;
 }
 
 .column4 {
@@ -151,15 +152,13 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    padding-top: 18px;
-    padding-bottom: 18px;
-    padding-left: 31px;
+    padding: 18px 0 18px 31px;
 }
 
 .row-view3 {
     align-self: stretch;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding: 80px 20px 160px;
     background-size: cover;
     background-position: center;
@@ -203,13 +202,15 @@
     width: 159px;
 }
 
+/* CENTER the “الرئيسية” title */
 .text3 {
     color: #103576;
     font-size: 24px;
     font-weight: bold;
     text-align: center;
-    margin-right: 57px;
-    width: 272px;
+    margin: 0 auto 20px;
+    width: 100%;
+    max-width: 420px;
 }
 
 .text4 {
@@ -302,4 +303,12 @@
     align-items: center;
     background: #010B38;
     padding: 40px 0;
+}
+
+.message {
+    color: #010B38;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
 }
