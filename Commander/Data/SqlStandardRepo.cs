@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Commander.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Commander.Data
 {
@@ -21,12 +22,16 @@ namespace Commander.Data
 
         public IEnumerable<Standard> GetAllStandards()
         {
-            return _context.Standards.ToList();
+            return _context.Standards
+                .Include(s => s.Proof_required)
+                .ToList();
         }
 
         public Standard? GetStandardById(int id)
         {
-            return _context.Standards.FirstOrDefault(s => s.Standard_id == id);
+            return _context.Standards
+                .Include(s => s.Proof_required)
+                .FirstOrDefault(s => s.Standard_id == id);
         }
 
         public void CreateStandard(Standard standard)
@@ -37,11 +42,7 @@ namespace Commander.Data
             _context.Standards.Add(standard);
         }
 
-        public void AddAttachment(Attachment attachment)
-        {
-            if (attachment == null)
-                throw new ArgumentNullException(nameof(attachment));
-            _context.Attachments.Add(attachment);
-        }
+        // No explicit method needed to add proof documents since they are saved
+        // with the Standard entity via the navigation property.
     }
 }

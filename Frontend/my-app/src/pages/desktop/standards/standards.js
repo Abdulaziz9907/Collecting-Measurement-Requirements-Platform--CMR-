@@ -4,9 +4,22 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 
+function escapeInput(str) {
+  return str.replace(/[&<>\'\"]/g, (char) => {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;',
+    };
+    return map[char] || char;
+  });
+}
+
 export default function Standards() {
   const [validated, setValidated] = useState(false);
-  const [attachments, setAttachments] = useState(['']);
+  const [proofRequired, setProofRequired] = useState(['']);
   const [departments, setDepartments] = useState([]);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
@@ -32,11 +45,13 @@ export default function Standards() {
       event.stopPropagation();
     } else {
       const data = {
-        standard_name: form.goal.value,
-        standard_goal: form.desc2.value,
-        standard_requirments: form.desc3.value,
+        standard_name: escapeInput(form.goal.value),
+        standard_goal: escapeInput(form.desc2.value),
+        standard_requirments: escapeInput(form.desc3.value),
         assigned_department_id: parseInt(form.scope.value, 10),
-        attachments: attachments.filter(a => a.trim() !== ''),
+        proof_required: proofRequired
+          .filter(a => a.trim() !== '')
+          .map(a => escapeInput(a)),
       };
 
       try {
@@ -59,18 +74,18 @@ export default function Standards() {
     setValidated(true);
   };
 
-  const handleAttachmentChange = (e, idx) => {
+  const handleProofChange = (e, idx) => {
     const text = e.target.value;
-    setAttachments(prev => {
+    setProofRequired(prev => {
       const next = [...prev];
       next[idx] = text;
       return next;
     });
   };
 
-  const addAttachment = () => setAttachments(prev => [...prev, '']);
-  const removeAttachment = (idx) =>
-    setAttachments(prev => prev.filter((_, i) => i !== idx));
+  const addProofField = () => setProofRequired(prev => [...prev, '']);
+  const removeProofField = (idx) =>
+    setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -194,7 +209,7 @@ export default function Standards() {
                     </div>
 
                     {/* مستندات الإثبات (نصية) */}
-                    {attachments.map((text, idx) => (
+                    {proofRequired.map((text, idx) => (
                       <div className="mb-4" key={idx}>
                         <label htmlFor={`attachment${idx}`} className="form-label">
                           مستند إثبات {idx + 1}
@@ -207,10 +222,10 @@ export default function Standards() {
                             <input
                               type="text"
                               className="form-control"
-                              id={`attachment${idx}`}
+                              id={`proof${idx}`}
                               value={text}
-                              placeholder="أدخل مسار أو وصلة المستند"
-                              onChange={e => handleAttachmentChange(e, idx)}
+                              placeholder="أدخل نص المستند"
+                              onChange={e => handleProofChange(e, idx)}
                               required
                             />
                             <div className="invalid-feedback">يرجى إدخال مسار المستند</div>
@@ -219,7 +234,7 @@ export default function Standards() {
                             <button
                               type="button"
                               className="btn btn-outline-danger ms-2"
-                              onClick={() => removeAttachment(idx)}
+                              onClick={() => removeProofField(idx)}
                             >
                               حذف
                             </button>
@@ -227,7 +242,7 @@ export default function Standards() {
                         </div>
                       </div>
                     ))}
-                    <button type="button" className="btn btn-secondary mb-3" onClick={addAttachment}>
+                    <button type="button" className="btn btn-secondary mb-3" onClick={addProofField}>
                       إضافة حقل نصي
                     </button>
 

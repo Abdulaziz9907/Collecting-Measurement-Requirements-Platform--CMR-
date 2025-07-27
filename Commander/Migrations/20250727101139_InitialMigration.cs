@@ -57,7 +57,6 @@ namespace Commander.Migrations
                     Standard_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Standard_goal = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Standard_requirments = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Proof_required = table.Column<bool>(type: "bit", nullable: false),
                     Assigned_department_id = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -99,20 +98,20 @@ namespace Commander.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Attachments",
+                name: "ProofDocuments",
                 columns: table => new
                 {
-                    Attachment_id = table.Column<int>(type: "int", nullable: false)
+                    ProofDocument_id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Standard_id = table.Column<int>(type: "int", nullable: false),
                     Uploaded_date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
+                    DocumentText = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attachments", x => x.Attachment_id);
+                    table.PrimaryKey("PK_ProofDocuments", x => x.ProofDocument_id);
                     table.ForeignKey(
-                        name: "FK_Attachments_Standards_Standard_id",
+                        name: "FK_ProofDocuments_Standards_Standard_id",
                         column: x => x.Standard_id,
                         principalTable: "Standards",
                         principalColumn: "Standard_id",
@@ -148,8 +147,8 @@ namespace Commander.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attachments_Standard_id",
-                table: "Attachments",
+                name: "IX_ProofDocuments_Standard_id",
+                table: "ProofDocuments",
                 column: "Standard_id");
 
             migrationBuilder.CreateIndex(
@@ -182,7 +181,7 @@ namespace Commander.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Attachments");
+                name: "ProofDocuments");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
