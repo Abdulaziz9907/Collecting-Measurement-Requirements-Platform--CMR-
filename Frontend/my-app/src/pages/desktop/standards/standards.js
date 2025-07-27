@@ -13,14 +13,21 @@ export default function Standards() {
 
   useEffect(() => {
     fetch(`${API_BASE}/api/departments`)
-      .then(res => (res.ok ? res.json() : []))
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
       .then(data => setDepartments(data))
-      .catch(() => setDepartments([]));
+      .catch(err => {
+        console.error('Failed to fetch departments:', err);
+        setDepartments([]);
+      });
   }, [API_BASE]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
+
     if (!form.checkValidity()) {
       event.stopPropagation();
     } else {
@@ -31,6 +38,7 @@ export default function Standards() {
         assigned_department_id: parseInt(form.scope.value, 10),
         attachments: attachments.filter(a => a.trim() !== ''),
       };
+
       try {
         const res = await fetch(`${API_BASE}/api/standards`, {
           method: 'POST',
@@ -38,14 +46,16 @@ export default function Standards() {
           body: JSON.stringify(data),
         });
         if (!res.ok) {
-          console.error('Failed to submit');
+          console.error('Failed to submit standard:', res.statusText);
         } else {
-          console.log('Submitted');
+          console.log('Standard submitted successfully');
+          // Optionally reset form here
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error submitting standard:', err);
       }
     }
+
     setValidated(true);
   };
 
@@ -67,92 +77,63 @@ export default function Standards() {
       <Header />
 
       <div id="wrapper">
-        {/* SIDEBAR */}
-        <nav
-          className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark"
-          style={{ background: "#061736" }}
-        >
-          <div className="container-fluid d-flex flex-column p-0">
-            {/* ...sidebar content unchanged... */}
-          </div>
+        {/* SIDEBAR (unchanged) */}
+        <nav className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark d-md-block d-sm-none d-xs-none d-none" style={{ background: "#061736" }}>
+          {/* ... */}
         </nav>
 
         {/* PAGE CONTENT */}
         <div className="d-flex flex-column" id="content-wrapper">
           <div id="content">
             <div className="container-fluid">
+              <div className="row p-4">
+                <div className='col-md-12'>
+                  <h4>الرئيسية/ إدارة المعايير</h4>
+                </div>
+              </div>
+
               <div className="row">
-                <div className="col-md-2" />
-                <div className="col-md-8 p-4 my-3 bg-white border rounded">
+                <div className="col-md-1 col-xl-2 col-xxl-2" />
+                <div className="col-md-10 col-xl-8 col-xxl-8 p-4 my-3 bg-white"
+                     style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
+                  <h4>إنشاء بطاقة معيار</h4>
                   <form
                     className={`needs-validation ${validated ? 'was-validated' : ''}`}
                     noValidate
                     onSubmit={handleSubmit}
                   >
-                    {/* المعيار */}
+                    {/* رقم المعيار */}
                     <div className="mb-3">
-                      <label htmlFor="standard" className="form-label">رقم المعيار </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="standard"
-                        name="standard"
-                        required
-                      />
+                      <label htmlFor="standard" className="form-label">رقم المعيار</label>
+                      <input type="text" className="form-control" id="standard" name="standard" required />
                       <div className="invalid-feedback">يرجى إدخال المعيار</div>
                     </div>
 
                     {/* اسم المعيار */}
                     <div className="mb-3">
                       <label htmlFor="goal" className="form-label">اسم المعيار</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="goal"
-                        name="goal"
-                        required
-                      />
-                      <div className="invalid-feedback">يرجى إدخال الهدف</div>
+                      <input type="text" className="form-control" id="goal" name="goal" required />
+                      <div className="invalid-feedback">يرجى إدخال اسم المعيار</div>
                     </div>
-
 
                     {/* الهدف */}
                     <div className="mb-3">
-                      <label htmlFor="desc2" className="form-label">
-                      الهدف
-                      </label>
-                      <textarea
-                        className="form-control"
-                        id="desc2"
-                        name="desc2"
-                        rows="3"
-                        required
-                      />
-                      <div className="invalid-feedback">يرجى إدخال البيانات المرتبطة</div>
+                      <label htmlFor="desc2" className="form-label">الهدف</label>
+                      <textarea className="form-control" id="desc2" name="desc2" rows="3" required />
+                      <div className="invalid-feedback">يرجى إدخال الهدف</div>
                     </div>
 
                     {/* متطلبات التطبيق */}
                     <div className="mb-3">
                       <label htmlFor="desc3" className="form-label">متطلبات التطبيق</label>
-                      <textarea
-                        className="form-control"
-                        id="desc3"
-                        name="desc3"
-                        rows="3"
-                        required
-                      />
+                      <textarea className="form-control" id="desc3" name="desc3" rows="3" required />
                       <div className="invalid-feedback">يرجى تحديد متطلبات التطبيق</div>
                     </div>
 
                     {/* الجهة */}
                     <div className="mb-3">
                       <label htmlFor="scope" className="form-label">الجهة</label>
-                      <select
-                        className="form-select"
-                        id="scope"
-                        name="scope"
-                        required
-                      >
+                      <select className="form-select" id="scope" name="scope" required>
                         <option value="">اختر الجهة...</option>
                         {departments.map(dept => (
                           <option key={dept.department_id} value={dept.department_id}>
@@ -183,9 +164,7 @@ export default function Standards() {
                               onChange={e => handleAttachmentChange(e, idx)}
                               required
                             />
-                            <div className="invalid-feedback">
-                              يرجى إدخال مسار المستند
-                            </div>
+                            <div className="invalid-feedback">يرجى إدخال مسار المستند</div>
                           </div>
                           {idx > 0 && (
                             <button
@@ -199,23 +178,13 @@ export default function Standards() {
                         </div>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      className="btn btn-secondary mb-3"
-                      onClick={addAttachment}
-                    >
+                    <button type="button" className="btn btn-secondary mb-3" onClick={addAttachment}>
                       إضافة حقل نصي
                     </button>
 
                     {/* تأكيد المعلومات */}
                     <div className="form-check mb-3">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="checkTerms"
-                        name="checkTerms"
-                        required
-                      />
+                      <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
                       <label className="form-check-label" htmlFor="checkTerms">
                         أؤكد صحة المعلومات
                       </label>
@@ -225,7 +194,7 @@ export default function Standards() {
                     <button type="submit" className="btn btn-primary">إرسال</button>
                   </form>
                 </div>
-                <div className="col-md-2" />
+                <div className="col-md-1 col-xl-2 col-xxl-2" />
               </div>
             </div>
           </div>
