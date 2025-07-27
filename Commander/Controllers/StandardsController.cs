@@ -33,15 +33,15 @@ namespace Commander.Controllers
                 Standard_goal = dto.Standard_goal,
                 Standard_requirments = dto.Standard_requirments,
                 Assigned_department_id = dto.Assigned_department_id,
-                Proof_required = dto.Attachments != null && dto.Attachments.Count > 0
+                Proof_required = dto.Proof_required != null && dto.Proof_required.Count > 0
             };
 
             _repository.CreateStandard(standard);
             _repository.SaveChanges();
 
-            if (dto.Attachments != null)
+            if (dto.Proof_required != null)
             {
-                foreach (var path in dto.Attachments)
+                foreach (var path in dto.Proof_required)
                 {
                     var att = new Attachment
                     {

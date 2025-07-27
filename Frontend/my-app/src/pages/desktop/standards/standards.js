@@ -19,7 +19,7 @@ function escapeInput(str) {
 
 export default function Standards() {
   const [validated, setValidated] = useState(false);
-  const [attachments, setAttachments] = useState(['']);
+  const [proofRequired, setProofRequired] = useState(['']);
   const [departments, setDepartments] = useState([]);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
@@ -49,7 +49,7 @@ export default function Standards() {
         standard_goal: escapeInput(form.desc2.value),
         standard_requirments: escapeInput(form.desc3.value),
         assigned_department_id: parseInt(form.scope.value, 10),
-        attachments: attachments
+        proof_required: proofRequired
           .filter(a => a.trim() !== '')
           .map(a => escapeInput(a)),
       };
@@ -76,16 +76,16 @@ export default function Standards() {
 
   const handleAttachmentChange = (e, idx) => {
     const text = e.target.value;
-    setAttachments(prev => {
+    setProofRequired(prev => {
       const next = [...prev];
       next[idx] = text;
       return next;
     });
   };
 
-  const addAttachment = () => setAttachments(prev => [...prev, '']);
+  const addAttachment = () => setProofRequired(prev => [...prev, '']);
   const removeAttachment = (idx) =>
-    setAttachments(prev => prev.filter((_, i) => i !== idx));
+    setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -209,7 +209,7 @@ export default function Standards() {
                     </div>
 
                     {/* مستندات الإثبات (نصية) */}
-                    {attachments.map((text, idx) => (
+                    {proofRequired.map((text, idx) => (
                       <div className="mb-4" key={idx}>
                         <label htmlFor={`attachment${idx}`} className="form-label">
                           مستند إثبات {idx + 1}
