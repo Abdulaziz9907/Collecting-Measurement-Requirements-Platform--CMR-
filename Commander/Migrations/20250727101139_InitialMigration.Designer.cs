@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Commander.Migrations
 {
     [DbContext(typeof(InterfaceContext))]
-    [Migration("20250718113953_InitialMigration")]
+    [Migration("20250727101139_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace Commander.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "8.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -149,7 +149,7 @@ namespace Commander.Migrations
                     b.Property<bool>("Proof_required")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Standard_description")
+                    b.Property<string>("Standard_goal")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
@@ -157,6 +157,9 @@ namespace Commander.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Standard_requirments")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()

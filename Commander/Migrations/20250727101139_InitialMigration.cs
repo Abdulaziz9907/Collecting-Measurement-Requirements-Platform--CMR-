@@ -55,7 +55,8 @@ namespace Commander.Migrations
                     Standard_id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Standard_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Standard_description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Standard_goal = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Standard_requirments = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Proof_required = table.Column<bool>(type: "bit", nullable: false),
                     Assigned_department_id = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -76,7 +77,8 @@ namespace Commander.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Employee_id = table.Column<int>(type: "int", maxLength: 7, nullable: false),
+                    Employee_id = table.Column<int>(type: "int", maxLength: 7, nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Username = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     Password = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     First_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),

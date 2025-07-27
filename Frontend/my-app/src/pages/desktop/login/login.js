@@ -8,7 +8,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('http://localhost:5186/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -31,30 +31,16 @@ export default function Login() {
         <div className={styles.column}>
 
           {/* Header */}
-          <div className={styles['row-view']}>
+          {/* <div className={styles['row-view']}>
             <img
               src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/NJfVaftABi/lr49i5w1_expires_30_days.png"
               className={styles.image}
               alt="Notifications"
             />
-            <div className={styles['row-view2']}>
-              <div className={styles.view}>
-                <div className={styles.column2}>
-                  <span className={styles.text}>للتواصل</span>
-                  <div className={styles.view2}>
-                    <div className={styles.box}></div>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.view}>
-                <div className={styles.column2}>
-                  <div className={styles.view2}>
-                    <div className={styles.box}></div>
-                  </div>
-                  <span className={styles.text}>عن المنصة</span>
-                </div>
-              </div>
-              <span className={styles.text2}>الرئيسية</span>
+            <div className={styles.navRow}>
+              <span className={styles.navItem}>الرئيسية</span>
+              <span className={styles.navItem}>عن المنصة</span>
+              <span className={styles.navItem}>للتواصل</span>
             </div>
             <div className={styles.box2}></div>
             <span className={styles.text3}>منصة جمع متطلبات قياس</span>
@@ -63,7 +49,7 @@ export default function Login() {
               className={styles.image2}
               alt="Logo"
             />
-          </div>
+          </div> */}
 
           {/* Main Content */}
           <div
@@ -125,31 +111,39 @@ export default function Login() {
             {/* Login Column */}
             <div
               className={styles.column4}
-              style={{ backgroundImage: 'url(https://i.imgur.com/1tMFzp8.png)' }}
+              // style={{ backgroundImage: 'url(https://i.imgur.com/1tMFzp8.png)' }}
             >
-              <div className={styles.view4}>
-                <span className={styles.text6}>تسجيل دخول</span>
-              </div>
-              <input
-                placeholder="اسم المستخدم"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className={styles.input}
-              />
-              <input
-                placeholder="كلمة المرور"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={styles.input2}
-                type="password"
-              />
-              <div className={styles.view5}>
-                <span className={styles.text7}>نسيت كلمة المرور؟</span>
-              </div>
-              <button className={styles.button} onClick={handleLogin}>
-                <span className={styles.text8}>دخول</span>
-              </button>
-              {message && <p className={styles.message}>{message}</p>}
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleLogin();
+                }}
+                className={styles.loginForm}
+              >
+                <div className={styles.view4}>
+                  <span className={styles.text6}>تسجيل دخول</span>
+                </div>
+                <input
+                  placeholder="اسم المستخدم"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className={styles.input}
+                />
+                <input
+                  placeholder="كلمة المرور"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={styles.input2}
+                  type="password"
+                />
+                <div className={styles.view5}>
+                  <span className={styles.text7}>نسيت كلمة المرور؟</span>
+                </div>
+                <button className={styles.button} type="submit">
+                  <span className={styles.text8}>دخول</span>
+                </button>
+                {message && <p className={styles.message}>{message}</p>}
+              </form>
             </div>
 
             <img

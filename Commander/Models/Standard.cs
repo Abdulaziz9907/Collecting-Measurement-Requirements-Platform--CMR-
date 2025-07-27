@@ -12,7 +12,9 @@ namespace Commander.Models
         public required string Standard_name { get; set; }
 
         [MaxLength(255)]
-        public string? Standard_description { get; set; }
+        public string? Standard_goal { get; set; }
+
+        public string? Standard_requirments { get; set; }
 
         public bool Proof_required { get; set; }
 
