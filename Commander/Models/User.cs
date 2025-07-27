@@ -34,7 +34,6 @@ namespace Commander.Models
 
         public Department? Department { get; set; }
 
-        public ICollection<Notification>? Notifications { get; set; }
 
     }
 

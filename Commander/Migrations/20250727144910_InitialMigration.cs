@@ -118,47 +118,9 @@ namespace Commander.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Notification_id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Employee_id = table.Column<int>(type: "int", nullable: false),
-                    Standard_id = table.Column<int>(type: "int", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Is_read = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Notification_id);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Standards_Standard_id",
-                        column: x => x.Standard_id,
-                        principalTable: "Standards",
-                        principalColumn: "Standard_id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users_Employee_id",
-                        column: x => x.Employee_id,
-                        principalTable: "Users",
-                        principalColumn: "Employee_id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Attachments_Standard_id",
                 table: "Attachments",
-                column: "Standard_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_Employee_id",
-                table: "Notifications",
-                column: "Employee_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_Standard_id",
-                table: "Notifications",
                 column: "Standard_id");
 
             migrationBuilder.CreateIndex(
@@ -184,16 +146,13 @@ namespace Commander.Migrations
                 name: "Attachments");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
-
-            migrationBuilder.DropTable(
                 name: "PerformanceReports");
 
             migrationBuilder.DropTable(
-                name: "Standards");
+                name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Standards");
 
             migrationBuilder.DropTable(
                 name: "Departments");

@@ -69,36 +69,6 @@ namespace Commander.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("Commander.Models.Notification", b =>
-                {
-                    b.Property<int>("Notification_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Notification_id"));
-
-                    b.Property<int>("Employee_id")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Is_read")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Standard_id")
-                        .HasColumnType("int");
-
-                    b.HasKey("Notification_id");
-
-                    b.HasIndex("Employee_id");
-
-                    b.HasIndex("Standard_id");
-
-                    b.ToTable("Notifications");
-                });
-
             modelBuilder.Entity("Commander.Models.PerformanceReport", b =>
                 {
                     b.Property<int>("Report_id")
@@ -142,7 +112,6 @@ namespace Commander.Migrations
 
                     b.Property<DateTime>("Created_at")
                         .HasColumnType("datetime2");
-
 
                     b.Property<string>("Standard_goal")
                         .HasMaxLength(255)
@@ -226,25 +195,6 @@ namespace Commander.Migrations
                     b.Navigation("Standard");
                 });
 
-            modelBuilder.Entity("Commander.Models.Notification", b =>
-                {
-                    b.HasOne("Commander.Models.User", "User")
-                        .WithMany("Notifications")
-                        .HasForeignKey("Employee_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Commander.Models.Standard", "Standard")
-                        .WithMany("Notifications")
-                        .HasForeignKey("Standard_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Standard");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Commander.Models.PerformanceReport", b =>
                 {
                     b.HasOne("Commander.Models.Department", "Department")
@@ -290,13 +240,6 @@ namespace Commander.Migrations
             modelBuilder.Entity("Commander.Models.Standard", b =>
                 {
                     b.Navigation("Proof_required");
-
-                    b.Navigation("Notifications");
-                });
-
-            modelBuilder.Entity("Commander.Models.User", b =>
-                {
-                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }
