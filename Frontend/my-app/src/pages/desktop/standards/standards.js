@@ -78,8 +78,57 @@ export default function Standards() {
 
       <div id="wrapper">
         {/* SIDEBAR (unchanged) */}
-        <nav className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark d-md-block d-sm-none d-xs-none d-none" style={{ background: "#061736" }}>
-          {/* ... */}
+   <nav
+          className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark d-md-block d-sm-none d-xs-none d-none"
+          style={{ background: "#061736" }}
+        >
+          <div className="container-fluid d-flex flex-column p-0">
+            {/* ...sidebar content unchanged... */}
+
+             <a className="navbar-brand d-flex justify-content-center align-items-center m-0 sidebar-brand" href="#">
+              <div className="d-none d-sm-none d-md-block d-lg-block d-xl-block">
+                {/* navbar top */}
+              </div>
+            </a>
+            <hr className="my-0 sidebar-divider" />
+            <ul className="navbar-nav text-light" id="accordionSidebar">
+              <li className="nav-item">
+                <a className="nav-link d-flex justify-content-start" href="/index.html">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-house" viewBox="0 0 16 16">
+                    <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
+                  </svg>
+                  <span className="me-2" style={{ fontSize: 17 }}> الرئيسية </span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link d-flex justify-content-start" href="/table.html">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style={{ opacity: 0.8 }} className="bi bi-card-checklist" viewBox="0 0 16 16">
+                    <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/>
+                    <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0M7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0"/>
+                  </svg>
+                  <span className="me-2" style={{ fontSize: 17 }}> معايير التحول </span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link d-flex justify-content-start" href="/login.html">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style={{ opacity: 0.8 }} className="bi bi-diagram-2" viewBox="0 0 16 16">
+                    <path fillRule="evenodd" d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6v1H11a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0v-1A.5.5 0 0 1 5 7h2.5V6A1.5 1.5 0 0 1 6 4.5zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5zM3 11.5A1.5 1.5 0 0 1 4.5 10h1A1.5 1.5 0 0 1 7 11.5v1A1.5 1.5 0 0 1 5.5 14h-1A1.5 1.5 0 0 1 3 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 9 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5"/>
+                  </svg>
+                  <span className="me-2" style={{ fontSize: 17 }}> الجهات </span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link d-flex justify-content-start" href="/login.html">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" style={{ opacity: 0.8 }} className="bi bi-pie-chart" viewBox="0 0 16 16">
+                    <path d="M7.5 1.018a7 7 0 0 0-4.79 11.566L7.5 7.793zm1 0V7.5h6.482A7 7 0 0 0 8.5 1.018M14.982 8.5H8.207l-4.79 4.79A7 7 0 0 0 14.982 8.5M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8"/>
+                  </svg>
+                  <span className="me-2" style={{ fontSize: 17 }}> الإحصائيات </span>
+                </a>
+              </li>
+            </ul>
+
+
+          </div>
         </nav>
 
         {/* PAGE CONTENT */}
