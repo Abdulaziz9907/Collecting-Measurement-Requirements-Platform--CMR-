@@ -16,8 +16,6 @@ namespace Commander.Models
 
         public string? Standard_requirments { get; set; }
 
-        public bool Proof_required { get; set; }
-
         [ForeignKey("Department")]
         public required int Assigned_department_id { get; set; }
 
@@ -26,7 +24,7 @@ namespace Commander.Models
         public DateTime Created_at { get; set; } = DateTime.UtcNow;
 
         public Department? Department { get; set; }
-        public ICollection<Attachment>? Attachments { get; set; }
+        public ICollection<Attachment>? Proof_required { get; set; }
         public ICollection<Notification>? Notifications { get; set; }
     }
 }

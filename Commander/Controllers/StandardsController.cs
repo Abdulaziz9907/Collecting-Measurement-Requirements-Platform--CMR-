@@ -32,8 +32,7 @@ namespace Commander.Controllers
                 Standard_name = dto.Standard_name,
                 Standard_goal = dto.Standard_goal,
                 Standard_requirments = dto.Standard_requirments,
-                Assigned_department_id = dto.Assigned_department_id,
-                Proof_required = dto.Proof_required != null && dto.Proof_required.Count > 0
+                Assigned_department_id = dto.Assigned_department_id
             };
 
             _repository.CreateStandard(standard);

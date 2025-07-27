@@ -23,14 +23,14 @@ namespace Commander.Data
         public IEnumerable<Standard> GetAllStandards()
         {
             return _context.Standards
-                .Include(s => s.Attachments)
+                .Include(s => s.Proof_required)
                 .ToList();
         }
 
         public Standard? GetStandardById(int id)
         {
             return _context.Standards
-                .Include(s => s.Attachments)
+                .Include(s => s.Proof_required)
                 .FirstOrDefault(s => s.Standard_id == id);
         }
 
