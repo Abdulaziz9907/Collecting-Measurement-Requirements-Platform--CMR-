@@ -146,8 +146,6 @@ namespace Commander.Migrations
                     b.Property<DateTime>("Created_at")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("Proof_required")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Standard_goal")
                         .HasMaxLength(255)
@@ -223,7 +221,7 @@ namespace Commander.Migrations
             modelBuilder.Entity("Commander.Models.Attachment", b =>
                 {
                     b.HasOne("Commander.Models.Standard", "Standard")
-                        .WithMany("Attachments")
+                        .WithMany("Proof_required")
                         .HasForeignKey("Standard_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -294,7 +292,7 @@ namespace Commander.Migrations
 
             modelBuilder.Entity("Commander.Models.Standard", b =>
                 {
-                    b.Navigation("Attachments");
+                    b.Navigation("Proof_required");
 
                     b.Navigation("Notifications");
                 });

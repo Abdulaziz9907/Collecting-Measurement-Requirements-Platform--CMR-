@@ -57,7 +57,6 @@ namespace Commander.Migrations
                     Standard_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Standard_goal = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Standard_requirments = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Proof_required = table.Column<bool>(type: "bit", nullable: false),
                     Assigned_department_id = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
