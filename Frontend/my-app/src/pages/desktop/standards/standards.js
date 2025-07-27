@@ -64,7 +64,7 @@ export default function Standards() {
       <div id="wrapper">
         {/* SIDEBAR */}
         <nav
-          className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark"
+          className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark d-md-block d-sm-none d-xs-none d-none"
           style={{ background: "#061736" }}
         >
           <div className="container-fluid d-flex flex-column p-0">
@@ -120,9 +120,19 @@ export default function Standards() {
         <div className="d-flex flex-column" id="content-wrapper">
           <div id="content">
             <div className="container-fluid">
+
+              <div className="row p-4">
+<div className='col-md-12 '>
+  <h4>الرئيسية/ إدارة المعايير</h4>
+
+</div>
+
+              </div>
               <div className="row">
-                <div className="col-md-2" />
-                <div className="col-md-8 p-4 my-3 bg-white border rounded">
+               
+                <div className="col-md-1 col-xl-2 col-xxl-2" />
+                <div className="col-md-10 col-xl-8 col-xxl-8 p-4 my-3 bg-white " style={{borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)"}}>
+                   <h4>إنشاء بطاقة معيار</h4>
                   <form
                     className={`needs-validation ${validated ? 'was-validated' : ''}`}
                     noValidate
@@ -261,7 +271,7 @@ export default function Standards() {
                     <button type="submit" className="btn btn-primary">إرسال</button>
                   </form>
                 </div>
-                <div className="col-md-2" />
+                <div className="col-md-1 col-xl-2 col-xxl-2" />
               </div>
             </div>
           </div>
