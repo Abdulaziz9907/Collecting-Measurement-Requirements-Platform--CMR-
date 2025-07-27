@@ -8,24 +8,38 @@ export default function Standards() {
   const [validated, setValidated] = useState(false);
   const [attachments, setAttachments] = useState(['']);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.checkValidity()) {
       event.stopPropagation();
     } else {
       const data = {
-        standard: form.standard.value,
-        goal: form.goal.value,
-        desc1: form.desc1.value,
-        desc2: form.desc2.value,
-        desc3: form.desc3.value,
-        scope: form.scope.value,
+        standard_name: form.goal.value,
+        standard_goal: form.desc2.value,
+        standard_requirments: form.desc3.value,
+        assigned_department_id:
+          form.scope.value === 'وزارة التعليم'
+            ? 1
+            : form.scope.value === 'وزارة المالية'
+            ? 2
+            : parseInt(form.scope.value, 10),
         attachments,
-        confirmed: form.checkTerms.checked,
       };
-      console.log('Submitting:', data);
-      // TODO: send `data` to server
+      try {
+        const res = await fetch('http://localhost:5186/api/standards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          console.error('Failed to submit');
+        } else {
+          console.log('Submitted');
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
     setValidated(true);
   };
