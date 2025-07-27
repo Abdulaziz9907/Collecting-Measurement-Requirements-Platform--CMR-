@@ -12,7 +12,7 @@ namespace Commander.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Standard> Standards { get; set; }
-        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<ProofDocument> ProofDocuments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PerformanceReport> PerformanceReports { get; set; }
 
