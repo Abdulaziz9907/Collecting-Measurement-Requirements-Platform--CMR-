@@ -9,12 +9,14 @@ export default function Standards() {
   const [attachments, setAttachments] = useState(['']);
   const [departments, setDepartments] = useState([]);
 
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+
   useEffect(() => {
-    fetch('http://localhost:5186/api/departments')
-      .then(res => res.ok ? res.json() : [])
+    fetch(`${API_BASE}/api/departments`)
+      .then(res => (res.ok ? res.json() : []))
       .then(data => setDepartments(data))
       .catch(() => setDepartments([]));
-  }, []);
+  }, [API_BASE]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -27,10 +29,10 @@ export default function Standards() {
         standard_goal: form.desc2.value,
         standard_requirments: form.desc3.value,
         assigned_department_id: parseInt(form.scope.value, 10),
-        attachments,
+        attachments: attachments.filter(a => a.trim() !== ''),
       };
       try {
-        const res = await fetch('http://localhost:5186/api/standards', {
+        const res = await fetch(`${API_BASE}/api/standards`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
