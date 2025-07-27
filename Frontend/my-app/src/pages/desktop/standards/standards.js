@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import "./assets/bootstrap/css/bootstrap.min.css";
 import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
@@ -7,25 +7,42 @@ import Header from '../../../components/Header.jsx';
 export default function Standards() {
   const [validated, setValidated] = useState(false);
   const [attachments, setAttachments] = useState(['']);
+  const [departments, setDepartments] = useState([]);
 
-  const handleSubmit = (event) => {
+  useEffect(() => {
+    fetch('http://localhost:5186/api/departments')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setDepartments(data))
+      .catch(() => setDepartments([]));
+  }, []);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.checkValidity()) {
       event.stopPropagation();
     } else {
       const data = {
-        standard: form.standard.value,
-        goal: form.goal.value,
-        desc1: form.desc1.value,
-        desc2: form.desc2.value,
-        desc3: form.desc3.value,
-        scope: form.scope.value,
+        standard_name: form.goal.value,
+        standard_goal: form.desc2.value,
+        standard_requirments: form.desc3.value,
+        assigned_department_id: parseInt(form.scope.value, 10),
         attachments,
-        confirmed: form.checkTerms.checked,
       };
-      console.log('Submitting:', data);
-      // TODO: send `data` to server
+      try {
+        const res = await fetch('http://localhost:5186/api/standards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          console.error('Failed to submit');
+        } else {
+          console.log('Submitted');
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
     setValidated(true);
   };
@@ -135,8 +152,11 @@ export default function Standards() {
                         required
                       >
                         <option value="">اختر الجهة...</option>
-                        <option>وزارة التعليم</option>
-                        <option>وزارة المالية</option>
+                        {departments.map(dept => (
+                          <option key={dept.department_id} value={dept.department_id}>
+                            {dept.department_name}
+                          </option>
+                        ))}
                       </select>
                       <div className="invalid-feedback">يرجى اختيار الجهة</div>
                     </div>

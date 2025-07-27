@@ -1,6 +1,7 @@
 using System;
 using AutoMapper;
 using Commander.Data;
+using Commander.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ namespace Commander
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
+            services.AddScoped<IStandardRepo, SqlStandardRepo>();
 
             // 4) CORS policy
             services.AddCors(opts =>
