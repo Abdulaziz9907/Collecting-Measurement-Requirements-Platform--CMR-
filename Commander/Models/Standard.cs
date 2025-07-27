@@ -19,7 +19,7 @@ namespace Commander.Models
         [ForeignKey("Department")]
         public required int Assigned_department_id { get; set; }
 
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; } = "لم يبدأ";
 
         public DateTime Created_at { get; set; } = DateTime.UtcNow;
 
