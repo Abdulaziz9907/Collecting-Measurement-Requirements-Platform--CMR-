@@ -17,6 +17,10 @@ function escapeInput(str) {
   });
 }
 
+function escapeCommas(str) {
+  return str.replace(/,/g, '\\,');
+}
+
 export default function Standards() {
   const [validated, setValidated] = useState(false);
   const [proofRequired, setProofRequired] = useState(['']);
@@ -44,14 +48,17 @@ export default function Standards() {
     if (!form.checkValidity()) {
       event.stopPropagation();
     } else {
+      const proofs = proofRequired
+        .filter(a => a.trim() !== '')
+        .map(a => escapeCommas(escapeInput(a)))
+        .join(',');
+
       const data = {
         standard_name: escapeInput(form.goal.value),
         standard_goal: escapeInput(form.desc2.value),
         standard_requirments: escapeInput(form.desc3.value),
         assigned_department_id: parseInt(form.scope.value, 10),
-        proof_required: proofRequired
-          .filter(a => a.trim() !== '')
-          .map(a => escapeInput(a)),
+        proof_required: proofs,
       };
 
       try {

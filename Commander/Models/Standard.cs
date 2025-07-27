@@ -24,6 +24,6 @@ namespace Commander.Models
         public DateTime Created_at { get; set; } = DateTime.UtcNow;
 
         public Department? Department { get; set; }
-        public ICollection<Attachment>? Proof_required { get; set; }
+        public string? Proof_required { get; set; }
     }
 }

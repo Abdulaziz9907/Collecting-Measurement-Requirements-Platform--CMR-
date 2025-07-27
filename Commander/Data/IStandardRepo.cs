@@ -10,6 +10,5 @@ namespace Commander.Data
         IEnumerable<Standard> GetAllStandards();
         Standard? GetStandardById(int id);
         void CreateStandard(Standard standard);
-        void AddAttachment(Attachment attachment);
     }
 }

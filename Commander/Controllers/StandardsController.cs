@@ -32,25 +32,12 @@ namespace Commander.Controllers
                 Standard_name = dto.Standard_name,
                 Standard_goal = dto.Standard_goal,
                 Standard_requirments = dto.Standard_requirments,
-                Assigned_department_id = dto.Assigned_department_id
+                Assigned_department_id = dto.Assigned_department_id,
+                Proof_required = dto.Proof_required
             };
 
             _repository.CreateStandard(standard);
             _repository.SaveChanges();
-
-            if (dto.Proof_required != null)
-            {
-                foreach (var path in dto.Proof_required)
-                {
-                    var att = new Attachment
-                    {
-                        Standard_id = standard.Standard_id,
-                        FilePath = path
-                    };
-                    _repository.AddAttachment(att);
-                }
-                _repository.SaveChanges();
-            }
 
             return CreatedAtAction(nameof(GetAll), new { id = standard.Standard_id }, standard);
         }
