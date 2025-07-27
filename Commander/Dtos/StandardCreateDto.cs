@@ -15,6 +15,6 @@ namespace Commander.Dtos
         [Required]
         public int Assigned_department_id { get; set; }
 
-        public List<string>? Proof_required { get; set; }
+        public string? Proof_required { get; set; }
     }
 }

@@ -22,16 +22,12 @@ namespace Commander.Data
 
         public IEnumerable<Standard> GetAllStandards()
         {
-            return _context.Standards
-                .Include(s => s.Proof_required)
-                .ToList();
+            return _context.Standards.ToList();
         }
 
         public Standard? GetStandardById(int id)
         {
-            return _context.Standards
-                .Include(s => s.Proof_required)
-                .FirstOrDefault(s => s.Standard_id == id);
+            return _context.Standards.FirstOrDefault(s => s.Standard_id == id);
         }
 
         public void CreateStandard(Standard standard)
@@ -42,11 +38,5 @@ namespace Commander.Data
             _context.Standards.Add(standard);
         }
 
-        public void AddAttachment(Attachment attachment)
-        {
-            if (attachment == null)
-                throw new ArgumentNullException(nameof(attachment));
-            _context.Attachments.Add(attachment);
-        }
     }
 }
