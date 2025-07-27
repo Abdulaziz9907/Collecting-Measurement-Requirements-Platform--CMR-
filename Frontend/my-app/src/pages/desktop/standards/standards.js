@@ -4,6 +4,19 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 
+function escapeInput(str) {
+  return str.replace(/[&<>\'\"]/g, (char) => {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;',
+    };
+    return map[char] || char;
+  });
+}
+
 export default function Standards() {
   const [validated, setValidated] = useState(false);
   const [attachments, setAttachments] = useState(['']);
@@ -32,11 +45,13 @@ export default function Standards() {
       event.stopPropagation();
     } else {
       const data = {
-        standard_name: form.goal.value,
-        standard_goal: form.desc2.value,
-        standard_requirments: form.desc3.value,
+        standard_name: escapeInput(form.goal.value),
+        standard_goal: escapeInput(form.desc2.value),
+        standard_requirments: escapeInput(form.desc3.value),
         assigned_department_id: parseInt(form.scope.value, 10),
-        attachments: attachments.filter(a => a.trim() !== ''),
+        attachments: attachments
+          .filter(a => a.trim() !== '')
+          .map(a => escapeInput(a)),
       };
 
       try {
