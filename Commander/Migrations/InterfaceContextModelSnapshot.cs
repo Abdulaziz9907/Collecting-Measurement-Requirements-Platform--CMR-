@@ -22,15 +22,15 @@ namespace Commander.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Commander.Models.Attachment", b =>
+            modelBuilder.Entity("Commander.Models.ProofDocument", b =>
                 {
-                    b.Property<int>("Attachment_id")
+                    b.Property<int>("ProofDocument_id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Attachment_id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProofDocument_id"));
 
-                    b.Property<string>("FilePath")
+                    b.Property<string>("DocumentText")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -41,11 +41,11 @@ namespace Commander.Migrations
                     b.Property<DateTime>("Uploaded_date")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Attachment_id");
+                    b.HasKey("ProofDocument_id");
 
                     b.HasIndex("Standard_id");
 
-                    b.ToTable("Attachments");
+                    b.ToTable("ProofDocuments");
                 });
 
             modelBuilder.Entity("Commander.Models.Department", b =>
@@ -143,8 +143,6 @@ namespace Commander.Migrations
                     b.Property<DateTime>("Created_at")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("Proof_required")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Standard_goal")
                         .HasMaxLength(255)
@@ -217,10 +215,10 @@ namespace Commander.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Commander.Models.Attachment", b =>
+            modelBuilder.Entity("Commander.Models.ProofDocument", b =>
                 {
                     b.HasOne("Commander.Models.Standard", "Standard")
-                        .WithMany("Attachments")
+                        .WithMany("Proof_required")
                         .HasForeignKey("Standard_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -291,7 +289,7 @@ namespace Commander.Migrations
 
             modelBuilder.Entity("Commander.Models.Standard", b =>
                 {
-                    b.Navigation("Attachments");
+                    b.Navigation("Proof_required");
 
                     b.Navigation("Notifications");
                 });
