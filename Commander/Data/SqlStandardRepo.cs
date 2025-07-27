@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Commander.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Commander.Data
 {
@@ -22,16 +21,12 @@ namespace Commander.Data
 
         public IEnumerable<Standard> GetAllStandards()
         {
-            return _context.Standards
-                .Include(s => s.Attachments)
-                .ToList();
+            return _context.Standards.ToList();
         }
 
         public Standard? GetStandardById(int id)
         {
-            return _context.Standards
-                .Include(s => s.Attachments)
-                .FirstOrDefault(s => s.Standard_id == id);
+            return _context.Standards.FirstOrDefault(s => s.Standard_id == id);
         }
 
         public void CreateStandard(Standard standard)
