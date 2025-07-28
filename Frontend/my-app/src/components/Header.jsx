@@ -6,8 +6,6 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 const notificationCount = 22;
 
 const Header = () => {
-  // Cap at 99+
-  const displayCount = notificationCount > 99 ? '99+' : notificationCount;
 
   // Shared button styles
   const navButtonStyle = {
@@ -41,11 +39,8 @@ const Header = () => {
           </h5>
         </div>
 
-        {/* Nav items + Bell badge */}
-        <div className="d-flex align-items-center gap-4 flex-shrink-0">
  
-    
-        </div>
+
       </div>
     </nav>
   );
