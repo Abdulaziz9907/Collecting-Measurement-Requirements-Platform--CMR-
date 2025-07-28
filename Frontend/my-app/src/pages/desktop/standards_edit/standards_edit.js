@@ -22,7 +22,9 @@ function escapeCommas(str) {
   return str.replace(/,/g, '\\,');
 }
 
-export default function Standards_create() {
+import { useParams, useNavigate } from 'react-router-dom';
+
+export default function Standards_edit() {
   const [validated, setValidated] = useState(false);
   const [proofRequired, setProofRequired] = useState(['']);
   const [departments, setDepartments] = useState([]);
@@ -30,6 +32,10 @@ export default function Standards_create() {
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false); // Mobile sidebar
+  const [standard, setStandard] = useState(null);
+
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   const API_BASE = process.env.REACT_APP_API_BASE || '';
 
@@ -45,6 +51,18 @@ export default function Standards_create() {
         setDepartments([]);
       });
   }, [API_BASE]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/standards/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setStandard(data);
+        if (data.proof_required) {
+          setProofRequired(data.proof_required.split(',').filter(t => t));
+        }
+      })
+      .catch(() => setStandard(null));
+  }, [API_BASE, id]);
 
   useEffect(() => {
     if (showError) {
@@ -76,11 +94,12 @@ export default function Standards_create() {
         standard_requirments: escapeInput(form.desc3.value),
         assigned_department_id: parseInt(form.scope.value, 10),
         proof_required: proofs,
+        status: standard?.status || 'لم يبدأ',
       };
 
       try {
-        const res = await fetch(`${API_BASE}/api/standards`, {
-          method: 'POST',
+        const res = await fetch(`${API_BASE}/api/standards/${id}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
@@ -88,7 +107,7 @@ export default function Standards_create() {
           setShowError(true);
         } else {
           setShowSuccess(true);
-          setTimeout(() => window.location.reload(), 5000);
+          setTimeout(() => navigate('/standards'), 2000);
         }
       } catch {
         setShowError(true);
@@ -162,36 +181,36 @@ export default function Standards_create() {
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
                 <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
-                  <h4>إنشاء بطاقة معيار</h4>
+                  <h4>تعديل بطاقة معيار</h4>
                   {/* Form */}
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                     <div className="mb-3">
                       <label className="form-label">رقم المعيار</label>
-                      <input type="text" className="form-control" id="standard_num" name="standard" required />
+                      <input type="text" className="form-control" id="standard_num" name="standard" required defaultValue={standard?.standard_number || ''} />
                       <div className="invalid-feedback">يرجى إدخال المعيار</div>
                     </div>
 
                     <div className="mb-3">
                       <label className="form-label">اسم المعيار</label>
-                      <input type="text" className="form-control" id="goal" name="goal" required />
+                      <input type="text" className="form-control" id="goal" name="goal" required defaultValue={standard?.standard_name || ''} />
                       <div className="invalid-feedback">يرجى إدخال اسم المعيار</div>
                     </div>
 
                     <div className="mb-3">
                       <label className="form-label">الهدف</label>
-                      <textarea className="form-control" id="desc2" name="desc2" rows="3" required />
+                      <textarea className="form-control" id="desc2" name="desc2" rows="3" required defaultValue={standard?.standard_goal || ''} />
                       <div className="invalid-feedback">يرجى إدخال الهدف</div>
                     </div>
 
                     <div className="mb-3">
                       <label className="form-label">متطلبات التطبيق</label>
-                      <textarea className="form-control" id="desc3" name="desc3" rows="3" required />
+                      <textarea className="form-control" id="desc3" name="desc3" rows="3" required defaultValue={standard?.standard_requirments || ''} />
                       <div className="invalid-feedback">يرجى تحديد متطلبات التطبيق</div>
                     </div>
 
                     <div className="mb-3">
                       <label className="form-label">الجهة</label>
-                      <select className="form-select" id="scope" name="scope" required>
+                      <select className="form-select" id="scope" name="scope" required defaultValue={standard?.assigned_department_id || ''}>
                         <option value="">اختر الجهة...</option>
                         {departments.map(d => (
                           <option key={d.department_id} value={d.department_id}>
@@ -238,7 +257,7 @@ export default function Standards_create() {
 
                     <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                       {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                      إرسال
+                      تحديث
                     </button>
                   </form>
                 </div>

@@ -22,12 +22,12 @@ namespace Commander.Data
 
         public IEnumerable<Standard> GetAllStandards()
         {
-            return _context.Standards.ToList();
+            return _context.Standards.Include(s => s.Department).ToList();
         }
 
         public Standard? GetStandardById(int id)
         {
-            return _context.Standards.FirstOrDefault(s => s.Standard_id == id);
+            return _context.Standards.Include(s => s.Department).FirstOrDefault(s => s.Standard_id == id);
         }
 
         public void CreateStandard(Standard standard)
@@ -36,6 +36,19 @@ namespace Commander.Data
                 throw new ArgumentNullException(nameof(standard));
 
             _context.Standards.Add(standard);
+        }
+
+        public void UpdateStandard(Standard standard)
+        {
+            _context.Entry(standard).State = EntityState.Modified;
+        }
+
+        public void DeleteStandard(Standard standard)
+        {
+            if (standard != null)
+            {
+                _context.Standards.Remove(standard);
+            }
         }
 
     }
