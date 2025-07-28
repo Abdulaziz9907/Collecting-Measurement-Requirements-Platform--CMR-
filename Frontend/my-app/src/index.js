@@ -2,18 +2,19 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import Login from './pages/desktop/login/login.js';
-import Standards from './pages/desktop/standards/standards.js'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'css/vanilla-zoom.min.css';
 import 'css/baguetteBox.min.css';
+import { BrowserRouter } from 'react-router-dom';
 
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Standards />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
