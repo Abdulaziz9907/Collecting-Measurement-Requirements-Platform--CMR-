@@ -31,7 +31,7 @@ export default function Standards_create() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false); // Mobile sidebar
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = process.env.REACT_APP_API_BASE || '';
 
   useEffect(() => {
     fetch(`${API_BASE}/api/departments`)
