@@ -10,5 +10,7 @@ namespace Commander.Data
         IEnumerable<Standard> GetAllStandards();
         Standard? GetStandardById(int id);
         void CreateStandard(Standard standard);
+        void UpdateStandard(Standard standard);
+        void DeleteStandard(Standard standard);
     }
 }
