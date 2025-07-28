@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/fonts/fontawesome-all.min.css';
@@ -12,28 +12,66 @@ export default function Standards() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState([]);
   const [departmentFilter, setDepartmentFilter] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [data, setData] = useState([]);
 
-  const data = [
-    { id: 1, number: '5.20.33', name: 'التحليل المتقدم للبيانات', department: 'خدمات وتقنية المعلومات المشتركة', status: 'معتمد', statusClass: 'success', date: '22 Oct, 2020' },
-    { id: 2, number: '6.20.33', name: 'التحليل المتقدم للبيانات', department: 'خدمات وتقنية المعلومات المشتركة', status: 'مكتمل', statusClass: 'info', date: '24 May, 2020' },
-    { id: 3, number: '9.20.2', name: 'التحليل المتقدم للبيانات', department: 'الخدمات اللوجستية', status: 'لم يبدأ', statusClass: 'secondary', date: '24 May, 2020' },
-    { id: 4, number: '5.80.33', name: 'التحليل المتقدم للبيانات', department: 'الخدمات اللوجستية', status: 'تحت العمل', statusClass: 'warning text-dark', date: '21 Sep, 2020' },
-    { id: 5, number: '3.40.1', name: 'التحليل المتقدم للبيانات', department: 'إدارة الشؤون المالية', status: 'تحت العمل', statusClass: 'warning text-dark', date: '17 Oct, 2020' },
-  ];
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
-  const allSelected = selectedItems.length === data.length;
+  useEffect(() => {
+    fetch(`${API_BASE}/api/standards`)
+      .then(res => res.json())
+      .then(setData)
+      .catch(() => setData([]));
+
+    fetch(`${API_BASE}/api/departments`)
+      .then(res => res.json())
+      .then(setDepartments)
+      .catch(() => setDepartments([]));
+  }, [API_BASE]);
+
+  const allSelected = selectedItems.length === data.length && data.length > 0;
   const isChecked = (id) => selectedItems.includes(id);
 
   const toggleSelectAll = () => {
-    setSelectedItems(allSelected ? [] : data.map((item) => item.id));
+    setSelectedItems(allSelected ? [] : data.map((item) => item.standard_id));
   };
 
   const toggleItem = (id) => {
     setSelectedItems(isChecked(id) ? selectedItems.filter((x) => x !== id) : [...selectedItems, id]);
   };
 
+  const handleDelete = async () => {
+    for (const id of selectedItems) {
+      try {
+        await fetch(`${API_BASE}/api/standards/${id}`, { method: 'DELETE' });
+      } catch {
+        // ignore errors
+      }
+    }
+    setSelectedItems([]);
+    // Refresh list
+    fetch(`${API_BASE}/api/standards`)
+      .then(res => res.json())
+      .then(setData)
+      .catch(() => setData([]));
+  };
+
   const uniqueStatuses = [...new Set(data.map((item) => item.status))];
-  const uniqueDepartments = [...new Set(data.map((item) => item.department))];
+  const uniqueDepartments = departments.map(d => d.department_name);
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'معتمد':
+        return 'success';
+      case 'مكتمل':
+        return 'info';
+      case 'تحت العمل':
+        return 'warning text-dark';
+      case 'لم يبدأ':
+      default:
+        return 'secondary';
+    }
+  };
 
   const handleCheckboxFilter = (value, current, setFunc) => {
     if (current.includes(value)) {
@@ -44,11 +82,12 @@ export default function Standards() {
   };
 
   const filteredData = data.filter((item) => {
-    const text = `${item.number} ${item.name} ${item.department} ${item.status} ${item.date}`;
+    const deptName = item.department?.department_name || '';
+    const text = `${item.standard_number} ${item.standard_name} ${deptName} ${item.status}`;
     return (
       text.includes(searchTerm) &&
       (statusFilter.length ? statusFilter.includes(item.status) : true) &&
-      (departmentFilter.length ? departmentFilter.includes(item.department) : true)
+      (departmentFilter.length ? departmentFilter.includes(deptName) : true)
     );
   });
 
@@ -149,7 +188,7 @@ export default function Standards() {
                 {/* Delete Button */}
                 <div className="col-auto order-last mb-2">
                   {selectedItems.length > 0 && (
-                    <button className="btn btn-danger btn-sm">حذف المحدد</button>
+                    <button className="btn btn-danger btn-sm" onClick={handleDelete}>حذف المحدد</button>
                   )}
                 </div>
               </div>
@@ -180,26 +219,26 @@ export default function Standards() {
                       </thead>
                       <tbody>
                         {filteredData.map((item) => (
-                          <tr key={item.id}>
+                          <tr key={item.standard_id}>
                             <td>
                               <input
                                 type="checkbox"
-                                checked={isChecked(item.id)}
-                                onChange={() => toggleItem(item.id)}
+                                checked={isChecked(item.standard_id)}
+                                onChange={() => toggleItem(item.standard_id)}
                               />
                             </td>
-                            <td>{item.number}</td>
-                            <td className="text-primary" style={{ cursor: 'pointer' }}>{item.name}</td>
-                            <td>{item.department}</td>
+                            <td>{item.standard_number}</td>
+                            <td className="text-primary" style={{ cursor: 'pointer' }}>{item.standard_name}</td>
+                            <td>{item.department?.department_name}</td>
                             <td>
-                              <span className={`badge bg-${item.statusClass}`}>{item.status}</span>
+                              <span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span>
                             </td>
                             <td>
                               <a href="#" className="text-primary text-decoration-none">إظهار</a>
                             </td>
-                            <td>{item.date}</td>
+                            <td>{new Date(item.created_at).toLocaleDateString()}</td>
                             <td>
-                              <i className="fas fa-pen text-success" style={{ cursor: 'pointer' }}></i>
+                              <i className="fas fa-pen text-success" style={{ cursor: 'pointer' }} onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
                             </td>
                           </tr>
                         ))}
