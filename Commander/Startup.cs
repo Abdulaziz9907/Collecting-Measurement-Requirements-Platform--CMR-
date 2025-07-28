@@ -28,8 +28,12 @@ namespace Commander
             // 2) Controllers + Newtonsoft JSON (camel‑case)
             services.AddControllers()
                     .AddNewtonsoftJson(opts =>
-                        opts.SerializerSettings.ContractResolver
-                             = new CamelCasePropertyNamesContractResolver());
+                    {
+                        opts.SerializerSettings.ContractResolver =
+                            new CamelCasePropertyNamesContractResolver();
+                        opts.SerializerSettings.ReferenceLoopHandling =
+                            Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    });
 
             // 3) AutoMapper + Repos
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
