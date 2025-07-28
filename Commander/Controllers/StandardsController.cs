@@ -29,6 +29,7 @@ namespace Commander.Controllers
         {
             var standard = new Standard
             {
+                Standard_number = dto.Standard_number,
                 Standard_name = dto.Standard_name,
                 Standard_goal = dto.Standard_goal,
                 Standard_requirments = dto.Standard_requirments,

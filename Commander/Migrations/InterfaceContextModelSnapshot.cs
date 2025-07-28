@@ -125,6 +125,9 @@ namespace Commander.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("Standard_number")
+                        .HasColumnType("int");
+
                     b.Property<string>("Standard_requirments")
                         .HasColumnType("nvarchar(max)");
 

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Commander.Migrations
 {
     [DbContext(typeof(InterfaceContext))]
-    [Migration("20250727152034_InitialMigration")]
+    [Migration("20250727162156_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -127,6 +127,9 @@ namespace Commander.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Standard_number")
+                        .HasColumnType("int");
 
                     b.Property<string>("Standard_requirments")
                         .HasColumnType("nvarchar(max)");

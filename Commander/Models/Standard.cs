@@ -8,6 +8,8 @@ namespace Commander.Models
         [Key]
         public int Standard_id { get; set; }
 
+        public int Standard_number { get; set; }
+
         [MaxLength(100)]
         public required string Standard_name { get; set; }
 

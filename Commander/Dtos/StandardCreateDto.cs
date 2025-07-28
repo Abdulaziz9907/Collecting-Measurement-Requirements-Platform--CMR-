@@ -5,7 +5,11 @@ namespace Commander.Dtos
 {
     public class StandardCreateDto
     {
+
+        public int Standard_number { get; set; }
+
         [Required]
+
         public string Standard_name { get; set; } = string.Empty;
 
         public string? Standard_goal { get; set; }
