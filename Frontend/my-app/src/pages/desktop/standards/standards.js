@@ -14,19 +14,25 @@ export default function Standards() {
   const [departmentFilter, setDepartmentFilter] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/standards`)
-      .then(res => res.json())
-      .then(setData)
-      .catch(() => setData([]));
-
-    fetch(`${API_BASE}/api/departments`)
-      .then(res => res.json())
-      .then(setDepartments)
-      .catch(() => setDepartments([]));
+    setLoading(true);
+    Promise.all([
+      fetch(`${API_BASE}/api/standards`).then(res => res.json()),
+      fetch(`${API_BASE}/api/departments`).then(res => res.json())
+    ])
+      .then(([standards, departments]) => {
+        setData(standards);
+        setDepartments(departments);
+      })
+      .catch(() => {
+        setData([]);
+        setDepartments([]);
+      })
+      .finally(() => setLoading(false));
   }, [API_BASE]);
 
   const allSelected = selectedItems.length === data.length && data.length > 0;
@@ -49,11 +55,12 @@ export default function Standards() {
       }
     }
     setSelectedItems([]);
-    // Refresh list
+    setLoading(true);
     fetch(`${API_BASE}/api/standards`)
       .then(res => res.json())
       .then(setData)
-      .catch(() => setData([]));
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   };
 
   const uniqueStatuses = [...new Set(data.map((item) => item.status))];
@@ -108,10 +115,8 @@ export default function Standards() {
 
               {/* Control bar */}
               <div className="row mb-3 px-4 align-items-center justify-content-between">
-                {/* Filters + Search + Create */}
                 <div className="col">
                   <div className="d-flex justify-content-start flex-wrap gap-2">
-                    {/* Create */}
                     <button
                       className="btn btn-success btn-sm"
                       onClick={() => (window.location.href = 'http://localhost:3000/standards_add')}
@@ -119,7 +124,6 @@ export default function Standards() {
                       إضافة معيار جديد
                     </button>
 
-                    {/* Search */}
                     <input
                       type="text"
                       className="form-control form-control-sm"
@@ -129,7 +133,6 @@ export default function Standards() {
                       style={{ width: '180px' }}
                     />
 
-                    {/* Status Filter */}
                     <Dropdown>
                       <Dropdown.Toggle variant="outline-secondary" size="sm">
                         الحالة
@@ -156,7 +159,6 @@ export default function Standards() {
                       </Dropdown.Menu>
                     </Dropdown>
 
-                    {/* Department Filter */}
                     <Dropdown>
                       <Dropdown.Toggle variant="outline-secondary" size="sm">
                         الإدارة
@@ -185,7 +187,6 @@ export default function Standards() {
                   </div>
                 </div>
 
-                {/* Delete Button */}
                 <div className="col-auto order-last mb-2">
                   {selectedItems.length > 0 && (
                     <button className="btn btn-danger btn-sm" onClick={handleDelete}>حذف المحدد</button>
@@ -218,34 +219,43 @@ export default function Standards() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredData.map((item) => (
-                          <tr key={item.standard_id}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={isChecked(item.standard_id)}
-                                onChange={() => toggleItem(item.standard_id)}
-                              />
-                            </td>
-                            <td>{item.standard_number}</td>
-                            <td className="text-primary" style={{ cursor: 'pointer' }}>{item.standard_name}</td>
-                            <td>{item.department?.department_name}</td>
-                            <td>
-                              <span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span>
-                            </td>
-                            <td>
-                              <a href="#" className="text-primary text-decoration-none">إظهار</a>
-                            </td>
-                            <td>{new Date(item.created_at).toLocaleDateString()}</td>
-                            <td>
-                              <i className="fas fa-pen text-success" style={{ cursor: 'pointer' }} onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
+                        {loading ? (
+                          <tr>
+                            <td colSpan="8" className="text-center py-5">
+                              <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                              </div>
                             </td>
                           </tr>
-                        ))}
-                        {filteredData.length === 0 && (
+                        ) : filteredData.length === 0 ? (
                           <tr>
                             <td colSpan="8" className="text-muted">لا توجد نتائج مطابقة</td>
                           </tr>
+                        ) : (
+                          filteredData.map((item) => (
+                            <tr key={item.standard_id}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked(item.standard_id)}
+                                  onChange={() => toggleItem(item.standard_id)}
+                                />
+                              </td>
+                              <td>{item.standard_number}</td>
+                              <td className="text-primary" style={{ cursor: 'pointer' }}>{item.standard_name}</td>
+                              <td>{item.department?.department_name}</td>
+                              <td>
+                                <span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span>
+                              </td>
+                              <td>
+                                <a href="#" className="text-primary text-decoration-none">إظهار</a>
+                              </td>
+                              <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                              <td>
+                                <i className="fas fa-pen text-success" style={{ cursor: 'pointer' }} onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
+                              </td>
+                            </tr>
+                          ))
                         )}
                       </tbody>
                     </table>

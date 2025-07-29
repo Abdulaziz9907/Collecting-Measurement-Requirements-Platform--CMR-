@@ -29,7 +29,7 @@ export default function Standards_create() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(false); // Mobile sidebar
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
@@ -59,18 +59,30 @@ export default function Standards_create() {
     setShowSuccess(false);
     setShowError(false);
 
-    if (!form.checkValidity()) {
+    const standardNumValue = form.standard_num.value.trim();
+    const isStandardNumValid = /^\d+\.\d+\.\d+$/.test(standardNumValue);
+
+    if (!form.checkValidity() || !isStandardNumValid) {
       setShowError(true);
+
+      if (!isStandardNumValid) {
+        form.standard_num.setCustomValidity("يرجى إدخال رقم بالصيغة الصحيحة مثل 5.20.3");
+      } else {
+        form.standard_num.setCustomValidity("");
+      }
+
       e.stopPropagation();
     } else {
+      form.standard_num.setCustomValidity("");
       setIsSubmitting(true);
+
       const proofs = proofRequired
         .filter(text => text.trim())
         .map(text => escapeCommas(escapeInput(text)))
         .join(',');
 
       const payload = {
-        standard_number: escapeInput(form.standard_num.value),
+        standard_number: escapeInput(standardNumValue),
         standard_name: escapeInput(form.goal.value),
         standard_goal: escapeInput(form.desc2.value),
         standard_requirments: escapeInput(form.desc3.value),
@@ -112,22 +124,10 @@ export default function Standards_create() {
   const removeAttachment = idx =>
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
- 
-
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
 
-{/* Hamburger Button (Top-Left) */}
-
-
-
-{/* Slide-in Sidebar (Mobile Only - LEFT) */}
-
-
-
-
-      {/* Alerts */}
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
@@ -143,14 +143,9 @@ export default function Standards_create() {
         </div>
       )}
 
-      {/* Main Layout */}
       <div id="wrapper">
+        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-<Sidebar
-  sidebarVisible={sidebarVisible}
-  setSidebarVisible={setSidebarVisible}
-/>
-        {/* Content Wrapper */}
         <div className="d-flex flex-column" id="content-wrapper">
           <div id="content">
             <div className="container-fluid">
@@ -163,12 +158,20 @@ export default function Standards_create() {
                 <div className="col-md-1 col-xl-2" />
                 <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
                   <h4>إنشاء بطاقة معيار</h4>
-                  {/* Form */}
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+
+                    {/* رقم المعيار with regex pattern */}
                     <div className="mb-3">
                       <label className="form-label">رقم المعيار</label>
-                      <input type="text" className="form-control" id="standard_num" name="standard" required />
-                      <div className="invalid-feedback">يرجى إدخال المعيار</div>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="standard_num"
+                        name="standard_num"
+                        pattern="^\d+\.\d+\.\d+$"
+                        required
+                      />
+                      <div className="invalid-feedback">يرجى إدخال رقم بالصيغة الصحيحة مثل 88.863.2</div>
                     </div>
 
                     <div className="mb-3">
@@ -202,7 +205,7 @@ export default function Standards_create() {
                       <div className="invalid-feedback">يرجى اختيار الجهة, اذا لم تظهر جهة يرجى اضافة الجهات من خانة الجهات</div>
                     </div>
 
-                    {/* Proof Attachments */}
+                    {/* مستندات الإثبات */}
                     {proofRequired.map((text, idx) => (
                       <div className="mb-4" key={idx}>
                         <label className="form-label">مستند إثبات {idx + 1}</label>
