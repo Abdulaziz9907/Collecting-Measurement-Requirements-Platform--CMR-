@@ -4,6 +4,7 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
+import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function escapeInput(str) {
@@ -155,7 +156,7 @@ export default function Standards_edit() {
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-md-12">
-                  <h4>إدارة المعايير / تعديل بطاقة معيار</h4>
+                  <Breadcrumbs />
                 </div>
               </div>
 

@@ -5,6 +5,7 @@ import './assets/fonts/fontawesome-all.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
+import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -93,7 +94,7 @@ export default function Standards() {
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-md-12">
-                  <h4>الرئيسية / إدارة المعايير</h4>
+                  <Breadcrumbs />
                 </div>
               </div>
 

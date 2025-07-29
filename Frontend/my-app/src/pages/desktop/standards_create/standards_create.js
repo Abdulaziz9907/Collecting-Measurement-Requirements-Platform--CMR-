@@ -4,6 +4,7 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
+import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 
 function escapeInput(str) {
   return str.replace(/[&<>'"]/g, (char) => {
@@ -151,7 +152,7 @@ export default function Standards_create() {
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-md-12">
-                  <h4>إدارة المعايير/ إنشاء معيار</h4>
+                  <Breadcrumbs />
                 </div>
               </div>
               <div className="row">
