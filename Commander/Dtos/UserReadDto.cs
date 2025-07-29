@@ -7,6 +7,7 @@ namespace Commander.Dtos
     public class UserReadDto
     {
 
+        public required int Id { get; set; }
         public required int Employee_id { get; set; }
 
         public required string Username { get; set; }

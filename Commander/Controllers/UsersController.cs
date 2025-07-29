@@ -40,11 +40,11 @@ namespace Commander.Controllers
             return Ok(_mapper.Map<IEnumerable<UserReadDto>>(userItems));
         }
 
-        // GET api/users/{Employee_id}
-        [HttpGet("{Employee_id}", Name = "GetUserById")]
-        public ActionResult<UserReadDto> GetUserById(int Employee_id)
+        // GET api/users/{Id}
+        [HttpGet("{Id}", Name = "GetUserById")]
+        public ActionResult<UserReadDto> GetUserById(int Id)
         {
-            var userItem = _repository.GetUserById(Employee_id);
+            var userItem = _repository.GetUserById(Id);
             if (userItem == null)
                 return NotFound();
 
@@ -60,14 +60,14 @@ namespace Commander.Controllers
             _repository.SaveChanges();
 
             var userReadDto = _mapper.Map<UserReadDto>(userModel);
-            return CreatedAtRoute(nameof(GetUserById), new { Employee_id = userReadDto.Employee_id }, userReadDto);
+            return CreatedAtRoute(nameof(GetUserById), new { Id = userReadDto.Id }, userReadDto);
         }
 
-        // PUT api/users/{Employee_id}
-        [HttpPut("{Employee_id}")]
-        public ActionResult UpdateUser(int Employee_id, UserUpdateDto userUpdateDto)
+        // PUT api/users/{Id}
+        [HttpPut("{Id}")]
+        public ActionResult UpdateUser(int Id, UserUpdateDto userUpdateDto)
         {
-            var userModelFromRepo = _repository.GetUserById(Employee_id);
+            var userModelFromRepo = _repository.GetUserById(Id);
             if (userModelFromRepo == null)
                 return NotFound();
 
@@ -78,11 +78,11 @@ namespace Commander.Controllers
             return NoContent();
         }
 
-        // PATCH api/users/{Employee_id}
-        [HttpPatch("{Employee_id}")]
-        public ActionResult PartialUserUpdate(int Employee_id, JsonPatchDocument<UserUpdateDto> patchDocument)
+        // PATCH api/users/{Id}
+        [HttpPatch("{Id}")]
+        public ActionResult PartialUserUpdate(int Id, JsonPatchDocument<UserUpdateDto> patchDocument)
         {
-            var userModelFromRepo = _repository.GetUserById(Employee_id);
+            var userModelFromRepo = _repository.GetUserById(Id);
             if (userModelFromRepo == null)
                 return NotFound();
 
@@ -99,11 +99,11 @@ namespace Commander.Controllers
             return NoContent();
         }
 
-        // DELETE api/users/{Employee_id}
-        [HttpDelete("{Employee_id}")]
-        public ActionResult DeleteUser(int Employee_id)
+        // DELETE api/users/{Id}
+        [HttpDelete("{Id}")]
+        public ActionResult DeleteUser(int Id)
         {
-            var userModelFromRepo = _repository.GetUserById(Employee_id);
+            var userModelFromRepo = _repository.GetUserById(Id);
             if (userModelFromRepo == null)
                 return NotFound();
 

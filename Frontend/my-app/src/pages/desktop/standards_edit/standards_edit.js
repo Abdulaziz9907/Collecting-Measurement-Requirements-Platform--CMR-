@@ -4,6 +4,7 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
+import { useParams, useNavigate } from 'react-router-dom';
 
 function escapeInput(str) {
   return str.replace(/[&<>'"]/g, (char) => {
@@ -22,8 +23,6 @@ function escapeCommas(str) {
   return str.replace(/,/g, '\\,');
 }
 
-import { useParams, useNavigate } from 'react-router-dom';
-
 export default function Standards_edit() {
   const [validated, setValidated] = useState(false);
   const [proofRequired, setProofRequired] = useState(['']);
@@ -31,12 +30,11 @@ export default function Standards_edit() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(false); // Mobile sidebar
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [standard, setStandard] = useState(null);
 
   const { id } = useParams();
   const navigate = useNavigate();
-
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
   useEffect(() => {
@@ -92,7 +90,7 @@ export default function Standards_edit() {
         standard_name: escapeInput(form.goal.value),
         standard_goal: escapeInput(form.desc2.value),
         standard_requirments: escapeInput(form.desc3.value),
-        assigned_department_id: parseInt(form.scope.value, 10),
+        assigned_department_id: standard?.assigned_department_id,
         proof_required: proofs,
         status: standard?.status || 'لم يبدأ',
       };
@@ -131,26 +129,13 @@ export default function Standards_edit() {
   const removeAttachment = idx =>
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
- 
-
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
-
-{/* Hamburger Button (Top-Left) */}
-
-
-
-{/* Slide-in Sidebar (Mobile Only - LEFT) */}
-
-
-
-
-      {/* Alerts */}
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
-            تم إنشاء بطاقة المعيار بنجاح
+            تم تحديث بطاقة المعيار بنجاح
           </div>
         </div>
       )}
@@ -162,27 +147,21 @@ export default function Standards_edit() {
         </div>
       )}
 
-      {/* Main Layout */}
       <div id="wrapper">
+        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-<Sidebar
-  sidebarVisible={sidebarVisible}
-  setSidebarVisible={setSidebarVisible}
-/>
-        {/* Content Wrapper */}
         <div className="d-flex flex-column" id="content-wrapper">
           <div id="content">
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-md-12">
-                  <h4>إدارة المعايير/ إنشاء معيار</h4>
+                  <h4>إدارة المعايير / تعديل بطاقة معيار</h4>
                 </div>
               </div>
+
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
                 <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
-                  <h4>تعديل بطاقة معيار</h4>
-                  {/* Form */}
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                     <div className="mb-3">
                       <label className="form-label">رقم المعيار</label>
@@ -210,7 +189,19 @@ export default function Standards_edit() {
 
                     <div className="mb-3">
                       <label className="form-label">الجهة</label>
-                      <select className="form-select" id="scope" name="scope" required defaultValue={standard?.assigned_department_id || ''}>
+                      <select
+                        className="form-select"
+                        id="scope"
+                        name="scope"
+                        required
+                        value={standard?.assigned_department_id || ''}
+                        onChange={e =>
+                          setStandard(prev => ({
+                            ...prev,
+                            assigned_department_id: parseInt(e.target.value, 10)
+                          }))
+                        }
+                      >
                         <option value="">اختر الجهة...</option>
                         {departments.map(d => (
                           <option key={d.department_id} value={d.department_id}>
@@ -218,10 +209,9 @@ export default function Standards_edit() {
                           </option>
                         ))}
                       </select>
-                      <div className="invalid-feedback">يرجى اختيار الجهة, اذا لم تظهر جهة يرجى اضافة الجهات من خانة الجهات</div>
+                      <div className="invalid-feedback">يرجى اختيار الجهة</div>
                     </div>
 
-                    {/* Proof Attachments */}
                     {proofRequired.map((text, idx) => (
                       <div className="mb-4" key={idx}>
                         <label className="form-label">مستند إثبات {idx + 1}</label>
@@ -246,6 +236,7 @@ export default function Standards_edit() {
                         </div>
                       </div>
                     ))}
+
                     <button type="button" className="btn btn-light mb-3" onClick={addAttachment}>
                       إضافة مستند إثبات
                     </button>

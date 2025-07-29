@@ -12,7 +12,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/standards_add" element={<Standards_create />} />
+      <Route path="/standards_create" element={<Standards_create />} />
       <Route path="/standards" element={<Standards />} />
       <Route path="/standards_edit/:id" element={<Standards_edit />} />
     </Routes>
