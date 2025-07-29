@@ -6,7 +6,7 @@ namespace Commander.Dtos
     public class StandardCreateDto
     {
 
-        public int Standard_number { get; set; }
+        public string Standard_number { get; set; } = string.Empty;
 
         [Required]
 

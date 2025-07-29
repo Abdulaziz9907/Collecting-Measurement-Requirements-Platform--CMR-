@@ -4,7 +4,7 @@ namespace Commander.Dtos
 {
     public class StandardUpdateDto
     {
-        public int Standard_number { get; set; }
+        public string Standard_number { get; set; } = string.Empty;
 
         [Required]
         public string Standard_name { get; set; } = string.Empty;
