@@ -33,34 +33,45 @@ export default function Standards_edit() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [standard, setStandard] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/departments`)
-      .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then(setDepartments)
-      .catch(err => {
-        console.error('Failed to fetch departments:', err);
-        setDepartments([]);
-      });
-  }, [API_BASE]);
+    let isMounted = true;
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/standards/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        setStandard(data);
-        if (data.proof_required) {
-          setProofRequired(data.proof_required.split(',').filter(t => t));
+    const fetchData = async () => {
+      try {
+        const [departmentsRes, standardRes] = await Promise.all([
+          fetch(`${API_BASE}/api/departments`),
+          fetch(`${API_BASE}/api/standards/${id}`)
+        ]);
+
+        if (!departmentsRes.ok || !standardRes.ok) throw new Error();
+
+        const departmentsData = await departmentsRes.json();
+        const standardData = await standardRes.json();
+
+        if (isMounted) {
+          setDepartments(departmentsData);
+          setStandard(standardData);
+          if (standardData.proof_required) {
+            setProofRequired(standardData.proof_required.split(',').filter(Boolean));
+          }
+          setIsLoading(false);
         }
-      })
-      .catch(() => setStandard(null));
+      } catch (err) {
+        console.error('Error fetching data', err);
+        setDepartments([]);
+        setStandard(null);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { isMounted = false };
   }, [API_BASE, id]);
 
   useEffect(() => {
@@ -150,7 +161,6 @@ export default function Standards_edit() {
 
       <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-
         <div className="d-flex flex-column" id="content-wrapper">
           <div id="content">
             <div className="container-fluid">
@@ -163,95 +173,103 @@ export default function Standards_edit() {
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
                 <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
-                  <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                      <label className="form-label">رقم المعيار</label>
-                      <input type="text" className="form-control" id="standard_num" name="standard" required defaultValue={standard?.standard_number || ''} />
-                      <div className="invalid-feedback">يرجى إدخال المعيار</div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">اسم المعيار</label>
-                      <input type="text" className="form-control" id="goal" name="goal" required defaultValue={standard?.standard_name || ''} />
-                      <div className="invalid-feedback">يرجى إدخال اسم المعيار</div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">الهدف</label>
-                      <textarea className="form-control" id="desc2" name="desc2" rows="3" required defaultValue={standard?.standard_goal || ''} />
-                      <div className="invalid-feedback">يرجى إدخال الهدف</div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">متطلبات التطبيق</label>
-                      <textarea className="form-control" id="desc3" name="desc3" rows="3" required defaultValue={standard?.standard_requirments || ''} />
-                      <div className="invalid-feedback">يرجى تحديد متطلبات التطبيق</div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">الجهة</label>
-                      <select
-                        className="form-select"
-                        id="scope"
-                        name="scope"
-                        required
-                        value={standard?.assigned_department_id || ''}
-                        onChange={e =>
-                          setStandard(prev => ({
-                            ...prev,
-                            assigned_department_id: parseInt(e.target.value, 10)
-                          }))
-                        }
-                      >
-                        <option value="">اختر الجهة...</option>
-                        {departments.map(d => (
-                          <option key={d.department_id} value={d.department_id}>
-                            {d.department_name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="invalid-feedback">يرجى اختيار الجهة</div>
-                    </div>
-
-                    {proofRequired.map((text, idx) => (
-                      <div className="mb-4" key={idx}>
-                        <label className="form-label">مستند إثبات {idx + 1}</label>
-                        <div className="d-flex align-items-start">
-                          <div className="input-group flex-grow-1 has-validation">
-                            <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={text}
-                              placeholder="أدخل مسار أو وصلة المستند"
-                              onChange={e => handleAttachmentChange(e, idx)}
-                              required
-                            />
-                            <div className="invalid-feedback">يرجى إدخال مسار المستند</div>
-                          </div>
-                          {idx > 0 && (
-                            <button type="button" className="btn btn-outline-danger ms-2" onClick={() => removeAttachment(idx)}>
-                              حذف
-                            </button>
-                          )}
-                        </div>
+                  {isLoading ? (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+                      <div className="spinner-border m-5" role="status">
+                        <span className="sr-only">Loading...</span>
                       </div>
-                    ))}
-
-                    <button type="button" className="btn btn-light mb-3" onClick={addAttachment}>
-                      إضافة مستند إثبات
-                    </button>
-
-                    <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                      <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                      <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
                     </div>
+                  ) : (
+                    <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                      <div className="mb-3">
+                        <label className="form-label">رقم المعيار</label>
+                        <input type="text" className="form-control" id="standard_num" name="standard" required defaultValue={standard?.standard_number || ''} />
+                        <div className="invalid-feedback">يرجى إدخال المعيار</div>
+                      </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                      {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                      تحديث
-                    </button>
-                  </form>
+                      <div className="mb-3">
+                        <label className="form-label">اسم المعيار</label>
+                        <input type="text" className="form-control" id="goal" name="goal" required defaultValue={standard?.standard_name || ''} />
+                        <div className="invalid-feedback">يرجى إدخال اسم المعيار</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">الهدف</label>
+                        <textarea className="form-control" id="desc2" name="desc2" rows="3" required defaultValue={standard?.standard_goal || ''} />
+                        <div className="invalid-feedback">يرجى إدخال الهدف</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">متطلبات التطبيق</label>
+                        <textarea className="form-control" id="desc3" name="desc3" rows="3" required defaultValue={standard?.standard_requirments || ''} />
+                        <div className="invalid-feedback">يرجى تحديد متطلبات التطبيق</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">الجهة</label>
+                        <select
+                          className="form-select"
+                          id="scope"
+                          name="scope"
+                          required
+                          value={standard?.assigned_department_id || ''}
+                          onChange={e =>
+                            setStandard(prev => ({
+                              ...prev,
+                              assigned_department_id: parseInt(e.target.value, 10)
+                            }))
+                          }
+                        >
+                          <option value="">اختر الجهة...</option>
+                          {departments.map(d => (
+                            <option key={d.department_id} value={d.department_id}>
+                              {d.department_name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="invalid-feedback">يرجى اختيار الجهة</div>
+                      </div>
+
+                      {proofRequired.map((text, idx) => (
+                        <div className="mb-4" key={idx}>
+                          <label className="form-label">مستند إثبات {idx + 1}</label>
+                          <div className="d-flex align-items-start">
+                            <div className="input-group flex-grow-1 has-validation">
+                              <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={text}
+                                placeholder="أدخل مسار أو وصلة المستند"
+                                onChange={e => handleAttachmentChange(e, idx)}
+                                required
+                              />
+                              <div className="invalid-feedback">يرجى إدخال مسار المستند</div>
+                            </div>
+                            {idx > 0 && (
+                              <button type="button" className="btn btn-outline-danger ms-2" onClick={() => removeAttachment(idx)}>
+                                حذف
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      <button type="button" className="btn btn-light mb-3" onClick={addAttachment}>
+                        إضافة مستند إثبات
+                      </button>
+
+                      <div className="d-flex align-items-center gap-2 pb-4 pt-4">
+                        <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
+                        <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                      </div>
+
+                      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                        {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
+                        تحديث
+                      </button>
+                    </form>
+                  )}
                 </div>
                 <div className="col-md-1 col-xl-2" />
               </div>

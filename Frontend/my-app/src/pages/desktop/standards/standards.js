@@ -232,11 +232,6 @@ export default function Standards() {
                             </tr>
                           ))
                         )}
-                        {!loading && paginatedData.length < rowsPerPage && (
-                          [...Array(rowsPerPage - paginatedData.length)].map((_, i) => (
-                            <tr key={`empty-${i}`}><td colSpan="8" style={{ height: '48px' }}></td></tr>
-                          ))
-                        )}
                       </tbody>
                     </table>
                   </div>
@@ -247,7 +242,6 @@ export default function Standards() {
                       className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100"
                       style={{
                         zIndex: 10,
-                        borderTop: '1px solid #eee',
                         paddingInline: '1rem'
                       }}
                     >

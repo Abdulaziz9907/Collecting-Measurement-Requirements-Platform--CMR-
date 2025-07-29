@@ -217,11 +217,11 @@ export default function Standards_create() {
                               type="text"
                               className="form-control"
                               value={text}
-                              placeholder="أدخل مسار أو وصلة المستند"
+                              placeholder="أدخل وصف المستند"
                               onChange={e => handleAttachmentChange(e, idx)}
                               required
                             />
-                            <div className="invalid-feedback">يرجى إدخال مسار المستند</div>
+                            <div className="invalid-feedback">يرجى إدخال وصف المستند</div>
                           </div>
                           {idx > 0 && (
                             <button type="button" className="btn btn-outline-danger ms-2" onClick={() => removeAttachment(idx)}>
