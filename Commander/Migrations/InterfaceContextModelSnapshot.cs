@@ -59,8 +59,6 @@ namespace Commander.Migrations
                     b.Property<int>("Building_number")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("Created_at")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Department_name")
                         .IsRequired()

@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Commander.Models
@@ -10,13 +9,7 @@ namespace Commander.Models
 
         [MaxLength(50)]
         public required string Department_name { get; set; }
-
-
         public required int Building_number { get; set; }
-
-        public DateTime Created_at { get; set; } = DateTime.UtcNow;
-
-
         public ICollection<User>? Users { get; set; }
         public ICollection<Standard>? Standards { get; set; }
         public ICollection<PerformanceReport>? PerformanceReports { get; set; }
