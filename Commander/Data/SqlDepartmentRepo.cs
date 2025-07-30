@@ -41,11 +41,7 @@ namespace Commander.Data
 
         public void UpdateDepartment(Department department)
         {
-            // The department retrieved from the context is already being tracked.
-            // Using Update ensures the entity is marked as modified without
-            // attempting to attach a duplicate instance which can cause
-            // tracking conflicts when a detached copy is provided.
-            _context.Departments.Update(department);
+            _context.Entry(department).State = EntityState.Modified;
         }
 
         public void DeleteDepartment(Department department)
