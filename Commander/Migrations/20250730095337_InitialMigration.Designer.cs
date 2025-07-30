@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Commander.Migrations
 {
     [DbContext(typeof(InterfaceContext))]
-    [Migration("20250729101356_InitialMigration")]
+    [Migration("20250730095337_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -149,12 +149,11 @@ namespace Commander.Migrations
 
             modelBuilder.Entity("Commander.Models.User", b =>
                 {
-                    b.Property<int>("Employee_id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Employee_id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Department_id")
                         .HasColumnType("int");
@@ -162,6 +161,10 @@ namespace Commander.Migrations
                     b.Property<string>("Email")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Employee_id")
+                        .HasMaxLength(7)
+                        .HasColumnType("int");
 
                     b.Property<string>("First_name")
                         .IsRequired()
@@ -188,7 +191,7 @@ namespace Commander.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)");
 
-                    b.HasKey("Employee_id");
+                    b.HasKey("Id");
 
                     b.HasIndex("Department_id");
 

@@ -8,7 +8,6 @@ namespace Commander.Models
     public class User
     {
         [Key]
-
         public required int Id { get; set; }
 
         [MaxLength(7)]

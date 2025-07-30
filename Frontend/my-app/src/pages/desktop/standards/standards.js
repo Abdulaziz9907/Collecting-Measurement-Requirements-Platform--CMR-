@@ -113,7 +113,7 @@ export default function Standards() {
                   <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
                     <input
                       className="form-control form-control-sm"
-                      style={{ width: '200px' }}
+                      style={{ width: '160px' }}
                       type="search"
                       placeholder="بحث..."
                       value={searchTerm}
@@ -164,7 +164,7 @@ export default function Standards() {
                       </Dropdown.Menu>
                     </Dropdown>
 
-                    <a className="btn btn-success btn-sm" href="/standards_create">إضافة معيار</a>
+                    <a className="btn btn-outline-success btn-sm" href="/standards_create">إضافة معيار</a>
                   </div>
 
                   {/* Table */}
@@ -239,14 +239,14 @@ export default function Standards() {
                   {/* Pagination */}
                   {!loading && filteredData.length > rowsPerPage && (
                     <div
-                      className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100"
+                      className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100 "
                       style={{
                         zIndex: 10,
                         paddingInline: '1rem'
                       }}
                     >
                       <div>
-                        <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                        <button className="btn btn-outline-primary btn-sm " onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
                         <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
                       </div>
                       <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>

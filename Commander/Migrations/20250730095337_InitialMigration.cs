@@ -78,8 +78,9 @@ namespace Commander.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Employee_id = table.Column<int>(type: "int", maxLength: 7, nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    Employee_id = table.Column<int>(type: "int", maxLength: 7, nullable: false),
                     Username = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     Password = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     First_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
@@ -90,7 +91,7 @@ namespace Commander.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Employee_id);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Users_Departments_Department_id",
                         column: x => x.Department_id,

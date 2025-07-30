@@ -34,7 +34,7 @@ const Header = () => {
             className="img-fluid d-lg-block"
             style={{ width: '170px', objectFit: 'fill' }}
           />
-          <h5 >
+          <h5 style={{ color: '#010B38' }}>
             منصة التحول الرقمي  
           </h5>
         </div>

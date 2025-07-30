@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const location = useLocation();
 
   const navItems = [
-    { href: '/', icon: <i className="fas fa-home me-2" />, label: 'الرئيسية' },
-    { href: '/standards', icon: <i className="fas fa-list me-2" />, label: 'معايير التحول' },
-    { href: '/departments', icon: <i className="fas fa-sitemap me-2" />, label: 'الجهات' },
-    { href: '/reports', icon: <i className="fas fa-chart-pie me-2" />, label: 'الإحصائيات' },
+    { href: '/', icon: 'fas fa-home', label: 'الرئيسية' },
+    { href: '/standards', icon: 'fas fa-list', label: 'معايير التحول' },
+    { href: '/reports', icon: 'fas fa-chart-pie', label: 'الإحصائيات' },
+    { href: '/users', icon: 'fa fa-users', label: 'ادارة المستخدمين' },
+    { href: '/departments', icon: 'fas fa-sitemap', label: 'ادارة الجهات' },
+    { href: '/', icon: 'fas fa-sign-out-alt', label: 'تسجيل خروج' },
   ];
 
-  // Close sidebar when resizing to desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && sidebarVisible) {
         setSidebarVisible(false);
       }
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [sidebarVisible]);
@@ -50,16 +52,25 @@ export default function Sidebar() {
         onClick={() => setSidebarVisible(prev => !prev)}
         aria-label="Toggle sidebar"
       >
-        <div style={{ width: '22px', height: '2px', backgroundColor: barColor, margin: '3px 0', transition: '0.3s' }} />
-        <div style={{ width: '22px', height: '2px', backgroundColor: barColor, margin: '3px 0', transition: '0.3s' }} />
-        <div style={{ width: '22px', height: '2px', backgroundColor: barColor, margin: '3px 0', transition: '0.3s' }} />
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: '22px',
+              height: '2px',
+              backgroundColor: barColor,
+              margin: '3px 0',
+              transition: '0.3s',
+            }}
+          />
+        ))}
       </button>
 
       {/* Mobile Sidebar */}
       <div
         className="bg-dark text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
-          width: '320px',
+          width: '200px',
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
           opacity: sidebarVisible ? 1 : 0,
           pointerEvents: sidebarVisible ? 'auto' : 'none',
@@ -69,42 +80,88 @@ export default function Sidebar() {
         }}
       >
         <div className="p-3">
-          <ul className="navbar-nav">
-            {navItems.map((item, idx) => (
-              <li className="nav-item" key={idx}>
-                <a
-                  className="nav-link text-white d-flex align-items-center"
-                  href={item.href}
-                  onClick={() => setSidebarVisible(false)}
-                >
-                  {item.icon}
-                  <span className="me-2">{item.label}</span>
-                </a>
-              </li>
-            ))}
+          <ul className="navbar-nav mt-5">
+            {navItems.map((item, idx) => {
+              const isActive = location.pathname.startsWith(item.href) && item.href !== '/'
+                ? true
+                : location.pathname === item.href;
+
+              return (
+                <li className="nav-item" key={idx}>
+                  <a
+                    className={`nav-link text-white d-flex align-items-center mt-4 sidebar-link ${
+                      isActive ? 'active' : ''
+                    }`}
+                    href={item.href}
+                    onClick={() => setSidebarVisible(false)}
+                  >
+                    <i className={`${item.icon} me-2`} style={{ fontSize: '1.25rem' }}></i>
+                    <span className="me-2">{item.label}</span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
 
       {/* Desktop Sidebar */}
       <nav
-        className="navbar align-items-start p-0 sidebar sidebar-dark accordion bg-gradient-primary navbar-dark d-none d-md-block"
-        style={{ background: "#061736" }}
+        className="navbar align-items-start p-0 sidebar sidebar-dark accordion navbar-dark d-none d-md-block"
+        style={{ background: '#061736' }}
       >
         <div className="container-fluid d-flex flex-column p-0">
           <hr className="my-0 sidebar-divider" />
-          <ul className="navbar-nav text-light" id="accordionSidebar">
-            {navItems.map((item, idx) => (
-              <li className="nav-item" key={idx}>
-                <a className="nav-link d-flex justify-content-start" href={item.href}>
-                  {item.icon}
-                  <span className="me-2" style={{ fontSize: 17 }}>{item.label}</span>
-                </a>
-              </li>
-            ))}
+          <ul className="navbar-nav text-light mt-4" id="accordionSidebar">
+            {navItems.map((item, idx) => {
+              const isActive = location.pathname.startsWith(item.href) && item.href !== '/'
+                ? true
+                : location.pathname === item.href;
+
+              return (
+                <li className="nav-item" key={idx}>
+                  <a
+                    className={`nav-link d-flex align-items-center sidebar-link ${
+                      isActive ? 'active' : ''
+                    }`}
+                    href={item.href}
+                  >
+                    <i className={`${item.icon} me-2`} style={{ fontSize: '15px' }}></i>
+                    <span className="me-2" style={{ fontSize: 15 }}>{item.label}</span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </nav>
+
+      {/* Sidebar Styles */}
+      <style>{`
+        .sidebar-link {
+          transition: background-color 0.2s ease;
+          padding: 10px 15px;
+          position: relative;
+        }
+
+        .sidebar-link:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-link.active {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-link.active::after {
+          content: "";
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 100%;
+          width: 4px;
+          background-color: #fff;
+        }
+      `}</style>
     </>
   );
 }
