@@ -31,7 +31,7 @@ export default function Departments() {
   }, [searchTerm]);
 
   const filteredData = data.filter(item =>
-    `${item.department_id} ${item.department_name} ${item.building_number}`.includes(searchTerm)
+    `${item.department_name} ${item.building_number}`.includes(searchTerm)
   );
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -79,6 +79,7 @@ export default function Departments() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    <a className="btn btn-outline-success btn-sm" href="/departments_create">إضافة جهة</a>
                   </div>
                   <div
                     className="table-responsive"
@@ -91,9 +92,9 @@ export default function Departments() {
                     <table className="table text-center align-middle">
                       <thead>
                         <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
-                          <th style={{ color: '#6c757d' }}>رقم الجهة</th>
                           <th style={{ color: '#6c757d' }}>اسم الجهة</th>
                           <th style={{ color: '#6c757d' }}>رقم المبنى</th>
+                          <th style={{ color: '#6c757d' }}>تاريخ الإنشاء</th>
                           <th style={{ color: '#6c757d' }}>تعديل</th>
                           <th style={{ color: '#6c757d' }}>حذف</th>
                         </tr>
@@ -112,9 +113,9 @@ export default function Departments() {
                         ) : (
                           paginatedData.map((item) => (
                             <tr key={item.department_id}>
-                              <td>{item.department_id}</td>
                               <td className="text-primary">{item.department_name}</td>
                               <td>{item.building_number}</td>
+                              <td>{new Date(item.created_at).toLocaleDateString()}</td>
                               <td>
                                 <i className="fas fa-pen text-success" onClick={() => window.location.href = `/departments_edit/${item.department_id}`}></i>
                               </td>
