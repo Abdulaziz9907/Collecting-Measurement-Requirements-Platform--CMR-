@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import './pages/desktop/standards_create/assets/fonts/fontawesome-all.min.css';
 import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
