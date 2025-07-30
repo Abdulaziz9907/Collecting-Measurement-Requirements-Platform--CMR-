@@ -31,6 +31,7 @@ export default function Departments_create() {
     if (!form.checkValidity()) {
       setShowError(true);
       e.stopPropagation();
+      setValidated(true);
     } else {
       setIsSubmitting(true);
       const payload = {
@@ -44,19 +45,19 @@ export default function Departments_create() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+
         if (!res.ok) {
           setShowError(true);
         } else {
           setShowSuccess(true);
           form.reset();
+          setValidated(false); // ✅ Reset validation state on success
         }
       } catch {
         setShowError(true);
       }
       setIsSubmitting(false);
     }
-
-    setValidated(true);
   };
 
   return (

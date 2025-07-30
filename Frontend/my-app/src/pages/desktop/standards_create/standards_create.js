@@ -48,11 +48,14 @@ export default function Standards_create() {
   }, [API_BASE]);
 
   useEffect(() => {
-    if (showError) {
-      const timer = setTimeout(() => setShowError(false), 5000);
+    if (showError || showSuccess) {
+      const timer = setTimeout(() => {
+        setShowError(false);
+        setShowSuccess(false);
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [showError]);
+  }, [showError, showSuccess]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +76,7 @@ export default function Standards_create() {
       }
 
       e.stopPropagation();
+      setValidated(true);
     } else {
       form.standard_num.setCustomValidity("");
       setIsSubmitting(true);
@@ -97,19 +101,21 @@ export default function Standards_create() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+
         if (!res.ok) {
           setShowError(true);
         } else {
           setShowSuccess(true);
-          setTimeout(() => window.location.reload(), 2000);
+          form.reset(); // ✅ Clear form fields
+          setValidated(false); // ✅ Clear validation
+          setProofRequired(['']); // ✅ Reset attachments
         }
       } catch {
         setShowError(true);
       }
+
       setIsSubmitting(false);
     }
-
-    setValidated(true);
   };
 
   const handleAttachmentChange = (e, idx) => {
@@ -161,7 +167,6 @@ export default function Standards_create() {
                   <h4>إنشاء بطاقة معيار</h4>
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
 
-                    {/* رقم المعيار with regex pattern */}
                     <div className="mb-3">
                       <label className="form-label">رقم المعيار</label>
                       <input
@@ -206,7 +211,6 @@ export default function Standards_create() {
                       <div className="invalid-feedback">يرجى اختيار الجهة, اذا لم تظهر جهة يرجى اضافة الجهات من خانة الجهات</div>
                     </div>
 
-                    {/* مستندات الإثبات */}
                     {proofRequired.map((text, idx) => (
                       <div className="mb-4" key={idx}>
                         <label className="form-label">مستند إثبات {idx + 1}</label>
