@@ -37,7 +37,6 @@ namespace Commander.Controllers
         [HttpPost]
         public ActionResult<Department> CreateDepartment(Department department)
         {
-            department.Created_at = DateTime.UtcNow;
             _repository.CreateDepartment(department);
             _repository.SaveChanges();
             return CreatedAtAction(nameof(GetDepartmentById), new { id = department.Department_id }, department);

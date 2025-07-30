@@ -18,8 +18,7 @@ namespace Commander.Migrations
                     Department_id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Department_name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Building_number = table.Column<int>(type: "int", nullable: false),
-                    Created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Building_number = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
