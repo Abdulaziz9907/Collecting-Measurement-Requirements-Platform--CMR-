@@ -9,6 +9,7 @@ import Standards from './pages/desktop/standards/standards';
 import Standards_edit from './pages/desktop/standards_edit/standards_edit';
 import Departments from './pages/desktop/departments/departments';
 import Departments_edit from './pages/desktop/departments_edit/departments_edit';
+import Departments_create from './pages/desktop/departments_create/departments_create';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/standards_edit/:id" element={<Standards_edit />} />
       <Route path="/departments" element={<Departments />} />
       <Route path="/departments_edit/:id" element={<Departments_edit />} />
+      <Route path="/departments_create" element={<Departments_create />} />
     </Routes>
   );
 }
