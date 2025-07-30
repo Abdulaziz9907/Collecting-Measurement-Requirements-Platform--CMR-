@@ -30,7 +30,7 @@ export default function Breadcrumbs() {
   }
 
   return (
-    <nav aria-label="breadcrumb" dir="rtl" className="h4">
+    <nav aria-label="breadcrumb" dir="rtl" className="h5">
       <ol className="breadcrumb custom-breadcrumb px-0 py-1 small text-muted m-0">
         {breadcrumbs.map((crumb, idx) => {
           const isLast = idx === breadcrumbs.length - 1;

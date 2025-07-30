@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faHouse,
+  faList,
+  faChartPie,
+  faUsers,
+  faSitemap,
+  faArrowRightFromBracket,
+} from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const location = useLocation();
 
   const navItems = [
-    { href: '/', icon: 'fas fa-home', label: 'الرئيسية' },
-    { href: '/standards', icon: 'fas fa-list', label: 'معايير التحول' },
-    { href: '/reports', icon: 'fas fa-chart-pie', label: 'الإحصائيات' },
-    { href: '/users', icon: 'fa fa-users', label: 'ادارة المستخدمين' },
-    { href: '/departments', icon: 'fas fa-sitemap', label: 'ادارة الجهات' },
-    { href: '/', icon: 'fas fa-sign-out-alt', label: 'تسجيل خروج' },
+    { href: '/', icon: faHouse, label: 'الرئيسية' },
+    { href: '/standards', icon: faList, label: 'معايير التحول' },
+    { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
+    { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
+    { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
+    { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج' },
   ];
 
   useEffect(() => {
@@ -49,7 +58,7 @@ export default function Sidebar() {
         type="button"
         className="position-fixed top-0 start-0 m-3 d-md-none"
         style={buttonStyles}
-        onClick={() => setSidebarVisible(prev => !prev)}
+        onClick={() => setSidebarVisible((prev) => !prev)}
         aria-label="Toggle sidebar"
       >
         {[...Array(3)].map((_, i) => (
@@ -70,7 +79,7 @@ export default function Sidebar() {
       <div
         className="bg-dark text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
-          width: '200px',
+          width: '240px',
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
           opacity: sidebarVisible ? 1 : 0,
           pointerEvents: sidebarVisible ? 'auto' : 'none',
@@ -79,30 +88,27 @@ export default function Sidebar() {
           boxShadow: sidebarVisible ? '4px 0 12px rgba(0,0,0,0.2)' : 'none',
         }}
       >
-        <div className="p-3">
-          <ul className="navbar-nav mt-5">
-            {navItems.map((item, idx) => {
-              const isActive = location.pathname.startsWith(item.href) && item.href !== '/'
+        <ul className="navbar-nav mt-5 p-0 mt-5 w-100 ">
+          {navItems.map((item, idx) => {
+            const isActive =
+              location.pathname.startsWith(item.href) && item.href !== '/'
                 ? true
                 : location.pathname === item.href;
 
-              return (
-                <li className="nav-item" key={idx}>
-                  <a
-                    className={`nav-link text-white d-flex align-items-center mt-4 sidebar-link ${
-                      isActive ? 'active' : ''
-                    }`}
-                    href={item.href}
-                    onClick={() => setSidebarVisible(false)}
-                  >
-                    <i className={`${item.icon} me-2`} style={{ fontSize: '1.25rem' }}></i>
-                    <span className="me-2">{item.label}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+            return (
+              <li className="nav-item p-0 m-0 " key={idx}>
+                <a
+                  className={`sidebar-link-mobile ${isActive ? 'active' : ''} `}
+                  href={item.href}
+                  onClick={() => setSidebarVisible(false)}
+                >
+                  <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
+                  <span className="me-2">{item.label}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {/* Desktop Sidebar */}
@@ -112,11 +118,12 @@ export default function Sidebar() {
       >
         <div className="container-fluid d-flex flex-column p-0">
           <hr className="my-0 sidebar-divider" />
-          <ul className="navbar-nav text-light mt-4" id="accordionSidebar">
+          <ul className="navbar-nav text-light mt-4 w-100" id="accordionSidebar">
             {navItems.map((item, idx) => {
-              const isActive = location.pathname.startsWith(item.href) && item.href !== '/'
-                ? true
-                : location.pathname === item.href;
+              const isActive =
+                location.pathname.startsWith(item.href) && item.href !== '/'
+                  ? true
+                  : location.pathname === item.href;
 
               return (
                 <li className="nav-item" key={idx}>
@@ -126,8 +133,8 @@ export default function Sidebar() {
                     }`}
                     href={item.href}
                   >
-                    <i className={`${item.icon} me-2`} style={{ fontSize: '15px' }}></i>
-                    <span className="me-2" style={{ fontSize: 15 }}>{item.label}</span>
+                    <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
+                    <span className="me-2" style={{ fontSize: '15px' }}>{item.label}</span>
                   </a>
                 </li>
               );
@@ -140,8 +147,10 @@ export default function Sidebar() {
       <style>{`
         .sidebar-link {
           transition: background-color 0.2s ease;
-          padding: 10px 15px;
+          padding: 10px 20px;
           position: relative;
+          display: block;
+          width: 100%;
         }
 
         .sidebar-link:hover {
@@ -153,6 +162,36 @@ export default function Sidebar() {
         }
 
         .sidebar-link.active::after {
+          content: "";
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 100%;
+          width: 4px;
+          background-color: #fff;
+        }
+
+        /* Mobile Sidebar Style Fix */
+        .sidebar-link-mobile {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          padding: 12px 20px;
+          color: #fff;
+          text-decoration: none;
+          position: relative;
+          transition: background-color 0.2s ease;
+        }
+
+        .sidebar-link-mobile:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-link-mobile.active {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-link-mobile.active::after {
           content: "";
           position: absolute;
           right: 0;
