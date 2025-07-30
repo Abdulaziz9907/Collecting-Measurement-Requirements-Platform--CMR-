@@ -6,6 +6,8 @@ const map = {
   standards_create: { label: 'إضافة معيار جديد', parent: 'standards' },
   standards_edit: { label: 'تعديل بيانات المعيار', parent: 'standards' },
   departments: { label: 'إدارة الجهات' },
+  departments_create: { label: 'إضافة جهة جديدة', parent: 'departments' },
+  departments_edit: { label: 'تعديل بيانات الجهة', parent: 'departments' },
   reports: { label: 'تقارير الإحصائيات' }
 };
 

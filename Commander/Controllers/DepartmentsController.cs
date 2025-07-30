@@ -46,18 +46,21 @@ namespace Commander.Controllers
         [HttpPut("{id}")]
         public ActionResult UpdateDepartment(int id, Department department)
         {
-            if(id != department.Department_id)
+            if (id != department.Department_id)
             {
                 return BadRequest();
             }
 
             var existing = _repository.GetDepartmentById(id);
-            if(existing == null)
+            if (existing == null)
             {
                 return NotFound();
             }
 
-            _repository.UpdateDepartment(department);
+            existing.Department_name = department.Department_name;
+            existing.Building_number = department.Building_number;
+
+            _repository.UpdateDepartment(existing);
             _repository.SaveChanges();
             return NoContent();
         }

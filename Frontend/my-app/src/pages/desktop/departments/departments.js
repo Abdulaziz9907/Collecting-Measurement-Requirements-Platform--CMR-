@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/fonts/fontawesome-all.min.css';
 import './assets/css/bss-overrides.css';
@@ -9,6 +10,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [buildingFilter, setBuildingFilter] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,10 +30,21 @@ export default function Departments() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, buildingFilter]);
+
+  const uniqueBuildings = [...new Set(data.map(d => d.building_number))];
+
+  const handleCheckboxFilter = (value) => {
+    if (buildingFilter.includes(value)) {
+      setBuildingFilter(buildingFilter.filter(v => v !== value));
+    } else {
+      setBuildingFilter([...buildingFilter, value]);
+    }
+  };
 
   const filteredData = data.filter(item =>
-    `${item.department_name} ${item.building_number}`.includes(searchTerm)
+    `${item.department_name} ${item.building_number}`.includes(searchTerm) &&
+    (buildingFilter.length ? buildingFilter.includes(item.building_number) : true)
   );
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -79,6 +92,26 @@ export default function Departments() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    <Dropdown>
+                      <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        {uniqueBuildings.map((num, idx) => (
+                          <label
+                            key={idx}
+                            className="dropdown-item d-flex align-items-center gap-2 m-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              className="form-check-input m-0"
+                              checked={buildingFilter.includes(num)}
+                              onChange={() => handleCheckboxFilter(num)}
+                            />
+                            <span className="form-check-label">{num}</span>
+                          </label>
+                        ))}
+                      </Dropdown.Menu>
+                    </Dropdown>
                     <a className="btn btn-outline-success btn-sm" href="/departments_create">إضافة جهة</a>
                   </div>
                   <div
@@ -94,7 +127,6 @@ export default function Departments() {
                         <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
                           <th style={{ color: '#6c757d' }}>اسم الجهة</th>
                           <th style={{ color: '#6c757d' }}>رقم المبنى</th>
-                          <th style={{ color: '#6c757d' }}>تاريخ الإنشاء</th>
                           <th style={{ color: '#6c757d' }}>تعديل</th>
                           <th style={{ color: '#6c757d' }}>حذف</th>
                         </tr>
@@ -102,20 +134,19 @@ export default function Departments() {
                       <tbody>
                         {loading ? (
                           <tr>
-                            <td colSpan="5" className="text-center py-5">
+                            <td colSpan="4" className="text-center py-5">
                               <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Loading...</span>
                               </div>
                             </td>
                           </tr>
                         ) : paginatedData.length === 0 ? (
-                          <tr><td colSpan="5" className="text-muted">لا توجد نتائج</td></tr>
+                          <tr><td colSpan="4" className="text-muted">لا توجد نتائج</td></tr>
                         ) : (
                           paginatedData.map((item) => (
                             <tr key={item.department_id}>
                               <td className="text-primary">{item.department_name}</td>
                               <td>{item.building_number}</td>
-                              <td>{new Date(item.created_at).toLocaleDateString()}</td>
                               <td>
                                 <i className="fas fa-pen text-success" onClick={() => window.location.href = `/departments_edit/${item.department_id}`}></i>
                               </td>
