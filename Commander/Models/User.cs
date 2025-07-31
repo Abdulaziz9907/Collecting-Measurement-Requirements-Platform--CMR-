@@ -28,7 +28,8 @@ namespace Commander.Models
         [MaxLength(20)]
         public string? Email { get; set; }
 
-        [MaxLength(10)]
+        // Increased to accommodate longer role names like "Senior Management"
+        [MaxLength(20)]
         public required string Role { get; set; }
 
         [ForeignKey("Department")]

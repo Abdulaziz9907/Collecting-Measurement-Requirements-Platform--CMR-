@@ -86,7 +86,7 @@ namespace Commander.Migrations
                     First_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Last_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Role = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Department_id = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
