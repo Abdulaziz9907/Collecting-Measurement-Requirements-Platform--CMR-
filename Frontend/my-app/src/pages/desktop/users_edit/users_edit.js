@@ -154,7 +154,12 @@ export default function Users_edit() {
                       </div>
                       <div className="mb-3">
                         <label className="form-label">الدور</label>
-                        <input type="text" className="form-control" name="role" required defaultValue={user?.role || ''} />
+                        <select className="form-select" name="role" required defaultValue={user?.role || ''} onChange={e => setUser(prev => ({ ...prev, role: e.target.value }))}>
+                          <option value="">اختر الدور...</option>
+                          <option value="Admin">Admin</option>
+                          <option value="User">User</option>
+                          <option value="Senior Management">Senior Management</option>
+                        </select>
                         <div className="invalid-feedback">يرجى تحديد الدور</div>
                       </div>
                       <div className="mb-3">
