@@ -133,7 +133,6 @@ export default function Users_create() {
                       <label className="form-label">الدور</label>
                       <select className="form-select" name="role" required>
                         <option value="">اختر الدور...</option>
-                        <option value="Admin">Admin</option>
                         <option value="User">User</option>
                         <option value="Senior Management">Senior Management</option>
                       </select>
