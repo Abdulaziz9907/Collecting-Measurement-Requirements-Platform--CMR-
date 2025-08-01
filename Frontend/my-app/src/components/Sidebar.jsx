@@ -20,7 +20,7 @@ export default function Sidebar() {
 
   if (role === 'admin' || role === 'administrator') {
     navItems = [
-      { href: '/standards', icon: faHome, label: 'الرئيسية' },
+      { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
@@ -29,13 +29,13 @@ export default function Sidebar() {
     ];
   } else if (role === 'user') {
     navItems = [
-      { href: '/standards', icon: faHome, label: 'الرئيسية' },
+      { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];
   } else if (role === 'senior management') {
     navItems = [
-      { href: '/reports', icon: faHome, label: 'الرئيسية' },
+      { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];

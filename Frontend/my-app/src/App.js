@@ -14,6 +14,7 @@ import Users from './pages/desktop/users/users';
 import Users_create from './pages/desktop/users_create/users_create';
 import Users_edit from './pages/desktop/users_edit/users_edit';
 import Reports from './pages/desktop/reports/reports';
+import Home from './pages/desktop/home/home'
 
 function App() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
@@ -26,6 +27,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Login onLogin={setUser} />} />
+      <Route path="/home" element={user ? <Home /> : <Navigate to="/" replace />} />
       <Route path="/standards_create" element={user ? <Standards_create /> : <Navigate to="/" replace />} />
       <Route path="/standards" element={user ? <Standards /> : <Navigate to="/" replace />} />
       <Route path="/standards_edit/:id" element={user ? <Standards_edit /> : <Navigate to="/" replace />} />
