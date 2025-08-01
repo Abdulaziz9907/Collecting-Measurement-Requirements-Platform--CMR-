@@ -5,6 +5,7 @@ import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import StandardModal from '../../../components/StandardModal.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -14,6 +15,8 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalId, setModalId] = useState(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -21,7 +24,7 @@ export default function Standards() {
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
+  const refreshData = () => {
     setLoading(true);
     Promise.all([
       fetch(`${API_BASE}/api/standards`).then(res => res.json()),
@@ -40,6 +43,10 @@ export default function Standards() {
         setDepartments([]);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refreshData();
   }, [API_BASE]);
 
   useEffect(() => {
@@ -211,7 +218,9 @@ export default function Standards() {
                               <td className="text-primary">{item.standard_name}</td>
                               <td>{item.department?.department_name}</td>
                               <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
-                              <td><a href={`/standards_show/${item.standard_id}`} className="text-primary">إظهار</a></td>
+                              <td>
+                                <a href="#" className="text-primary" onClick={e => { e.preventDefault(); setModalId(item.standard_id); setShowModal(true); }}>إظهار</a>
+                              </td>
                               <td>{new Date(item.created_at).toLocaleDateString()}</td>
                               {user?.role?.toLowerCase() !== 'user' ? (
                                 <td>
@@ -273,5 +282,6 @@ export default function Standards() {
         </div>
       </div>
     </div>
+    <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={refreshData} />
   );
 }

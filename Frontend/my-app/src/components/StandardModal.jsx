@@ -7,7 +7,6 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
 
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [files, setFiles] = useState({});
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState('');
 
@@ -26,29 +25,28 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
   useEffect(() => {
     if (show) {
       loadData();
-      setFiles({});
       setReason('');
       setShowReject(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, standardId]);
 
-  const handleFileChange = (proof, file) => {
-    setFiles(prev => ({ ...prev, [proof]: file }));
+  const uploadFile = async (proof, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('proofName', proof);
+    await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, {
+      method: 'POST',
+      body: form
+    });
+    loadData();
+    if (onUpdated) onUpdated();
   };
 
-  const handleSubmitFiles = async () => {
-    for (const [proof, file] of Object.entries(files)) {
-      if (!file) continue;
-      const form = new FormData();
-      form.append('file', file);
-      form.append('proofName', proof);
-      await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, {
-        method: 'POST',
-        body: form
-      });
-    }
-    setFiles({});
+  const deleteFile = async id => {
+    await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, {
+      method: 'DELETE'
+    });
     loadData();
     if (onUpdated) onUpdated();
   };
@@ -94,14 +92,25 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
               {proofs.map((p, idx) => {
                 const att = getAttachment(p);
                 return (
-                  <Form.Group className="mb-3" controlId={`proof-${idx}`} key={idx}>
+                  <Form.Group className="mb-4" controlId={`proof-${idx}`} key={idx}>
                     <Form.Label>{p}</Form.Label>
-                    {att && (
-                      <div className="mb-2">
-                        <a href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                    {att ? (
+                      <div className="d-flex align-items-start">
+                        <div className="input-group flex-grow-1">
+                          <a className="form-control" href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                        </div>
+                        {user?.role?.toLowerCase() === 'user' && (
+                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</Button>
+                        )}
                       </div>
+                    ) : (
+                      user?.role?.toLowerCase() === 'user' && (
+                        <div className="input-group">
+                          <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                          <Form.Control type="file" onChange={e => uploadFile(p, e.target.files[0])} />
+                        </div>
+                      )
                     )}
-                    <Form.Control type="file" onChange={e => handleFileChange(p, e.target.files[0])} />
                   </Form.Group>
                 );
               })}
@@ -116,9 +125,6 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
               <Button variant="success" className="ms-2" onClick={approve}>معتمد</Button>
               <Button variant="danger" onClick={() => setShowReject(true)}>غير معتمد</Button>
             </div>
-          )}
-          {proofs.length > 0 && (
-            <Button variant="primary" onClick={handleSubmitFiles}>إرسال</Button>
           )}
           <Button variant="secondary" onClick={onHide}>إغلاق</Button>
         </Modal.Footer>

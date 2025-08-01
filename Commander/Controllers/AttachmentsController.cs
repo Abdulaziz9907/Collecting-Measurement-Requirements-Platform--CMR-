@@ -73,6 +73,27 @@ namespace Commander.Controllers
             if (attachment == null || attachment.Standard_id != standardId) return NotFound();
             _repository.DeleteAttachment(attachment);
             _repository.SaveChanges();
+
+            var standard = _standardRepo.GetStandardById(standardId);
+            if (standard != null)
+            {
+                var remaining = _repository.GetAttachmentsByStandard(standardId).Count();
+                if (remaining == 0)
+                {
+                    standard.Status = "لم يبدأ";
+                }
+                else
+                {
+                    var required = (standard.Proof_required ?? "").Split(',', System.StringSplitOptions.RemoveEmptyEntries).Length;
+                    if (remaining >= required && required > 0)
+                        standard.Status = "مكتمل";
+                    else
+                        standard.Status = "تحت العمل";
+                }
+                _standardRepo.UpdateStandard(standard);
+                _standardRepo.SaveChanges();
+            }
+
             return NoContent();
         }
     }
