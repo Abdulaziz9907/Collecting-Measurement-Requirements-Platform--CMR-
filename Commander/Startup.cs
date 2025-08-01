@@ -51,8 +51,10 @@ namespace Commander
             });
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
+            // Apply any pending migrations automatically on startup
+            context.Database.Migrate();
             // Developer exceptions
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
