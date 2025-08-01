@@ -7,6 +7,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
 
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
+  const [files, setFiles] = useState({});
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState('');
 
@@ -43,6 +44,20 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
     if (onUpdated) onUpdated();
   };
 
+  const handleFileChange = (proof, fileList) => {
+    setFiles(prev => ({ ...prev, [proof]: fileList }));
+  };
+
+  const sendFiles = async proof => {
+    const fileList = files[proof];
+    if (!fileList) return;
+    for (const file of Array.from(fileList)) {
+      // eslint-disable-next-line no-await-in-loop
+      await uploadFile(proof, file);
+    }
+    setFiles(prev => ({ ...prev, [proof]: null }));
+  };
+
   const deleteFile = async id => {
     await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, {
       method: 'DELETE'
@@ -68,7 +83,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
     onHide();
   };
 
-  const getAttachment = name => attachments.find(a => a.proof_name === name);
+  const getAttachments = name => attachments.filter(a => a.proof_name === name);
   const proofs = (standard?.proof_required || '').split(',').filter(Boolean);
 
   return (
@@ -90,26 +105,26 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
               )}
               <hr />
               {proofs.map((p, idx) => {
-                const att = getAttachment(p);
+                const atts = getAttachments(p);
                 return (
                   <Form.Group className="mb-4" controlId={`proof-${idx}`} key={idx}>
                     <Form.Label>{p}</Form.Label>
-                    {att ? (
-                      <div className="d-flex align-items-start">
+                    {atts.map(a => (
+                      <div className="d-flex align-items-start mb-2" key={a.attachment_id}>
                         <div className="input-group flex-grow-1">
-                          <a className="form-control" href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                          <a className="form-control" href={`/${a.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
                         </div>
                         {user?.role?.toLowerCase() === 'user' && (
-                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</Button>
+                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>حذف</Button>
                         )}
                       </div>
-                    ) : (
-                      user?.role?.toLowerCase() === 'user' && (
-                        <div className="input-group">
-                          <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                          <Form.Control type="file" onChange={e => uploadFile(p, e.target.files[0])} />
-                        </div>
-                      )
+                    ))}
+                    {user?.role?.toLowerCase() === 'user' && (
+                      <div className="input-group">
+                        <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                        <Form.Control type="file" multiple onChange={e => handleFileChange(p, e.target.files)} />
+                        <Button className="ms-2" variant="primary" disabled={!files[p] || files[p].length === 0} onClick={() => sendFiles(p)}>إرسال</Button>
+                      </div>
                     )}
                   </Form.Group>
                 );
