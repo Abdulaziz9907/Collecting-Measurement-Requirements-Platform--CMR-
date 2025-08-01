@@ -1,5 +1,5 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 
 // Pages
@@ -16,7 +16,13 @@ import Users_edit from './pages/desktop/users_edit/users_edit';
 import Reports from './pages/desktop/reports/reports';
 
 function App() {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
+  const location = useLocation();
+
+  useEffect(() => {
+    setUser(JSON.parse(localStorage.getItem('user') || 'null'));
+  }, [location]);
+
   return (
     <Routes>
       <Route path="/" element={<Login />} />
