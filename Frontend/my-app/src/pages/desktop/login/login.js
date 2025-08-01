@@ -26,7 +26,7 @@ export default function Login({ onLogin }) {
         onLogin(data);
       }
       setMessage(`تم تسجيل الدخول باسم ${data.username}`);
-      navigate('/standards', { replace: true });
+      navigate('/home', { replace: true });
     } catch (err) {
       console.error(err);
       setMessage('خطأ في الشبكة');
