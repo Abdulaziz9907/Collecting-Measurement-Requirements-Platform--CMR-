@@ -22,11 +22,7 @@ export default function Login() {
       const data = await res.json();
       localStorage.setItem('user', JSON.stringify(data));
       setMessage(`تم تسجيل الدخول باسم ${data.username}`);
-      if (data.role === 'Senior Management') {
-        navigate('/reports', { replace: true });
-      } else {
-        navigate('/standards', { replace: true });
-      }
+      navigate('/standards', { replace: true });
     } catch (err) {
       console.error(err);
       setMessage('خطأ في الشبكة');
