@@ -58,6 +58,17 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
     setFiles(prev => ({ ...prev, [proof]: null }));
   };
 
+  const sendAllFiles = async () => {
+    for (const [proof, fileList] of Object.entries(files)) {
+      if (!fileList) continue;
+      for (const file of Array.from(fileList)) {
+        // eslint-disable-next-line no-await-in-loop
+        await uploadFile(proof, file);
+      }
+    }
+    setFiles({});
+  };
+
   const deleteFile = async id => {
     await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, {
       method: 'DELETE'
@@ -85,6 +96,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
 
   const getAttachments = name => attachments.filter(a => a.proof_name === name);
   const proofs = (standard?.proof_required || '').split(',').filter(Boolean);
+  const hasFiles = Object.values(files).some(f => f && f.length > 0);
 
   return (
     <>
@@ -112,7 +124,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                     {atts.map(a => (
                       <div className="d-flex align-items-start mb-2" key={a.attachment_id}>
                         <div className="input-group flex-grow-1">
-                          <a className="form-control" href={`/${a.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                          <a className="form-control" href={`/${a.filePath}`} target="_blank" rel="noreferrer">{a.filePath.split('/').pop()}</a>
                         </div>
                         {user?.role?.toLowerCase() === 'user' && (
                           <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>حذف</Button>
@@ -122,8 +134,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                     {user?.role?.toLowerCase() === 'user' && (
                       <div className="input-group">
                         <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                        <Form.Control type="file" multiple onChange={e => handleFileChange(p, e.target.files)} />
-                        <Button className="ms-2" variant="primary" disabled={!files[p] || files[p].length === 0} onClick={() => sendFiles(p)}>إرسال</Button>
+                        <Form.Control className="form-control" type="file" multiple onChange={e => handleFileChange(p, e.target.files)} />
                       </div>
                     )}
                   </Form.Group>
@@ -135,6 +146,9 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
           )}
         </Modal.Body>
         <Modal.Footer>
+          {user?.role?.toLowerCase() === 'user' && (
+            <Button variant="primary" className="me-auto" disabled={!hasFiles} onClick={sendAllFiles}>إرسال</Button>
+          )}
           {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
             <div className="me-auto">
               <Button variant="success" className="ms-2" onClick={approve}>معتمد</Button>
