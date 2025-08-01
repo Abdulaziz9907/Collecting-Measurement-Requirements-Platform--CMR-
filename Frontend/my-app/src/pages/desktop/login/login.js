@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './login.module.css';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
@@ -18,7 +20,13 @@ export default function Login() {
         return;
       }
       const data = await res.json();
+      localStorage.setItem('user', JSON.stringify(data));
       setMessage(`تم تسجيل الدخول باسم ${data.username}`);
+      if (data.role === 'Senior Management') {
+        navigate('/reports', { replace: true });
+      } else {
+        navigate('/standards', { replace: true });
+      }
     } catch (err) {
       console.error(err);
       setMessage('خطأ في الشبكة');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 // Pages
@@ -13,20 +13,23 @@ import Departments_create from './pages/desktop/departments_create/departments_c
 import Users from './pages/desktop/users/users';
 import Users_create from './pages/desktop/users_create/users_create';
 import Users_edit from './pages/desktop/users_edit/users_edit';
+import Reports from './pages/desktop/reports/reports';
 
 function App() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/standards_create" element={<Standards_create />} />
-      <Route path="/standards" element={<Standards />} />
-      <Route path="/standards_edit/:id" element={<Standards_edit />} />
-      <Route path="/departments" element={<Departments />} />
-      <Route path="/departments_edit/:id" element={<Departments_edit />} />
-      <Route path="/departments_create" element={<Departments_create />} />
-      <Route path="/users" element={<Users />} />
-      <Route path="/users_create" element={<Users_create />} />
-      <Route path="/users_edit/:id" element={<Users_edit />} />
+      <Route path="/standards_create" element={user ? <Standards_create /> : <Navigate to="/" replace />} />
+      <Route path="/standards" element={user ? <Standards /> : <Navigate to="/" replace />} />
+      <Route path="/standards_edit/:id" element={user ? <Standards_edit /> : <Navigate to="/" replace />} />
+      <Route path="/departments" element={user ? <Departments /> : <Navigate to="/" replace />} />
+      <Route path="/departments_edit/:id" element={user ? <Departments_edit /> : <Navigate to="/" replace />} />
+      <Route path="/departments_create" element={user ? <Departments_create /> : <Navigate to="/" replace />} />
+      <Route path="/users" element={user ? <Users /> : <Navigate to="/" replace />} />
+      <Route path="/users_create" element={user ? <Users_create /> : <Navigate to="/" replace />} />
+      <Route path="/users_edit/:id" element={user ? <Users_edit /> : <Navigate to="/" replace />} />
+      <Route path="/reports" element={user ? <Reports /> : <Navigate to="/" replace />} />
     </Routes>
   );
 }
