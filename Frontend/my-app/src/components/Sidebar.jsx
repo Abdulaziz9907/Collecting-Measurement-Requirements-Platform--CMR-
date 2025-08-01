@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faHouse,
   faList,
   faChartPie,
   faUsers,
@@ -14,14 +13,27 @@ export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const location = useLocation();
 
-  const navItems = [
-    { href: '/', icon: faHouse, label: 'الرئيسية' },
-    { href: '/standards', icon: faList, label: 'معايير التحول' },
-    { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
-    { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
-    { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
-    { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج' },
-  ];
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  let navItems = [];
+  if (user?.role === 'Admin') {
+    navItems = [
+      { href: '/standards', icon: faList, label: 'معايير التحول' },
+      { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
+      { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
+      { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
+    ];
+  } else if (user?.role === 'User') {
+    navItems = [
+      { href: '/standards', icon: faList, label: 'معايير التحول' },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
+    ];
+  } else if (user?.role === 'Senior Management') {
+    navItems = [
+      { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
+    ];
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -100,7 +112,10 @@ export default function Sidebar() {
                 <a
                   className={`sidebar-link-mobile ${isActive ? 'active' : ''} `}
                   href={item.href}
-                  onClick={() => setSidebarVisible(false)}
+                  onClick={() => {
+                    setSidebarVisible(false);
+                    item.onClick && item.onClick();
+                  }}
                 >
                   <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                   <span className="me-2">{item.label}</span>
@@ -132,6 +147,7 @@ export default function Sidebar() {
                       isActive ? 'active' : ''
                     }`}
                     href={item.href}
+                    onClick={() => item.onClick && item.onClick()}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                     <span className="me-2" style={{ fontSize: '15px' }}>{item.label}</span>
