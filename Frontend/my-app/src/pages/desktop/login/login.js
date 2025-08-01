@@ -7,10 +7,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
   const handleLogin = async () => {
     try {
-      const res = await fetch('http://localhost:5186/api/login', {
+      const res = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })

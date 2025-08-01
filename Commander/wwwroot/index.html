@@ -50,8 +50,7 @@
         const password = document.getElementById("password").value;
 
         try {
-          // same‑origin: window.location.origin is https://localhost:5186
-          const res = await fetch(`http://localhost:5186/api/login`, {
+          const res = await fetch(`/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
