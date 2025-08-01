@@ -40,6 +40,7 @@ namespace Commander
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
             services.AddScoped<IStandardRepo, SqlStandardRepo>();
+            services.AddScoped<IAttachmentRepo, SqlAttachmentRepo>();
 
             // 4) CORS policy
             services.AddCors(opts =>

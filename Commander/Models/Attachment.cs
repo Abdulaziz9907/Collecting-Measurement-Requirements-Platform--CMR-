@@ -13,6 +13,9 @@ namespace Commander.Models
 
         public DateTime Uploaded_date { get; set; } = DateTime.UtcNow;
 
+        [MaxLength(100)]
+        public required string Proof_name { get; set; }
+
         [MaxLength(255)]
         public required string FilePath { get; set; } // stores the path or URL to the uploaded file
 

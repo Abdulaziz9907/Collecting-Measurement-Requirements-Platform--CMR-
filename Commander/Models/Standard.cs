@@ -28,5 +28,7 @@ namespace Commander.Models
 
         public Department? Department { get; set; }
         public string? Proof_required { get; set; }
+
+        public string? Rejection_reason { get; set; }
     }
 }

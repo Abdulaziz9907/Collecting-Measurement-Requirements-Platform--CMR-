@@ -92,5 +92,29 @@ namespace Commander.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("{id}/approve")]
+        public ActionResult ApproveStandard(int id)
+        {
+            var existing = _repository.GetStandardById(id);
+            if (existing == null) return NotFound();
+            existing.Status = "معتمد";
+            existing.Rejection_reason = null;
+            _repository.UpdateStandard(existing);
+            _repository.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpPost("{id}/reject")]
+        public ActionResult RejectStandard(int id, [FromBody] string reason)
+        {
+            var existing = _repository.GetStandardById(id);
+            if (existing == null) return NotFound();
+            existing.Status = "غير معتمد";
+            existing.Rejection_reason = reason;
+            _repository.UpdateStandard(existing);
+            _repository.SaveChanges();
+            return NoContent();
+        }
     }
 }
