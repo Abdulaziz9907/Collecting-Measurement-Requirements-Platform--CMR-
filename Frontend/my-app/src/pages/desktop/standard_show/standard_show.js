@@ -33,6 +33,11 @@ export default function Standard_show() {
     loadData();
   };
 
+  const deleteFile = async (attId) => {
+    await fetch(`${API_BASE}/api/standards/${id}/attachments/${attId}`, { method: 'DELETE' });
+    loadData();
+  };
+
   const approve = async () => {
     await fetch(`${API_BASE}/api/standards/${id}/approve`, { method: 'POST' });
     loadData();
@@ -83,15 +88,24 @@ export default function Standard_show() {
                   {proofs.map((p, idx) => {
                     const att = getAttachment(p);
                     return (
-                      <div key={idx} className="mb-3">
+                      <div key={idx} className="mb-4">
                         <label className="form-label">{p}</label>
                         {att ? (
-                          <div>
-                            <a href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
-                            <input type="file" className="form-control mt-2" onChange={e => uploadFile(p, e.target.files[0])} />
+                          <div className="d-flex align-items-start">
+                            <div className="input-group flex-grow-1">
+                              <a className="form-control" href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                            </div>
+                            {user?.role?.toLowerCase() === 'user' && (
+                              <button className="btn btn-outline-danger ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</button>
+                            )}
                           </div>
                         ) : (
-                          <input type="file" className="form-control" onChange={e => uploadFile(p, e.target.files[0])} />
+                          user?.role?.toLowerCase() === 'user' && (
+                            <div className="input-group">
+                              <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                              <input type="file" className="form-control" onChange={e => uploadFile(p, e.target.files[0])} />
+                            </div>
+                          )
                         )}
                       </div>
                     );
