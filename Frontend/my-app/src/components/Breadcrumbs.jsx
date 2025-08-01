@@ -8,7 +8,10 @@ const map = {
   departments: { label: 'إدارة الجهات' },
   departments_create: { label: 'إضافة جهة جديدة', parent: 'departments' },
   departments_edit: { label: 'تعديل بيانات الجهة', parent: 'departments' },
-  reports: { label: 'تقارير الإحصائيات' }
+  reports: { label: 'تقارير الإحصائيات' },
+  users: { label: 'إدارة المستخدمين' },
+  users_create: { label: 'إضافة مستخدم جديد', parent: 'users' },
+  users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' }
 };
 
 export default function Breadcrumbs() {
