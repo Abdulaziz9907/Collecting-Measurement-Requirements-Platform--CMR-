@@ -25,7 +25,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={<Login onLogin={setUser} />} />
       <Route path="/standards_create" element={user ? <Standards_create /> : <Navigate to="/" replace />} />
       <Route path="/standards" element={user ? <Standards /> : <Navigate to="/" replace />} />
       <Route path="/standards_edit/:id" element={user ? <Standards_edit /> : <Navigate to="/" replace />} />

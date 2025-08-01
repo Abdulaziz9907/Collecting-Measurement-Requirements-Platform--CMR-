@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './login.module.css';
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -22,6 +22,9 @@ export default function Login() {
       }
       const data = await res.json();
       localStorage.setItem('user', JSON.stringify(data));
+      if (typeof onLogin === 'function') {
+        onLogin(data);
+      }
       setMessage(`تم تسجيل الدخول باسم ${data.username}`);
       navigate('/standards', { replace: true });
     } catch (err) {
