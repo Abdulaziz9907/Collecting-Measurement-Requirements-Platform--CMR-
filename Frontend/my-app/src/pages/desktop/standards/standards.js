@@ -5,6 +5,7 @@ import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import StandardModal from '../../../components/StandardModal.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -14,6 +15,8 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalId, setModalId] = useState(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -21,7 +24,7 @@ export default function Standards() {
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
+  const loadData = () => {
     setLoading(true);
     Promise.all([
       fetch(`${API_BASE}/api/standards`).then(res => res.json()),
@@ -40,7 +43,9 @@ export default function Standards() {
         setDepartments([]);
       })
       .finally(() => setLoading(false));
-  }, [API_BASE]);
+  };
+
+  useEffect(() => { loadData(); }, [API_BASE]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -189,21 +194,25 @@ export default function Standards() {
                           <th style={{ color: '#6c757d' }}>حالة المعيار</th>
                           <th style={{ color: '#6c757d' }}>تفاصيل</th>
                           <th style={{ color: '#6c757d' }}>تاريخ الإنشاء</th>
-                          <th style={{ color: '#6c757d' }}>تعديل</th>
-                          <th style={{ color: '#6c757d' }}>حذف</th>
+                          {user?.role?.toLowerCase() !== 'user' && (
+                            <>
+                              <th style={{ color: '#6c757d' }}>تعديل</th>
+                              <th style={{ color: '#6c757d' }}>حذف</th>
+                            </>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
                         {loading ? (
                           <tr>
-                            <td colSpan="8" className="text-center py-5">
+                            <td colSpan={user?.role?.toLowerCase() !== 'user' ? 8 : 6} className="text-center py-5">
                               <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Loading...</span>
                               </div>
                             </td>
                           </tr>
                         ) : paginatedData.length === 0 ? (
-                          <tr><td colSpan="8" className="text-muted">لا توجد نتائج</td></tr>
+                          <tr><td colSpan={user?.role?.toLowerCase() !== 'user' ? 8 : 6} className="text-muted">لا توجد نتائج</td></tr>
                         ) : (
                           paginatedData.map((item) => (
                             <tr key={item.standard_id}>
@@ -211,32 +220,33 @@ export default function Standards() {
                               <td className="text-primary">{item.standard_name}</td>
                               <td>{item.department?.department_name}</td>
                               <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
-                              <td><a href={`/standards_show/${item.standard_id}`} className="text-primary">إظهار</a></td>
+                              <td>
+                                <span
+                                  className="text-primary"
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => { setModalId(item.standard_id); setShowModal(true); }}
+                                >إظهار</span>
+                              </td>
                               <td>{new Date(item.created_at).toLocaleDateString()}</td>
-                              {user?.role?.toLowerCase() !== 'user' ? (
-                                <td>
-                                  <i className="fas fa-pen text-success" onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
-                                </td>
-                              ) : <td></td>}
-                              {user?.role?.toLowerCase() !== 'user' ? (
-                                <td>
-                                  <i
-                                    className="fas fa-times text-danger"
-                                    style={{ cursor: 'pointer' }}
-                                    onClick={async () => {
-                                      try {
-                                        await fetch(`${API_BASE}/api/standards/${item.standard_id}`, { method: 'DELETE' });
-                                        setLoading(true);
-                                        fetch(`${API_BASE}/api/standards`)
-                                          .then(res => res.json())
-                                          .then(setData)
-                                          .catch(() => setData([]))
-                                          .finally(() => setLoading(false));
-                                      } catch {}
-                                    }}
-                                  ></i>
-                                </td>
-                              ) : <td></td>}
+                              {user?.role?.toLowerCase() !== 'user' && (
+                                <>
+                                  <td>
+                                    <i className="fas fa-pen text-success" onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
+                                  </td>
+                                  <td>
+                                    <i
+                                      className="fas fa-times text-danger"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={async () => {
+                                        try {
+                                          await fetch(`${API_BASE}/api/standards/${item.standard_id}`, { method: 'DELETE' });
+                                          loadData();
+                                        } catch {}
+                                      }}
+                                    ></i>
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           ))
                         )}
@@ -265,6 +275,12 @@ export default function Standards() {
               </div>
             </div>
           </div>
+          <StandardModal
+            show={showModal}
+            onHide={() => setShowModal(false)}
+            standardId={modalId}
+            onUpdated={loadData}
+          />
           <footer className="bg-white sticky-footer mt-auto py-3">
             <div className="container my-auto">
               <div className="text-center my-auto"><span>© RCJY 2025</span></div>
