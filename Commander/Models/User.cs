@@ -30,7 +30,8 @@ namespace Commander.Models
 
         // Increased to accommodate longer role names like "Senior Management"
         // Further expanded to ensure future roles are accommodated
-        [MaxLength(30)]
+        // Extended again to avoid truncation errors when saving longer roles
+        [MaxLength(50)]
         public required string Role { get; set; }
 
         [ForeignKey("Department")]
