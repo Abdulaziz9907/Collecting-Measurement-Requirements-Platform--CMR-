@@ -7,6 +7,7 @@ import {
   faUsers,
   faSitemap,
   faArrowRightFromBracket,
+  faHome
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
@@ -14,22 +15,27 @@ export default function Sidebar() {
   const location = useLocation();
 
   const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const role = user?.role?.toLowerCase();
   let navItems = [];
-  if (user?.role === 'Admin') {
+
+  if (role === 'admin' || role === 'administrator') {
     navItems = [
+      { href: '/standards', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
       { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];
-  } else if (user?.role === 'User') {
+  } else if (role === 'user') {
     navItems = [
+      { href: '/standards', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];
-  } else if (user?.role === 'Senior Management') {
+  } else if (role === 'senior management') {
     navItems = [
+      { href: '/reports', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];
