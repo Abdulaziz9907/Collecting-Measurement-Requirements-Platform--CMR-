@@ -15,7 +15,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-  const role = user?.role?.toLowerCase();
+  const role = user?.role?.trim().toLowerCase();
   let navItems = [];
 
   if (role === 'admin' || role === 'administrator') {
