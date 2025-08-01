@@ -16,6 +16,7 @@ export default function Standards() {
   const [loading, setLoading] = useState(true);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,6 +28,10 @@ export default function Standards() {
       fetch(`${API_BASE}/api/departments`).then(res => res.json())
     ])
       .then(([standards, departments]) => {
+        if (user?.role === 'User') {
+          standards = standards.filter(s => s.assigned_department_id === user.department_id);
+          departments = departments.filter(d => d.department_id === user.department_id);
+        }
         setData(standards);
         setDepartments(departments);
       })
