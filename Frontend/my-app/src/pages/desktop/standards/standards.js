@@ -211,28 +211,32 @@ export default function Standards() {
                               <td className="text-primary">{item.standard_name}</td>
                               <td>{item.department?.department_name}</td>
                               <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
-                              <td><a href="#" className="text-primary">إظهار</a></td>
+                              <td><a href={`/standards_show/${item.standard_id}`} className="text-primary">إظهار</a></td>
                               <td>{new Date(item.created_at).toLocaleDateString()}</td>
-                              <td>
-                                <i className="fas fa-pen text-success" onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
-                              </td>
-                              <td>
-                                <i
-                                  className="fas fa-times text-danger"
-                                  style={{ cursor: 'pointer' }}
-                                  onClick={async () => {
-                                    try {
-                                      await fetch(`${API_BASE}/api/standards/${item.standard_id}`, { method: 'DELETE' });
-                                      setLoading(true);
-                                      fetch(`${API_BASE}/api/standards`)
-                                        .then(res => res.json())
-                                        .then(setData)
-                                        .catch(() => setData([]))
-                                        .finally(() => setLoading(false));
-                                    } catch {}
-                                  }}
-                                ></i>
-                              </td>
+                              {user?.role?.toLowerCase() !== 'user' ? (
+                                <td>
+                                  <i className="fas fa-pen text-success" onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
+                                </td>
+                              ) : <td></td>}
+                              {user?.role?.toLowerCase() !== 'user' ? (
+                                <td>
+                                  <i
+                                    className="fas fa-times text-danger"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={async () => {
+                                      try {
+                                        await fetch(`${API_BASE}/api/standards/${item.standard_id}`, { method: 'DELETE' });
+                                        setLoading(true);
+                                        fetch(`${API_BASE}/api/standards`)
+                                          .then(res => res.json())
+                                          .then(setData)
+                                          .catch(() => setData([]))
+                                          .finally(() => setLoading(false));
+                                      } catch {}
+                                    }}
+                                  ></i>
+                                </td>
+                              ) : <td></td>}
                             </tr>
                           ))
                         )}
