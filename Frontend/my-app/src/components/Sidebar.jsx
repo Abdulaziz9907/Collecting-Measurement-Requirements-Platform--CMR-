@@ -33,7 +33,7 @@ export default function Sidebar() {
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user') },
     ];
-  } else if (role === 'senior management') {
+  } else if (role === 'management') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
