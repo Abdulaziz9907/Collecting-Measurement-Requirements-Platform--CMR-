@@ -35,6 +35,11 @@ namespace Commander.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("Proof_name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("Standard_id")
                         .HasColumnType("int");
 
@@ -58,7 +63,6 @@ namespace Commander.Migrations
 
                     b.Property<int>("Building_number")
                         .HasColumnType("int");
-
 
                     b.Property<string>("Department_name")
                         .IsRequired()
@@ -115,6 +119,9 @@ namespace Commander.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Proof_required")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rejection_reason")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Standard_goal")

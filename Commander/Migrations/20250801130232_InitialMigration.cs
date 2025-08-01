@@ -61,7 +61,8 @@ namespace Commander.Migrations
                     Assigned_department_id = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Proof_required = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Proof_required = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Rejection_reason = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -86,7 +87,7 @@ namespace Commander.Migrations
                     First_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Last_name = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Role = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Department_id = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -108,6 +109,7 @@ namespace Commander.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Standard_id = table.Column<int>(type: "int", nullable: false),
                     Uploaded_date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Proof_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FilePath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>

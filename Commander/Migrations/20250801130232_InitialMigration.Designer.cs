@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Commander.Migrations
 {
     [DbContext(typeof(InterfaceContext))]
-    [Migration("20250730095337_InitialMigration")]
+    [Migration("20250801130232_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -38,6 +38,11 @@ namespace Commander.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("Proof_name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("Standard_id")
                         .HasColumnType("int");
 
@@ -61,7 +66,6 @@ namespace Commander.Migrations
 
                     b.Property<int>("Building_number")
                         .HasColumnType("int");
-
 
                     b.Property<string>("Department_name")
                         .IsRequired()
@@ -118,6 +122,9 @@ namespace Commander.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Proof_required")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rejection_reason")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Standard_goal")
