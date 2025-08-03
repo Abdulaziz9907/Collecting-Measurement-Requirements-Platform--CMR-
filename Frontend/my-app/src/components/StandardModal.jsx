@@ -78,11 +78,13 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
       body: JSON.stringify(reason)
     });
     if (onUpdated) onUpdated();
+    setShowReject(false);
     onHide();
   };
 
   const getAttachments = name => attachments.filter(a => a.proof_name === name);
   const proofs = (standard?.proof_required || '').split(',').filter(Boolean);
+  const hasAllProofs = proofs.every(p => attachments.some(a => a.proof_name === p));
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -222,7 +224,7 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
           )}
         </Modal.Body>
         <Modal.Footer>
-          {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
+          {user?.role?.toLowerCase() !== 'user' && hasAllProofs && (
             <div className="me-auto">
               <Button variant="success" className="ms-2" onClick={approve}>معتمد</Button>
               <Button variant="danger" onClick={() => setShowReject(true)}>غير معتمد</Button>
