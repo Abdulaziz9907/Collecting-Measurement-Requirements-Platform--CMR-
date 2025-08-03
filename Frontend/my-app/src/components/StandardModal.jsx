@@ -7,9 +7,9 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
 
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [files, setFiles] = useState({});
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState('');
+  const [dragOverProof, setDragOverProof] = useState(null);
 
   const loadData = () => {
     if (!standardId) return;
@@ -29,7 +29,6 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
       setReason('');
       setShowReject(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, standardId]);
 
   const uploadFile = async (proof, file) => {
@@ -44,29 +43,17 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
     if (onUpdated) onUpdated();
   };
 
-  const handleFileChange = (proof, fileList) => {
-    setFiles(prev => ({ ...prev, [proof]: fileList }));
-  };
-
-  const sendFiles = async proof => {
-    const fileList = files[proof];
-    if (!fileList) return;
-    for (const file of Array.from(fileList)) {
-      // eslint-disable-next-line no-await-in-loop
-      await uploadFile(proof, file);
-    }
-    setFiles(prev => ({ ...prev, [proof]: null }));
-  };
-
-  const sendAllFiles = async () => {
-    for (const [proof, fileList] of Object.entries(files)) {
-      if (!fileList) continue;
-      for (const file of Array.from(fileList)) {
-        // eslint-disable-next-line no-await-in-loop
+  const handleFileSelect = (proof) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const files = e.target.files;
+      for (const file of Array.from(files)) {
         await uploadFile(proof, file);
       }
-    }
-    setFiles({});
+    };
+    input.click();
   };
 
   const deleteFile = async id => {
@@ -96,17 +83,28 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
 
   const getAttachments = name => attachments.filter(a => a.proof_name === name);
   const proofs = (standard?.proof_required || '').split(',').filter(Boolean);
-  const hasFiles = Object.values(files).some(f => f && f.length > 0);
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'معتمد': return 'success';
+      case 'غير معتمد': return 'danger';
+      case 'مكتمل': return 'info';
+      case 'تحت العمل': return 'warning text-dark';
+      case 'لم يبدأ':
+      default: return 'secondary';
+    }
+  };
 
   return (
     <>
-      <Modal show={show} onHide={onHide} size="lg" centered dir="rtl">
-        <Modal.Header closeButton>
+      <Modal show={show} onHide={onHide} size="lg" centered dir="rtl"
+>
+        <Modal.Header>
           <Modal.Title>تفاصيل المعيار</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {standard ? (
-            <div style={{ fontFamily: 'Noto Sans Arabic' }}>
+            <div style={{ fontFamily: 'Noto Sans Arabic' }} >
               <Form.Group className="mb-3">
                 <Form.Label>رقم المعيار</Form.Label>
                 <Form.Control type="text" value={standard.standard_number} readOnly />
@@ -125,7 +123,11 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>الحالة</Form.Label>
-                <Form.Control type="text" value={standard.status} readOnly />
+                <div>
+                  <span className={`badge bg-${getStatusClass(standard.status)}`}>
+                    {standard.status}
+                  </span>
+                </div>
               </Form.Group>
               {standard.rejection_reason && (
                 <Form.Group className="mb-3">
@@ -133,12 +135,39 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                   <Form.Control type="text" value={standard.rejection_reason} readOnly className="text-danger" />
                 </Form.Group>
               )}
-              <hr />
+
+              <h4> مستندات الاثبات</h4>
               {proofs.map((p, idx) => {
                 const atts = getAttachments(p);
+                const isDragging = dragOverProof === p;
+
                 return (
-                  <Form.Group className="mb-4" controlId={`proof-${idx}`} key={idx}>
-                    <Form.Label>{p}</Form.Label>
+                  <div
+                    key={idx}
+                    className={`border rounded p-3 mb-4 mt-3 ${isDragging ? 'drag-over' : ''}`}
+                    style={{ borderRight: '5px solid #ffffffff' }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverProof(p);
+                    }}
+                    onDragLeave={() => setDragOverProof(null)}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      const files = Array.from(e.dataTransfer.files);
+                      for (const file of files) {
+                        await uploadFile(p, file);
+                      }
+                      setDragOverProof(null);
+                    }}
+                  >
+                    <h6 className="fw-bold mb-3 text-primary">
+                      <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
+                    </h6>
+
+                    {atts.length === 0 && (
+                      <div className="text-muted mb-2">لا يوجد ملفات مرفوعة لهذا المستند.</div>
+                    )}
+
                     {atts.map(a => (
                       <div className="d-flex align-items-start mb-2" key={a.attachment_id}>
                         <div className="input-group flex-grow-1">
@@ -156,42 +185,35 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                           >
                             عرض
                           </a>
+                          {user?.role?.toLowerCase() === 'user' && (
+                            <Button
+                              variant="outline-danger"
+                              className="ms-2"
+                              size="sm"
+                              onClick={() => deleteFile(a.attachment_id)}
+                            >
+                              حذف
+                            </Button>
+                          )}
                         </div>
-                        {user?.role?.toLowerCase() === 'user' && (
-                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>
-                            حذف
-                          </Button>
-                        )}
                       </div>
                     ))}
+
                     {user?.role?.toLowerCase() === 'user' && (
-                      <>
-                        <div className="input-group">
-                          <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                          <Form.Control
-                            className="form-control"
-                            type="file"
-                            multiple
-                            onChange={e => handleFileChange(p, e.target.files)}
-                          />
-                          <Button
-                            variant="outline-primary"
-                            disabled={!files[p] || files[p].length === 0}
-                            onClick={() => sendFiles(p)}
-                          >
-                            رفع
-                          </Button>
-                        </div>
-                        {files[p] && files[p].length > 0 && (
-                          <ul className="small text-muted mt-2">
-                            {Array.from(files[p]).map((f, i) => (
-                              <li key={i}>{f.name}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </>
+                      <div className="mt-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleFileSelect(p)}
+                        >
+                          <i className="fas fa-upload me-1"></i> رفع ملفات
+                        </Button>
+                        <Form.Text className="text-muted d-block mt-1">
+                          يمكنك رفع ملف أو أكثر، أو سحبها وإفلاتها هنا.
+                        </Form.Text>
+                      </div>
                     )}
-                  </Form.Group>
+                  </div>
                 );
               })}
             </div>
@@ -200,16 +222,6 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
           )}
         </Modal.Body>
         <Modal.Footer>
-          {user?.role?.toLowerCase() === 'user' && (
-            <Button
-              variant="primary"
-              className="me-auto"
-              disabled={!hasFiles}
-              onClick={sendAllFiles}
-            >
-              رفع جميع الملفات المختارة
-            </Button>
-          )}
           {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
             <div className="me-auto">
               <Button variant="success" className="ms-2" onClick={approve}>معتمد</Button>
@@ -226,13 +238,26 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
         </Modal.Header>
         <Modal.Body>
           <Form.Group controlId="rejectReason">
-            <Form.Control as="textarea" rows={3} value={reason} onChange={e => setReason(e.target.value)} />
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+            />
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="danger" onClick={reject}>إرسال</Button>
         </Modal.Footer>
       </Modal>
+
+      <style>{`
+        .drag-over {
+          background-color: #f0f8ff;
+          border: 2px dashed #007bff;
+        }
+          
+      `}</style>
     </>
   );
 }
