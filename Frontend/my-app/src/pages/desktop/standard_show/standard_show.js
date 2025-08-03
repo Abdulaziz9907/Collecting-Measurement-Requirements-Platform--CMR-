@@ -9,7 +9,7 @@ export default function Standard_show() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [localFiles, setLocalFiles] = useState({});
+  const [files, setFiles] = useState({});
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -26,30 +26,37 @@ export default function Standard_show() {
 
   useEffect(() => { loadData(); }, [id]);
 
-  const saveFile = (proofName, file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      // Save file locally (base64 string)
-      localStorage.setItem(`standard-${id}-${proofName}`, e.target.result);
-    };
-    reader.readAsDataURL(file);
-    setLocalFiles(prev => ({ ...prev, [proofName]: file }));
+  const handleFileChange = (proofName, fileList) => {
+    setFiles(prev => ({ ...prev, [proofName]: fileList }));
   };
 
-  const uploadFile = async (proofName) => {
-    const file = localFiles[proofName];
-    if (!file) return;
+  const uploadFile = async (proofName, file) => {
     const form = new FormData();
     form.append('file', file);
     form.append('proofName', proofName);
     await fetch(`${API_BASE}/api/standards/${id}/attachments`, { method: 'POST', body: form });
     loadData();
-    localStorage.removeItem(`standard-${id}-${proofName}`);
-    setLocalFiles(prev => {
-      const { [proofName]: _, ...rest } = prev;
-      return rest;
-    });
+  };
+
+  const sendFiles = async proofName => {
+    const fileList = files[proofName];
+    if (!fileList) return;
+    for (const file of Array.from(fileList)) {
+      // eslint-disable-next-line no-await-in-loop
+      await uploadFile(proofName, file);
+    }
+    setFiles(prev => ({ ...prev, [proofName]: null }));
+  };
+
+  const sendAllFiles = async () => {
+    for (const [proofName, fileList] of Object.entries(files)) {
+      if (!fileList) continue;
+      for (const file of Array.from(fileList)) {
+        // eslint-disable-next-line no-await-in-loop
+        await uploadFile(proofName, file);
+      }
+    }
+    setFiles({});
   };
 
   const deleteFile = async (attId) => {
@@ -72,11 +79,12 @@ export default function Standard_show() {
     loadData();
   };
 
-  const getAttachment = name => attachments.find(a => a.proof_name === name);
+  const getAttachments = name => attachments.filter(a => a.proof_name === name);
 
   if (!standard) return <div dir="rtl"><Header /><div className="p-5">جاري التحميل...</div></div>;
 
   const proofs = (standard.proof_required || '').split(',').filter(Boolean);
+  const hasFiles = Object.values(files).some(f => f && f.length > 0);
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -124,25 +132,22 @@ export default function Standard_show() {
 
                   <hr />
                   {proofs.map((p, idx) => {
-                    const att = getAttachment(p);
+                    const atts = getAttachments(p);
                     return (
                       <div key={idx} className="mb-4">
-
-                        
                         <label className="form-label">{p}</label>
-                        {att ? (
-                          <div className="d-flex align-items-start">
+                        {atts.map(a => (
+                          <div className="d-flex align-items-start mb-2" key={a.attachment_id}>
                             <div className="input-group flex-grow-1">
                               <input
                                 className="form-control"
                                 type="text"
-                                value={att.filePath.split('/').pop()}
-                                aria-label="readonly input example"
+                                value={a.filePath.split('/').pop()}
                                 readOnly
                               />
                               <a
                                 className="btn btn-outline-secondary"
-                                href={`${API_BASE}/${att.filePath}`}
+                                href={`${API_BASE}/${a.filePath}`}
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -150,31 +155,53 @@ export default function Standard_show() {
                               </a>
                             </div>
                             {user?.role?.toLowerCase() === 'user' && (
-                              <button className="btn btn-outline-danger ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</button>
+                              <button className="btn btn-outline-danger ms-2" onClick={() => deleteFile(a.attachment_id)}>حذف</button>
                             )}
                           </div>
-                        ) : (
-                          user?.role?.toLowerCase() === 'user' && (
+                        ))}
+                        {user?.role?.toLowerCase() === 'user' && (
+                          <>
                             <div className="input-group">
                               <input
                                 className="form-control"
                                 type="file"
-                                onChange={e => saveFile(p, e.target.files[0])}
+                                multiple
+                                onChange={e => handleFileChange(p, e.target.files)}
                               />
                               <button
                                 className="btn btn-primary"
                                 type="button"
-                                disabled={!localFiles[p]}
-                                onClick={() => uploadFile(p)}
+                                disabled={!files[p] || files[p].length === 0}
+                                onClick={() => sendFiles(p)}
                               >
-                                رفع للسيرفر
+                                رفع
                               </button>
                             </div>
-                          )
+                            {files[p] && files[p].length > 0 && (
+                              <ul className="small text-muted mt-2">
+                                {Array.from(files[p]).map((f, i) => (
+                                  <li key={i}>{f.name}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </>
                         )}
                       </div>
                     );
                   })}
+
+                  {user?.role?.toLowerCase() === 'user' && (
+                    <div className="mb-3">
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        disabled={!hasFiles}
+                        onClick={sendAllFiles}
+                      >
+                        رفع جميع الملفات المختارة
+                      </button>
+                    </div>
+                  )}
 
                   {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
                     <div className="d-flex gap-2">

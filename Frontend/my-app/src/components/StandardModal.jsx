@@ -158,15 +158,38 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                           </a>
                         </div>
                         {user?.role?.toLowerCase() === 'user' && (
-                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>حذف</Button>
+                          <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>
+                            حذف
+                          </Button>
                         )}
                       </div>
                     ))}
                     {user?.role?.toLowerCase() === 'user' && (
-                      <div className="input-group">
-                        <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                        <Form.Control className="form-control" type="file" multiple onChange={e => handleFileChange(p, e.target.files)} />
-                      </div>
+                      <>
+                        <div className="input-group">
+                          <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                          <Form.Control
+                            className="form-control"
+                            type="file"
+                            multiple
+                            onChange={e => handleFileChange(p, e.target.files)}
+                          />
+                          <Button
+                            variant="outline-primary"
+                            disabled={!files[p] || files[p].length === 0}
+                            onClick={() => sendFiles(p)}
+                          >
+                            رفع
+                          </Button>
+                        </div>
+                        {files[p] && files[p].length > 0 && (
+                          <ul className="small text-muted mt-2">
+                            {Array.from(files[p]).map((f, i) => (
+                              <li key={i}>{f.name}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
                     )}
                   </Form.Group>
                 );
@@ -178,7 +201,14 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
         </Modal.Body>
         <Modal.Footer>
           {user?.role?.toLowerCase() === 'user' && (
-            <Button variant="primary" className="me-auto" disabled={!hasFiles} onClick={sendAllFiles}>إرسال</Button>
+            <Button
+              variant="primary"
+              className="me-auto"
+              disabled={!hasFiles}
+              onClick={sendAllFiles}
+            >
+              رفع جميع الملفات المختارة
+            </Button>
           )}
           {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
             <div className="me-auto">
