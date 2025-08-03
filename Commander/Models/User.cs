@@ -28,9 +28,7 @@ namespace Commander.Models
         [MaxLength(20)]
         public string? Email { get; set; }
 
-        // Increased to accommodate longer role names like "Management"
-        // Further expanded to ensure future roles are accommodated
-        // Extended again to avoid truncation errors when saving longer roles
+
         [MaxLength(50)]
         public required string Role { get; set; }
 

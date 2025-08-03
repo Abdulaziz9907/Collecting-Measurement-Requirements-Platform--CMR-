@@ -133,12 +133,14 @@ export default function Users() {
                           <th style={{ color: '#6c757d' }}>الاسم الأخير</th>
                           <th style={{ color: '#6c757d' }}>الدور</th>
                           <th style={{ color: '#6c757d' }}>الإدارة</th>
+                           {!isUser && <th style={{ color: '#6c757d' }}>تعديل</th>}
+                          {!isUser && <th style={{ color: '#6c757d' }}>حذف</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {loading ? (
                           <tr>
-                            <td colSpan={isUser ? 6 : 8} className="text-center py-5">
+                             <td colSpan={isUser ? 6 : 8} className="text-center py-5">
                               <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Loading...</span>
                               </div>
@@ -155,6 +157,16 @@ export default function Users() {
                               <td>{u.last_name}</td>
                               <td>{u.role}</td>
                               <td>{departments.find(d => d.department_id === u.department_id)?.department_name}</td>
+                               {!isUser && (
+                                <td>
+                                  <i className="fas fa-pen text-success" onClick={() => window.location.href = `/users_edit/${u.employee_id}`}></i>
+                                </td>
+                              )}
+                              {!isUser && (
+                                <td>
+                                  <i className="fas fa-times text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteUser(u.employee_id)}></i>
+                                </td>
+                              )}
                             </tr>
                           ))
                         )}
