@@ -14,7 +14,7 @@ import Departments_create from './pages/desktop/departments_create/departments_c
 import Users from './pages/desktop/users/users';
 import Users_create from './pages/desktop/users_create/users_create';
 import Users_edit from './pages/desktop/users_edit/users_edit';
-import Reports from './pages/desktop/reports/reports';
+import Report from './pages/desktop/reports/report';
 import Home from './pages/desktop/home/home'
 
 function App() {
@@ -42,7 +42,7 @@ function App() {
       <Route path="/users" element={user && allow(['admin','administrator']) ? <Users /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/users_create" element={user && allow(['admin','administrator']) ? <Users_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/users_edit/:id" element={user && allow(['admin','administrator']) ? <Users_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/reports" element={user && allow(['admin','administrator','management']) ? <Reports /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/reports" element={user && allow(['admin','administrator','management']) ? <Report /> : <Navigate to={user ? '/home' : '/'} replace />} />
     </Routes>
   );
 }
