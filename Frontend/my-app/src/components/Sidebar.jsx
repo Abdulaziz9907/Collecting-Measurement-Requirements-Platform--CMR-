@@ -106,7 +106,7 @@ export default function Sidebar() {
           boxShadow: sidebarVisible ? '4px 0 12px rgba(0,0,0,0.2)' : 'none',
         }}
       >
-        <ul className="navbar-nav mt-5 p-0 mt-5 w-100 ">
+        <ul className="navbar-nav p-0 mt-5 pt-4 w-100 ">
           {navItems.map((item, idx) => {
             const isActive =
               location.pathname.startsWith(item.href) && item.href !== '/'

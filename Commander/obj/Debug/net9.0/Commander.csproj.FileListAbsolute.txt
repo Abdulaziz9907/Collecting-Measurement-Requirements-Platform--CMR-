@@ -144,3 +144,7 @@ D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Deb
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\Commander.genruntimeconfig.cache
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\ref\Commander.dll
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\xi7j5a0zn1-uikamx3r78.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\dv4tmqnwdq-x3o1fimvps.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\r7k2sr33tg-x3o1fimvps.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\b0pcqabj7w-x3o1fimvps.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\ncvbsjk37z-x3o1fimvps.gz
