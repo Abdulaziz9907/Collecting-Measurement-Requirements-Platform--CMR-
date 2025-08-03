@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -24,7 +24,9 @@ export default function Standard_show() {
       .catch(() => setAttachments([]));
   };
 
-  useEffect(() => { loadData(); }, [id]);
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
   const uploadFile = async (proofName, file) => {
     const form = new FormData();
@@ -35,8 +37,8 @@ export default function Standard_show() {
   };
 
   const handleFileSelect = async (proofName, fileList) => {
+    if (!fileList) return;
     for (const file of Array.from(fileList)) {
-      // eslint-disable-next-line no-await-in-loop
       await uploadFile(proofName, file);
     }
     if (fileInputRefs.current[proofName]) {
@@ -48,6 +50,7 @@ export default function Standard_show() {
     await fetch(`${API_BASE}/api/standards/${id}/attachments/${attId}`, { method: 'DELETE' });
     loadData();
   };
+
   const approve = async () => {
     await fetch(`${API_BASE}/api/standards/${id}/approve`, { method: 'POST' });
     loadData();
@@ -66,7 +69,14 @@ export default function Standard_show() {
 
   const getAttachments = name => attachments.filter(a => a.proof_name === name);
 
-  if (!standard) return <div dir="rtl"><Header /><div className="p-5">جاري التحميل...</div></div>;
+  if (!standard) {
+    return (
+      <div dir="rtl">
+        <Header />
+        <div className="p-5">جاري التحميل...</div>
+      </div>
+    );
+  }
 
   const proofs = (standard.proof_required || '').split(',').filter(Boolean);
 
@@ -113,7 +123,6 @@ export default function Standard_show() {
                       <input className="form-control text-danger" type="text" value={standard.rejection_reason} readOnly />
                     </div>
                   )}
-
                   <hr />
                   {proofs.map((p, idx) => {
                     const atts = getAttachments(p);
@@ -164,7 +173,6 @@ export default function Standard_show() {
                       </div>
                     );
                   })}
-
                   {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
                     <div className="d-flex gap-2">
                       <button className="btn btn-success" onClick={approve}>معتمد</button>
