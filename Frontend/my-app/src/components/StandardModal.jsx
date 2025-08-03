@@ -107,13 +107,31 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
         <Modal.Body>
           {standard ? (
             <div style={{ fontFamily: 'Noto Sans Arabic' }}>
-              <p>رقم المعيار: {standard.standard_number}</p>
-              <p>اسم المعيار: {standard.standard_name}</p>
-              <p>الهدف: {standard.standard_goal}</p>
-              <p>متطلبات التطبيق: {standard.standard_requirments}</p>
-              <p>الحالة: {standard.status}</p>
+              <Form.Group className="mb-3">
+                <Form.Label>رقم المعيار</Form.Label>
+                <Form.Control type="text" value={standard.standard_number} readOnly />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>اسم المعيار</Form.Label>
+                <Form.Control type="text" value={standard.standard_name} readOnly />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>الهدف</Form.Label>
+                <Form.Control type="text" value={standard.standard_goal} readOnly />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>متطلبات التطبيق</Form.Label>
+                <Form.Control type="text" value={standard.standard_requirments} readOnly />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>الحالة</Form.Label>
+                <Form.Control type="text" value={standard.status} readOnly />
+              </Form.Group>
               {standard.rejection_reason && (
-                <p className="text-danger">سبب الرفض: {standard.rejection_reason}</p>
+                <Form.Group className="mb-3">
+                  <Form.Label className="text-danger">سبب الرفض</Form.Label>
+                  <Form.Control type="text" value={standard.rejection_reason} readOnly className="text-danger" />
+                </Form.Group>
               )}
               <hr />
               {proofs.map((p, idx) => {
@@ -124,7 +142,20 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
                     {atts.map(a => (
                       <div className="d-flex align-items-start mb-2" key={a.attachment_id}>
                         <div className="input-group flex-grow-1">
-                          <a className="form-control" href={`/${a.filePath}`} target="_blank" rel="noreferrer">{a.filePath.split('/').pop()}</a>
+                          <input
+                            className="form-control"
+                            type="text"
+                            value={a.filePath.split('/').pop()}
+                            readOnly
+                          />
+                          <a
+                            className="btn btn-outline-secondary"
+                            href={`${API_BASE}/${a.filePath}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            عرض
+                          </a>
                         </div>
                         {user?.role?.toLowerCase() === 'user' && (
                           <Button variant="outline-danger" className="ms-2" onClick={() => deleteFile(a.attachment_id)}>حذف</Button>

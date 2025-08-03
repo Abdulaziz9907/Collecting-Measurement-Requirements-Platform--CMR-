@@ -95,12 +95,32 @@ export default function Standard_show() {
                 <div className="col-md-1 col-xl-2" />
                 <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                   <h4>تفاصيل المعيار</h4>
-                  <p>رقم المعيار: {standard.standard_number}</p>
-                  <p>اسم المعيار: {standard.standard_name}</p>
-                  <p>الهدف: {standard.standard_goal}</p>
-                  <p>متطلبات التطبيق: {standard.standard_requirments}</p>
-                  <p>الحالة: {standard.status}</p>
-                  {standard.rejection_reason && <p className="text-danger">سبب الرفض: {standard.rejection_reason}</p>}
+                  <div className="mb-3">
+                    <label className="form-label">رقم المعيار</label>
+                    <input className="form-control" type="text" value={standard.standard_number} readOnly />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">اسم المعيار</label>
+                    <input className="form-control" type="text" value={standard.standard_name} readOnly />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">الهدف</label>
+                    <input className="form-control" type="text" value={standard.standard_goal} readOnly />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">متطلبات التطبيق</label>
+                    <input className="form-control" type="text" value={standard.standard_requirments} readOnly />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">الحالة</label>
+                    <input className="form-control" type="text" value={standard.status} readOnly />
+                  </div>
+                  {standard.rejection_reason && (
+                    <div className="mb-3">
+                      <label className="form-label text-danger">سبب الرفض</label>
+                      <input className="form-control text-danger" type="text" value={standard.rejection_reason} readOnly />
+                    </div>
+                  )}
 
                   <hr />
                   {proofs.map((p, idx) => {
@@ -116,11 +136,18 @@ export default function Standard_show() {
                               <input
                                 className="form-control"
                                 type="text"
-                                value={att.filePath}
+                                value={att.filePath.split('/').pop()}
                                 aria-label="readonly input example"
                                 readOnly
                               />
-                              <a className="btn btn-outline-secondary" href={`/${att.filePath}`} target="_blank" rel="noreferrer">عرض</a>
+                              <a
+                                className="btn btn-outline-secondary"
+                                href={`${API_BASE}/${att.filePath}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                عرض
+                              </a>
                             </div>
                             {user?.role?.toLowerCase() === 'user' && (
                               <button className="btn btn-outline-danger ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</button>
@@ -131,26 +158,15 @@ export default function Standard_show() {
                             <div className="input-group">
                               <input
                                 className="form-control"
-                                type="text"
-                                value={localFiles[p]?.name || ''}
-                                placeholder="لم يتم اختيار ملف"
-                                aria-label="readonly input example"
-                                readOnly
-                              />
-                              <button
-                                className="btn btn-outline-secondary"
-                                type="button"
-                                onClick={() => document.getElementById(`file-${idx}`).click()}
-                              >
-                                اختيار
-                              </button>
-                              <input
-                                id={`file-${idx}`}
                                 type="file"
-                                className="d-none"
                                 onChange={e => saveFile(p, e.target.files[0])}
                               />
-                              <button className="btn btn-primary" type="button" onClick={() => uploadFile(p)}>
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                disabled={!localFiles[p]}
+                                onClick={() => uploadFile(p)}
+                              >
                                 رفع للسيرفر
                               </button>
                             </div>
