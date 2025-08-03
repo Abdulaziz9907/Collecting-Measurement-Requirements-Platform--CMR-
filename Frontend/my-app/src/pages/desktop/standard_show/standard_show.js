@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -9,7 +9,7 @@ export default function Standard_show() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [files, setFiles] = useState({});
+  const fileInputRefs = useRef({});
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -26,10 +26,6 @@ export default function Standard_show() {
 
   useEffect(() => { loadData(); }, [id]);
 
-  const handleFileChange = (proofName, fileList) => {
-    setFiles(prev => ({ ...prev, [proofName]: fileList }));
-  };
-
   const uploadFile = async (proofName, file) => {
     const form = new FormData();
     form.append('file', file);
@@ -38,25 +34,14 @@ export default function Standard_show() {
     loadData();
   };
 
-  const sendFiles = async proofName => {
-    const fileList = files[proofName];
-    if (!fileList) return;
+  const handleFileSelect = async (proofName, fileList) => {
     for (const file of Array.from(fileList)) {
       // eslint-disable-next-line no-await-in-loop
       await uploadFile(proofName, file);
     }
-    setFiles(prev => ({ ...prev, [proofName]: null }));
-  };
-
-  const sendAllFiles = async () => {
-    for (const [proofName, fileList] of Object.entries(files)) {
-      if (!fileList) continue;
-      for (const file of Array.from(fileList)) {
-        // eslint-disable-next-line no-await-in-loop
-        await uploadFile(proofName, file);
-      }
+    if (fileInputRefs.current[proofName]) {
+      fileInputRefs.current[proofName].value = '';
     }
-    setFiles({});
   };
 
   const deleteFile = async (attId) => {
@@ -84,7 +69,6 @@ export default function Standard_show() {
   if (!standard) return <div dir="rtl"><Header /><div className="p-5">جاري التحميل...</div></div>;
 
   const proofs = (standard.proof_required || '').split(',').filter(Boolean);
-  const hasFiles = Object.values(files).some(f => f && f.length > 0);
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -161,47 +145,25 @@ export default function Standard_show() {
                         ))}
                         {user?.role?.toLowerCase() === 'user' && (
                           <>
-                            <div className="input-group">
-                              <input
-                                className="form-control"
-                                type="file"
-                                multiple
-                                onChange={e => handleFileChange(p, e.target.files)}
-                              />
-                              <button
-                                className="btn btn-primary"
-                                type="button"
-                                disabled={!files[p] || files[p].length === 0}
-                                onClick={() => sendFiles(p)}
-                              >
-                                رفع
-                              </button>
-                            </div>
-                            {files[p] && files[p].length > 0 && (
-                              <ul className="small text-muted mt-2">
-                                {Array.from(files[p]).map((f, i) => (
-                                  <li key={i}>{f.name}</li>
-                                ))}
-                              </ul>
-                            )}
+                            <input
+                              type="file"
+                              multiple
+                              ref={el => { fileInputRefs.current[p] = el; }}
+                              style={{ display: 'none' }}
+                              onChange={e => handleFileSelect(p, e.target.files)}
+                            />
+                            <button
+                              className="btn btn-primary mt-2"
+                              type="button"
+                              onClick={() => fileInputRefs.current[p]?.click()}
+                            >
+                              رفع ملف
+                            </button>
                           </>
                         )}
                       </div>
                     );
                   })}
-
-                  {user?.role?.toLowerCase() === 'user' && (
-                    <div className="mb-3">
-                      <button
-                        className="btn btn-primary"
-                        type="button"
-                        disabled={!hasFiles}
-                        onClick={sendAllFiles}
-                      >
-                        رفع جميع الملفات المختارة
-                      </button>
-                    </div>
-                  )}
 
                   {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
                     <div className="d-flex gap-2">
