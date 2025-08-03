@@ -223,15 +223,19 @@ export default function StandardModal({ show, onHide, standardId, onUpdated }) {
             <div className="text-center py-5">جاري التحميل...</div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          {user?.role?.toLowerCase() !== 'user' && hasAllProofs && (
-            <div className="me-auto">
-              <Button variant="success" className="ms-2" onClick={approve}>معتمد</Button>
-              <Button variant="danger" onClick={() => setShowReject(true)}>غير معتمد</Button>
-            </div>
-          )}
-          <Button variant="secondary" onClick={onHide}>إغلاق</Button>
-        </Modal.Footer>
+<Modal.Footer>
+  <div className="d-flex justify-content-between w-100">
+    {user?.role?.toLowerCase() !== 'user' && hasAllProofs && (
+      <div className="d-flex">
+        <Button variant="success"  onClick={approve}>معتمد</Button>
+        <Button variant="danger" className="ms-2" onClick={() => setShowReject(true)}>غير معتمد</Button>
+      </div>
+    )}
+
+    <Button variant="secondary" onClick={onHide}>إغلاق</Button>
+  </div>
+</Modal.Footer>
+
       </Modal>
 
       <Modal show={showReject} onHide={() => setShowReject(false)} centered dir="rtl">
