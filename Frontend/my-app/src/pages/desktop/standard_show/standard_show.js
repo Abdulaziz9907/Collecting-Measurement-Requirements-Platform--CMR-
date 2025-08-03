@@ -9,8 +9,8 @@ export default function Standard_show() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
-  const [sidebarVisible, setSidebarVisible] = useState(false);
   const fileInputRefs = useRef({});
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const loadData = () => {
@@ -24,7 +24,9 @@ export default function Standard_show() {
       .catch(() => setAttachments([]));
   };
 
-  useEffect(() => { loadData(); }, [id]);
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
   const uploadFile = async (proofName, file) => {
     const form = new FormData();
@@ -34,10 +36,9 @@ export default function Standard_show() {
     loadData();
   };
 
-  const handleSelectFiles = async (proofName, fileList) => {
+  const handleFileSelect = async (proofName, fileList) => {
     if (!fileList) return;
     for (const file of Array.from(fileList)) {
-      // eslint-disable-next-line no-await-in-loop
       await uploadFile(proofName, file);
     }
     if (fileInputRefs.current[proofName]) {
@@ -49,6 +50,7 @@ export default function Standard_show() {
     await fetch(`${API_BASE}/api/standards/${id}/attachments/${attId}`, { method: 'DELETE' });
     loadData();
   };
+
   const approve = async () => {
     await fetch(`${API_BASE}/api/standards/${id}/approve`, { method: 'POST' });
     loadData();
@@ -67,7 +69,14 @@ export default function Standard_show() {
 
   const getAttachments = name => attachments.filter(a => a.proof_name === name);
 
-  if (!standard) return <div dir="rtl"><Header /><div className="p-5">جاري التحميل...</div></div>;
+  if (!standard) {
+    return (
+      <div dir="rtl">
+        <Header />
+        <div className="p-5">جاري التحميل...</div>
+      </div>
+    );
+  }
 
   const proofs = (standard.proof_required || '').split(',').filter(Boolean);
 
@@ -114,7 +123,6 @@ export default function Standard_show() {
                       <input className="form-control text-danger" type="text" value={standard.rejection_reason} readOnly />
                     </div>
                   )}
-
                   <hr />
                   {proofs.map((p, idx) => {
                     const atts = getAttachments(p);
@@ -149,9 +157,9 @@ export default function Standard_show() {
                             <input
                               type="file"
                               multiple
+                              ref={el => { fileInputRefs.current[p] = el; }}
                               style={{ display: 'none' }}
-                              ref={el => (fileInputRefs.current[p] = el)}
-                              onChange={e => handleSelectFiles(p, e.target.files)}
+                              onChange={e => handleFileSelect(p, e.target.files)}
                             />
                             <button
                               className="btn btn-primary mt-2"
@@ -165,7 +173,6 @@ export default function Standard_show() {
                       </div>
                     );
                   })}
-
                   {user?.role?.toLowerCase() !== 'user' && proofs.length === attachments.length && (
                     <div className="d-flex gap-2">
                       <button className="btn btn-success" onClick={approve}>معتمد</button>
