@@ -9,6 +9,7 @@ export default function Standard_show() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const [standard, setStandard] = useState(null);
   const [attachments, setAttachments] = useState([]);
+  const [localFiles, setLocalFiles] = useState({});
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -25,12 +26,30 @@ export default function Standard_show() {
 
   useEffect(() => { loadData(); }, [id]);
 
-  const uploadFile = async (proofName, file) => {
+  const saveFile = (proofName, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Save file locally (base64 string)
+      localStorage.setItem(`standard-${id}-${proofName}`, e.target.result);
+    };
+    reader.readAsDataURL(file);
+    setLocalFiles(prev => ({ ...prev, [proofName]: file }));
+  };
+
+  const uploadFile = async (proofName) => {
+    const file = localFiles[proofName];
+    if (!file) return;
     const form = new FormData();
     form.append('file', file);
     form.append('proofName', proofName);
     await fetch(`${API_BASE}/api/standards/${id}/attachments`, { method: 'POST', body: form });
     loadData();
+    localStorage.removeItem(`standard-${id}-${proofName}`);
+    setLocalFiles(prev => {
+      const { [proofName]: _, ...rest } = prev;
+      return rest;
+    });
   };
 
   const deleteFile = async (attId) => {
@@ -92,22 +111,51 @@ export default function Standard_show() {
                         
                         <label className="form-label">{p}</label>
                         {att ? (
-                       <div className="d-flex align-items-start">
+                          <div className="d-flex align-items-start">
                             <div className="input-group flex-grow-1">
-                              <a className="form-control" href={`/${att.filePath}`} target="_blank" rel="noreferrer">الملف الحالي</a>
+                              <input
+                                className="form-control"
+                                type="text"
+                                value={att.filePath}
+                                aria-label="readonly input example"
+                                readOnly
+                              />
+                              <a className="btn btn-outline-secondary" href={`/${att.filePath}`} target="_blank" rel="noreferrer">عرض</a>
                             </div>
                             {user?.role?.toLowerCase() === 'user' && (
                               <button className="btn btn-outline-danger ms-2" onClick={() => deleteFile(att.attachment_id)}>حذف</button>
                             )}
                           </div>
                         ) : (
-                           user?.role?.toLowerCase() === 'user' && (
+                          user?.role?.toLowerCase() === 'user' && (
                             <div className="input-group">
-                              <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                          <input type="file" className="form-control" onChange={e => uploadFile(p, e.target.files[0])} />
-                       </div>
+                              <input
+                                className="form-control"
+                                type="text"
+                                value={localFiles[p]?.name || ''}
+                                placeholder="لم يتم اختيار ملف"
+                                aria-label="readonly input example"
+                                readOnly
+                              />
+                              <button
+                                className="btn btn-outline-secondary"
+                                type="button"
+                                onClick={() => document.getElementById(`file-${idx}`).click()}
+                              >
+                                اختيار
+                              </button>
+                              <input
+                                id={`file-${idx}`}
+                                type="file"
+                                className="d-none"
+                                onChange={e => saveFile(p, e.target.files[0])}
+                              />
+                              <button className="btn btn-primary" type="button" onClick={() => uploadFile(p)}>
+                                رفع للسيرفر
+                              </button>
+                            </div>
                           )
-                           )}
+                        )}
                       </div>
                     );
                   })}
