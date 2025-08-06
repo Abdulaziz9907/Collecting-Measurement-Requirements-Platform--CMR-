@@ -8,16 +8,13 @@ jest.mock('react-router-dom', () => ({
 
 import Login from './pages/desktop/login/login';
 import { MemoryRouter } from 'react-router-dom';
-import { ThemeProvider } from './ThemeContext';
 
-  test('renders login button', () => {
-    render(
-      <MemoryRouter>
-        <ThemeProvider>
-          <Login />
-        </ThemeProvider>
-      </MemoryRouter>
-    );
-    const button = screen.getByRole('button', { name: /دخول/i });
-    expect(button).toBeInTheDocument();
-  });
+test('renders login button', () => {
+  render(
+    <MemoryRouter>
+      <Login />
+    </MemoryRouter>
+  );
+  const button = screen.getByRole('button', { name: /دخول/i });
+  expect(button).toBeInTheDocument();
+});

@@ -5,8 +5,6 @@ import './pages/desktop/standards_create/assets/fonts/fontawesome-all.min.css';
 import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { ThemeProvider } from './ThemeContext';
-
 import { BrowserRouter } from 'react-router-dom';
 
 import reportWebVitals from './reportWebVitals';
@@ -15,9 +13,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );
