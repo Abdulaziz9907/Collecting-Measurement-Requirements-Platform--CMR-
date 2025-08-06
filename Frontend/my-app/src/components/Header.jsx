@@ -15,6 +15,8 @@ const Header = () => {
             src="/assets/img/logo_color.png"
             alt="Logo"
             className="img-fluid"
+            loading="eager"
+            fetchpriority="high"
             style={{ width: '170px', objectFit: 'contain' }}
           />
           <div className="d-flex flex-column justify-content-center">
