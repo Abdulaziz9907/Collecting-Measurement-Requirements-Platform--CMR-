@@ -21,6 +21,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import Footer from '../../../components/Footer.jsx';
 
 ChartJS.register(
   CategoryScale,
@@ -43,6 +44,8 @@ export default function Report() {
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
+
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const [totals, setTotals] = useState({
     total: 0,
@@ -296,9 +299,11 @@ export default function Report() {
                 <button className="btn btn-outline-danger" onClick={exportToPDF}>
                   <i className="fas fa-file-pdf ms-1"></i> تصدير PDF
                 </button>
-                <button className="btn btn-outline-success" onClick={exportToExcel}>
-                  <i className="fas fa-file-excel ms-1"></i> تصدير Excel
-                </button>
+                {['admin','administrator'].includes(user?.role?.toLowerCase()) && (
+                  <button className="btn btn-outline-success" onClick={exportToExcel}>
+                    <i className="fas fa-file-excel ms-1"></i> تصدير Excel
+                  </button>
+                )}
               </div>
 
               {/* Department Dropdown */}
@@ -407,6 +412,7 @@ export default function Report() {
             </>
           )}
         </div>
+        <Footer />
       </div>
     </div>
   );

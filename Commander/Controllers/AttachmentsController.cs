@@ -55,9 +55,18 @@ namespace Commander.Controllers
             _repository.AddAttachment(attachment);
             _repository.SaveChanges();
 
-            var count = _repository.GetAttachmentsByStandard(standardId).Count();
-            var required = (standard.Proof_required ?? "").Split(',', System.StringSplitOptions.RemoveEmptyEntries).Length;
-            if (count >= required && required > 0)
+            var attachments = _repository.GetAttachmentsByStandard(standardId);
+            var requiredProofs = (standard.Proof_required ?? "")
+                .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .ToArray();
+
+            bool allProofsHaveFiles = requiredProofs.All(rp =>
+                attachments.Any(a => a.Proof_name == rp));
+
+            if (!attachments.Any())
+                standard.Status = "لم يبدأ";
+            else if (allProofsHaveFiles && requiredProofs.Length > 0)
                 standard.Status = "مكتمل";
             else
                 standard.Status = "تحت العمل";
@@ -77,15 +86,22 @@ namespace Commander.Controllers
             var standard = _standardRepo.GetStandardById(standardId);
             if (standard != null)
             {
-                var remaining = _repository.GetAttachmentsByStandard(standardId).Count();
-                if (remaining == 0)
+                var attachments = _repository.GetAttachmentsByStandard(standardId);
+                if (!attachments.Any())
                 {
                     standard.Status = "لم يبدأ";
                 }
                 else
                 {
-                    var required = (standard.Proof_required ?? "").Split(',', System.StringSplitOptions.RemoveEmptyEntries).Length;
-                    if (remaining >= required && required > 0)
+                    var requiredProofs = (standard.Proof_required ?? "")
+                        .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .ToArray();
+
+                    bool allProofsHaveFiles = requiredProofs.All(rp =>
+                        attachments.Any(a => a.Proof_name == rp));
+
+                    if (allProofsHaveFiles && requiredProofs.Length > 0)
                         standard.Status = "مكتمل";
                     else
                         standard.Status = "تحت العمل";

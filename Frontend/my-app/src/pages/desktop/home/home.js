@@ -4,6 +4,8 @@ import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
+import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import Footer from '../../../components/Footer.jsx';
 
 
 
@@ -33,7 +35,7 @@ export default function Standards_menu() {
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-md-12">
-                  <h4>الرئيسية / إدارة المعايير</h4>
+                  <Breadcrumbs />
                 </div>
               </div>
               <div className="row">
@@ -47,13 +49,7 @@ export default function Standards_menu() {
             </div>
           </div>
 
-          <footer className="bg-white sticky-footer">
-            <div className="container my-auto">
-              <div className="text-center my-auto">
-                <span>© RCJY 2025</span>
-              </div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
     </div>

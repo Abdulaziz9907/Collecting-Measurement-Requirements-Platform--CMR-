@@ -4,6 +4,7 @@ import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import Footer from '../../../components/Footer.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export default function Departments_edit() {
@@ -138,13 +139,7 @@ export default function Departments_edit() {
               </div>
             </div>
           </div>
-          <footer className="bg-white sticky-footer">
-            <div className="container my-auto">
-              <div className="text-center my-auto">
-                <span>© RCJY 2025</span>
-              </div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
     </div>

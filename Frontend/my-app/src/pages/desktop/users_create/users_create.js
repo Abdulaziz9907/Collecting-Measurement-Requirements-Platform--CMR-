@@ -4,6 +4,7 @@ import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import Footer from '../../../components/Footer.jsx';
 
 export default function Users_create() {
   const [validated, setValidated] = useState(false);
@@ -162,11 +163,7 @@ export default function Users_create() {
               </div>
             </div>
           </div>
-          <footer className="bg-white sticky-footer">
-            <div className="container my-auto">
-              <div className="text-center my-auto"><span>© RCJY 2025</span></div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
     </div>
