@@ -1,4 +1,4 @@
-.absolute-image {
+/* .absolute-image {
     position: absolute;
     top: 424px;
     left: 0;
@@ -10,7 +10,7 @@
 .box {
     width: 1px;
     height: 56px;
-    background: #AAAAAA;
+    background: #ffffff;
 }
 
 .button {
@@ -24,7 +24,7 @@
     margin: 0 auto;
     width: 100%;
     max-width: 360px;
-    box-shadow: 0px 10px 20px #CAD6FF;
+    box-shadow: 0px 10px 20px #ffffff;
     text-align: center;
 }
 
@@ -282,4 +282,4 @@
     font-weight: bold;
     margin-top: 10px;
     text-align: center;
-}
+} */

@@ -6,6 +6,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import StandardModal from '../../../components/StandardModal.jsx';
+import * as XLSX from 'xlsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -98,6 +99,20 @@ export default function Standards() {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
+  const exportToExcel = () => {
+    const exportData = filteredData.map(item => ({
+      'رقم المعيار': item.standard_number,
+      'اسم المعيار': item.standard_name,
+      'الإدارة': item.department?.department_name || '',
+      'الحالة': item.status,
+      'تاريخ الإنشاء': new Date(item.created_at).toLocaleDateString()
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'المعايير');
+    XLSX.writeFile(workbook, 'المعايير.xlsx');
+  };
+
   return (
     <>
       <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -170,6 +185,7 @@ export default function Standards() {
                             </Dropdown.Menu>
                           </Dropdown>
 
+                          <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
                           <a className="btn btn-outline-success btn-sm" href="/standards_create">إضافة معيار</a>
                         </>
                       )}
