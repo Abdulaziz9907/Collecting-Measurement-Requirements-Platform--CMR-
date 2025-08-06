@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import "./assets/bootstrap/css/bootstrap.min.css";
 import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
@@ -21,7 +21,10 @@ export default function Standards_menu() {
   });
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = useMemo(
+    () => JSON.parse(localStorage.getItem('user') || 'null'),
+    []
+  );
 
   useEffect(() => {
     fetch(`${API_BASE}/api/standards`)
@@ -99,27 +102,15 @@ export default function Standards_menu() {
                   <Breadcrumbs />
                 </div>
               </div>
-              <div className="row">
-                <div className="col-md-1 col-xl-2" />
-                <div
-                  className="col-md-10 col-xl-8 p-4 my-3 bg-white"
-                  style={{
-                    borderTop: '3px solid #4F7689',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  <div className="row mb-4">
-                    {summaryCards.map((b, i) => (
-                      <div className="col-md-2 col-sm-4 mb-3" key={i}>
-                        <div className="bg-white text-center p-3 border rounded shadow-sm">
-                          <h5>{b.value.toLocaleString()}</h5>
-                          <small className="text-muted">{b.title}</small>
-                        </div>
-                      </div>
-                    ))}
+              <div className="row mb-4">
+                {summaryCards.map((b, i) => (
+                  <div className="col-md-2 col-sm-4 mb-3" key={i}>
+                    <div className="bg-white text-center p-3 border rounded shadow-sm">
+                      <h5>{b.value.toLocaleString()}</h5>
+                      <small className="text-muted">{b.title}</small>
+                    </div>
                   </div>
-                </div>
-                <div className="col-md-1 col-xl-2" />
+                ))}
               </div>
             </div>
           </div>

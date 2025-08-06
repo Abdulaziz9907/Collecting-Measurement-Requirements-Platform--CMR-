@@ -224,7 +224,7 @@ export default function Login({ onLogin }) {
       <div className="d-flex flex-column min-vh-100">
         <Header />
         <div className="video-background">
-          <video autoPlay muted loop playsInline>
+          <video autoPlay muted loop playsInline preload="auto">
             <source src="/assets/loop2.mp4" type="video/mp4" />
           </video>
           <div className="video-overlay"></div>
