@@ -18,8 +18,6 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
 
@@ -128,7 +126,6 @@ export default function Report() {
           if (!monthly[key]) monthly[key] = 0;
           monthly[key]++;
         });
-
         const sortedKeys = Object.keys(monthly).sort();
         setMonthlyProgress(
           sortedKeys.map((m) => ({ month: m, count: monthly[m] }))
@@ -153,7 +150,6 @@ export default function Report() {
         { key: 'notStarted', title: 'لم يبدأ', value: totals.notStarted }
       ];
     }
-
     const combined = {
       total: 0,
       completed: 0,
@@ -162,7 +158,6 @@ export default function Report() {
       underWork: 0,
       notStarted: 0
     };
-
     filteredStats.forEach((d) => {
       combined.total += d.total;
       combined.completed += d.completed;
@@ -171,7 +166,6 @@ export default function Report() {
       combined.underWork += d.underWork;
       combined.notStarted += d.notStarted;
     });
-
     return [
       { key: 'total', title: 'مجموع المعايير', value: combined.total },
       { key: 'completed', title: 'معايير مكتملة', value: combined.completed },
@@ -196,6 +190,14 @@ export default function Report() {
     underWork: '#ffc107',
     notStarted: '#6c757d'
   };
+  const summaryCardColors = {
+    total: '#0d6efd',
+    completed: statusColors.completed,
+    approved: statusColors.approved,
+    rejected: statusColors.rejected,
+    underWork: statusColors.underWork,
+    notStarted: statusColors.notStarted
+  };
 
   const pieData = {
     labels: summaryData.filter((s) => s.key !== 'total').map((s) => s.title),
@@ -206,7 +208,8 @@ export default function Report() {
           .map((s) => s.value),
         backgroundColor: summaryData
           .filter((s) => s.key !== 'total')
-          .map((s) => statusColors[s.key] || '#ccc')
+          .map((s) => summaryCardColors[s.key] || '#ccc'),
+        borderWidth: 1
       }
     ]
   };
@@ -236,32 +239,6 @@ export default function Report() {
     ]
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('تقرير الإدارات', 105, 15, { align: 'center' });
-
-    const tableData = filteredStats.map((d) => [
-      d.department,
-      d.total,
-      d.completed,
-      d.approved,
-      d.rejected,
-      d.underWork,
-      d.notStarted,
-      `${d.progressRate}%`
-    ]);
-
-    autoTable(doc, {
-      startY: 25,
-      head: [['الإدارة', 'المجموع', 'مكتمل', 'معتمد', 'غير معتمد', 'تحت العمل', 'لم يبدأ', 'نسبة التقدم']],
-      body: tableData,
-      theme: 'grid'
-    });
-
-    doc.save('تقرير_الإدارات.pdf');
-  };
-
   const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
       filteredStats.map((d) => ({
@@ -285,32 +262,28 @@ export default function Report() {
       <Header />
       <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="container-fluid p-4">
+        <div className="container px-3 px-md-4 py-4 mx-auto" style={{ maxWidth: '100%' }}>
           <Breadcrumbs />
-
           {loading ? (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
               <Spinner animation="border" variant="primary" />
             </div>
           ) : (
             <>
-              {/* Export Buttons */}
-              <div className="mb-3 d-flex gap-2">
-                <button className="btn btn-outline-danger" onClick={exportToPDF}>
-                  <i className="fas fa-file-pdf ms-1"></i> تصدير PDF
-                </button>
-                {['admin','administrator'].includes(user?.role?.toLowerCase()) && (
+              {/* Export + Filter Dropdown */}
+              <div className="mb-3 d-flex flex-wrap gap-2">
+                {['admin', 'administrator'].includes(user?.role?.toLowerCase()) && (
                   <button className="btn btn-outline-success" onClick={exportToExcel}>
                     <i className="fas fa-file-excel ms-1"></i> تصدير Excel
                   </button>
                 )}
               </div>
 
-              {/* Department Dropdown */}
               <div className="row mb-3">
-                <div className="col-md-6 position-relative">
+                
+                <div className="col-md-6">
                   <Dropdown show={dropdownOpen} onToggle={() => setDropdownOpen(!dropdownOpen)}>
-                    <Dropdown.Toggle className=" text-end" variant="outline-secondary">
+                    <Dropdown.Toggle className="text-end" variant="outline-secondary">
                       {selectedDepartments.length === 0
                         ? 'كل الإدارات'
                         : `عدد الإدارات المختارة: ${selectedDepartments.length}`}
@@ -356,56 +329,96 @@ export default function Report() {
               </div>
 
               {/* Summary Cards */}
-              <div className="row mb-4">
+              <div className="row g-3 mb-4 justify-content-center">
                 {summaryData.map((b, i) => (
-                  <div className="col-md-2 col-sm-4 mb-3" key={i}>
-                    <div className="bg-white text-center p-3 border rounded shadow-sm">
-                      <h5>{b.value.toLocaleString()}</h5>
-                      <small className="text-muted">{b.title}</small>
+                  <div className="col-lg-2 col-md-4 col-6" key={i}>
+                    <div className="p-3 rounded text-white text-center shadow-sm h-100" style={{ backgroundColor: summaryCardColors[b.key] }}>
+                      <h5 className="fw-bold mb-1">{b.value.toLocaleString()}</h5>
+                      <small>{b.title}</small>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Charts */}
-              <div className="row mb-4">
+              <div className="row g-4 mb-4 justify-content-center">
                 <div className="col-md-6">
-                  <div className="bg-white p-3 rounded shadow-sm">
-                    <h6 className="mb-2">نسبة تقدم الإدارات</h6>
-                    <Bar
-                      data={barChartData}
-                      height={150}
-                      options={{
-                        indexAxis: 'y',
-                        scales: {
-                          x: {
-                            min: 0,
-                            max: 100,
-                            title: {
-                              display: true,
-                              text: 'نسبة التقدم (%)'
+                  <div className="bg-white p-3 rounded shadow-sm h-100">
+                    <h6 className="mb-3">نسبة تقدم الإدارات</h6>
+                    <div style={{ height: '250px' }}>
+                      <Bar
+                        data={barChartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          indexAxis: 'y',
+                          scales: {
+                            x: {
+                              min: 0,
+                              max: 100,
+                              title: { display: true, text: 'نسبة التقدم (%)' },
+                              grid: { display: false }
+                            },
+                            y: { grid: { display: false } }
+                          },
+                          plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                              callbacks: {
+                                label: (ctx) => `${ctx.parsed.x}%`
+                              }
                             }
                           }
-                        }
-                      }}
-                    />
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
+
                 <div className="col-md-6">
-                  <div className="bg-white p-3 rounded shadow-sm text-center">
-                    <h6 className="mb-2">توزيع الحالات</h6>
-                    <div style={{ maxWidth: '250px', margin: '0 auto' }}>
-                      <Pie data={pieData} />
+                  <div className="bg-white p-3 rounded shadow-sm h-100">
+                    <h6 className="mb-3 text-center">توزيع الحالات</h6>
+                    <div style={{ height: '250px' }} className="mx-auto">
+                      <Pie
+                        data={pieData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { position: 'bottom' }
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="row mb-4">
-                <div className="col-md-12">
+              <div className="row g-4 mb-4">
+                <div className="col-12">
                   <div className="bg-white p-3 rounded shadow-sm">
-                    <h6 className="mb-2">مقدار التقدم الشهري</h6>
-                    <Line data={lineChartData} height={100} />
+                    <h6 className="mb-3">مقدار التقدم الشهري</h6>
+                    <div style={{ height: '300px' }}>
+                      <Line
+                        data={lineChartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            x: { grid: { display: false } },
+                            y: { beginAtZero: true, grid: { drawBorder: false } }
+                          },
+                          plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                              callbacks: {
+                                label: (ctx) => `${ctx.parsed.y}`
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -413,8 +426,16 @@ export default function Report() {
           )}
         </div>
       </div>
-              <Footer />
+      <Footer />
 
+      <style>{`
+        @media (min-width: 600px) and (max-width: 1650px) {
+          #wrapper .container {
+            max-width: 70% !important;
+            margin: 0 auto;
+          }
+        }
+      `}</style>
     </div>
   );
 }

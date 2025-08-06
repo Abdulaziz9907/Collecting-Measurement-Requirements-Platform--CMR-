@@ -224,8 +224,16 @@ export default function Login({ onLogin }) {
       <div className="d-flex flex-column min-vh-100">
         <Header />
         <div className="video-background">
-          <video autoPlay muted loop playsInline preload="auto">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/assets/loop2-fallback.jpg" // Optional: add a JPG fallback image
+          >
             <source src="/assets/loop2.mp4" type="video/mp4" />
+            المتصفح لا يدعم عرض الفيديو.
           </video>
           <div className="video-overlay"></div>
 
