@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faList,
@@ -115,9 +115,9 @@ export default function Sidebar() {
 
             return (
               <li className="nav-item p-0 m-0 " key={idx}>
-                <a
+                <Link
                   className={`sidebar-link-mobile ${isActive ? 'active' : ''} `}
-                  href={item.href}
+                  to={item.href}
                   onClick={() => {
                     setSidebarVisible(false);
                     item.onClick && item.onClick();
@@ -125,7 +125,7 @@ export default function Sidebar() {
                 >
                   <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                   <span className="me-2">{item.label}</span>
-                </a>
+                </Link>
               </li>
             );
           })}
@@ -148,16 +148,16 @@ export default function Sidebar() {
 
               return (
                 <li className="nav-item" key={idx}>
-                  <a
+                  <Link
                     className={`nav-link d-flex align-items-center sidebar-link ${
                       isActive ? 'active' : ''
                     }`}
-                    href={item.href}
+                    to={item.href}
                     onClick={() => item.onClick && item.onClick()}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                     <span className="me-2" style={{ fontSize: '15px' }}>{item.label}</span>
-                  </a>
+                  </Link>
                 </li>
               );
             })}

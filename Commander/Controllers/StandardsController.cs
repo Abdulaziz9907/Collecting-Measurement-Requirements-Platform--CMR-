@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Commander.Data;
 using Commander.Dtos;
 using Commander.Models;
@@ -11,16 +12,23 @@ namespace Commander.Controllers
     public class StandardsController : ControllerBase
     {
         private readonly IStandardRepo _repository;
+        private readonly IAttachmentRepo _attachmentRepo;
 
-        public StandardsController(IStandardRepo repository)
+        public StandardsController(IStandardRepo repository, IAttachmentRepo attachmentRepo)
         {
             _repository = repository;
+            _attachmentRepo = attachmentRepo;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<Standard>> GetAll()
         {
-            var items = _repository.GetAllStandards();
+            var items = _repository.GetAllStandards().ToList();
+            foreach (var s in items)
+            {
+                ValidateStatus(s);
+            }
+            _repository.SaveChanges();
             return Ok(items);
         }
 
@@ -32,6 +40,8 @@ namespace Commander.Controllers
             {
                 return NotFound();
             }
+            ValidateStatus(item);
+            _repository.SaveChanges();
             return Ok(item);
         }
 
@@ -115,6 +125,32 @@ namespace Commander.Controllers
             _repository.UpdateStandard(existing);
             _repository.SaveChanges();
             return NoContent();
+        }
+
+        private void ValidateStatus(Standard standard)
+        {
+            if (standard.Status == "معتمد" || standard.Status == "غير معتمد")
+                return;
+
+            var attachments = _attachmentRepo.GetAttachmentsByStandard(standard.Standard_id);
+            var requiredProofs = (standard.Proof_required ?? "")
+                .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .ToArray();
+
+            string newStatus;
+            if (!attachments.Any())
+                newStatus = "لم يبدأ";
+            else if (requiredProofs.Length > 0 && requiredProofs.All(rp => attachments.Any(a => a.Proof_name == rp)))
+                newStatus = "مكتمل";
+            else
+                newStatus = "تحت العمل";
+
+            if (standard.Status != newStatus)
+            {
+                standard.Status = newStatus;
+                _repository.UpdateStandard(standard);
+            }
         }
     }
 }
