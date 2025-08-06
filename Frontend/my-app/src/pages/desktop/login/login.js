@@ -8,6 +8,7 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
@@ -57,10 +58,17 @@ export default function Login({ onLogin }) {
           --text-color: #343a40;
         }
 
-        @keyframes gradientShine {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 100% 50%; }
-        }
+      @keyframes gradientShine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
 
         .video-background {
           position: relative;
@@ -68,13 +76,19 @@ export default function Login({ onLogin }) {
           overflow: hidden;
         }
 
-        .video-background video {
+        .login-video {
           position: absolute;
           top: 0; left: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
           z-index: 0;
+          opacity: 0;
+          transition: opacity 1s ease-in-out;
+        }
+
+        .video-loaded {
+          opacity: 1;
         }
 
         .video-overlay {
@@ -108,15 +122,15 @@ export default function Login({ onLogin }) {
         }
 
         .card-header-custom {
-          position: relative;
-          background: linear-gradient(-45deg, #667eea, #764ba2, #667eea);
-          background-size: 300% 300%;
-          color: white;
-          text-align: center;
-          padding: 2.5rem 2rem 2rem;
-          animation: gradientShine 6s ease infinite;
-          border-bottom: 1px solid rgba(255,255,255,0.15);
-        }
+  position: relative;
+  background: linear-gradient(-45deg, #667eea, #39076bff, #667eea);
+  background-size: 400% 400%;
+  color: white;
+  text-align: center;
+  padding: 2.5rem 2rem 2rem;
+  animation: gradientShine 6s ease-in-out infinite alternate;
+  border-bottom: 1px solid rgba(231, 224, 224, 0.15);
+}
 
         .card-body-custom {
           padding: 2rem 2.5rem 2.5rem;
@@ -223,14 +237,16 @@ export default function Login({ onLogin }) {
 
       <div className="d-flex flex-column min-vh-100">
         <Header />
-        <div className="video-background">
+        <div className="video-background bg-black">
           <video
+            className={`login-video ${videoLoaded ? 'video-loaded' : ''}`}
             autoPlay
             muted
             loop
             playsInline
             preload="auto"
-            poster="/assets/loop2-fallback.jpg" // Optional: add a JPG fallback image
+            poster="/assets/loop2-fallback.jpg"
+            onCanPlayThrough={() => setVideoLoaded(true)}
           >
             <source src="/assets/loop2.mp4" type="video/mp4" />
             المتصفح لا يدعم عرض الفيديو.
