@@ -185,8 +185,9 @@ export default function Standards() {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
                           <a className="btn btn-outline-success btn-sm" href="/standards_create">إضافة معيار</a>
+                          <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
+
                         </>
                       )}
                     </div>
