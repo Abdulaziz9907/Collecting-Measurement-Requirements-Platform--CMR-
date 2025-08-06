@@ -7,6 +7,7 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
+import Footer from '../../../components/Footer.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -186,7 +187,9 @@ export default function Standards() {
                           </Dropdown>
 
                           <a className="btn btn-outline-success btn-sm" href="/standards_create">إضافة معيار</a>
-                          <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
+                          {['admin','administrator'].includes(user?.role?.toLowerCase()) && (
+                            <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
+                          )}
 
                         </>
                       )}
@@ -270,11 +273,7 @@ export default function Standards() {
                 </div>
               </div>
             </div>
-            <footer className="bg-white sticky-footer mt-auto py-3">
-              <div className="container my-auto">
-                <div className="text-center my-auto"><span>© RCJY 2025</span></div>
-              </div>
-            </footer>
+            <Footer />
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import Footer from '../../../components/Footer.jsx';
 
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -192,11 +193,7 @@ export default function Departments() {
               </div>
             </div>
           </div>
-          <footer className="bg-white sticky-footer mt-auto py-3">
-            <div className="container my-auto">
-              <div className="text-center my-auto"><span>© RCJY 2025</span></div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
     </div>
