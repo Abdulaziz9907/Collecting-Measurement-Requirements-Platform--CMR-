@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
@@ -20,6 +21,7 @@ export default function Users() {
   const isUser = user?.role?.toLowerCase() === 'user';
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const navigate = useNavigate();
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -122,7 +124,7 @@ export default function Users() {
                         ))}
                       </Dropdown.Menu>
                     </Dropdown>
-                    <a className="btn btn-outline-success btn-sm" href="/users_create">إضافة مستخدم</a>
+                    <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
                   </div>
                   <div className="table-responsive" style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}>
                   <table className="table text-center align-middle">
@@ -160,7 +162,7 @@ export default function Users() {
                               <td>{departments.find(d => d.department_id === u.department_id)?.department_name}</td>
                                {!isUser && (
                                 <td>
-                                  <i className="fas fa-pen text-success" onClick={() => window.location.href = `/users_edit/${u.employee_id}`}></i>
+                                  <i className="fas fa-pen text-success" onClick={() => navigate(`/users_edit/${u.employee_id}`)}></i>
                                 </td>
                               )}
                               {!isUser && (

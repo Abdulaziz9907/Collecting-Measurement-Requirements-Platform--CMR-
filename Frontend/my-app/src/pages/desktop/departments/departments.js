@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
@@ -15,6 +16,7 @@ export default function Departments() {
   const [loading, setLoading] = useState(true);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const navigate = useNavigate();
 
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,7 +114,7 @@ export default function Departments() {
                         ))}
                       </Dropdown.Menu>
                     </Dropdown>
-                    <a className="btn btn-outline-success btn-sm" href="/departments_create">إضافة جهة</a>
+                    <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
                   </div>
                   <div
                     className="table-responsive"
@@ -148,7 +150,7 @@ export default function Departments() {
                               <td className="text-primary">{item.department_name}</td>
                               <td>{item.building_number}</td>
                               <td>
-                                <i className="fas fa-pen text-success" onClick={() => window.location.href = `/departments_edit/${item.department_id}`}></i>
+                                <i className="fas fa-pen text-success" onClick={() => navigate(`/departments_edit/${item.department_id}`)}></i>
                               </td>
                               <td>
                                 <i

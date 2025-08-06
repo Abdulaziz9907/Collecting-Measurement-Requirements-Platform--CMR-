@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
@@ -22,6 +23,7 @@ export default function Standards() {
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const navigate = useNavigate();
 
   const rowsPerPage = 11;
   const [currentPage, setCurrentPage] = useState(1);
@@ -186,7 +188,7 @@ export default function Standards() {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          <a className="btn btn-outline-success btn-sm" href="/standards_create">إضافة معيار</a>
+                          <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
                           {['admin','administrator'].includes(user?.role?.toLowerCase()) && (
                             <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
                           )}
@@ -235,7 +237,7 @@ export default function Standards() {
                                 {user?.role?.toLowerCase() !== 'user' && (
                                   <>
                                     <td>
-                                      <i className="fas fa-pen text-success" onClick={() => window.location.href = `/standards_edit/${item.standard_id}`}></i>
+                                      <i className="fas fa-pen text-success" onClick={() => navigate(`/standards_edit/${item.standard_id}`)}></i>
                                     </td>
                                     <td>
                                       <i
