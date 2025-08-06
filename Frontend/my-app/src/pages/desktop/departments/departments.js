@@ -193,9 +193,10 @@ export default function Departments() {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }

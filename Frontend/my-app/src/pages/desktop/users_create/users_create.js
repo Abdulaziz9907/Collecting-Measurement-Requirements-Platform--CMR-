@@ -163,9 +163,10 @@ export default function Users_create() {
               </div>
             </div>
           </div>
-          <Footer />
+          
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

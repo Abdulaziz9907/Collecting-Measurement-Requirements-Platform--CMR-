@@ -7,7 +7,6 @@ import Login from './pages/desktop/login/login';
 import Standards_create from './pages/desktop/standards_create/standards_create';
 import Standards from './pages/desktop/standards/standards';
 import Standards_edit from './pages/desktop/standards_edit/standards_edit';
-import Standard_show from './pages/desktop/standard_show/standard_show';
 import Departments from './pages/desktop/departments/departments';
 import Departments_edit from './pages/desktop/departments_edit/departments_edit';
 import Departments_create from './pages/desktop/departments_create/departments_create';
@@ -35,7 +34,6 @@ function App() {
       <Route path="/standards_create" element={user && allow(['admin','administrator']) ? <Standards_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/standards" element={user && allow(['admin','administrator','user']) ? <Standards /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/standards_edit/:id" element={user && allow(['admin','administrator']) ? <Standards_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/standards_show/:id" element={user && allow(['admin','administrator','user']) ? <Standard_show /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/departments" element={user && allow(['admin','administrator']) ? <Departments /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/departments_edit/:id" element={user && allow(['admin','administrator']) ? <Departments_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/departments_create" element={user && allow(['admin','administrator']) ? <Departments_create /> : <Navigate to={user ? '/home' : '/'} replace />} />

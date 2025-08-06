@@ -188,9 +188,11 @@ export default function Users() {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
+    
   );
 }

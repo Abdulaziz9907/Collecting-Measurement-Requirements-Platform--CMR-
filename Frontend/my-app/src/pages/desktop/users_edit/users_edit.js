@@ -187,9 +187,10 @@ export default function Users_edit() {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }

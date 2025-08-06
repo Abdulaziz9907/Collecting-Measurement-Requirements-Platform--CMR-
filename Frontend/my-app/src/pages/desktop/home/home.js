@@ -49,9 +49,10 @@ export default function Standards_menu() {
             </div>
           </div>
 
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }

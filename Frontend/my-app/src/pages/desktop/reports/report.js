@@ -412,8 +412,9 @@ export default function Report() {
             </>
           )}
         </div>
-        <Footer />
       </div>
+              <Footer />
+
     </div>
   );
 }

@@ -255,9 +255,10 @@ export default function Standards_create() {
             </div>
           </div>
 
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }

@@ -139,9 +139,10 @@ export default function Departments_edit() {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }

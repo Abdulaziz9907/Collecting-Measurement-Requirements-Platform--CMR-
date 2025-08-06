@@ -276,9 +276,9 @@ export default function Standards_edit() {
             </div>
           </div>
 
-          <Footer />
         </div>
       </div>
+                <Footer />
     </div>
   );
 }

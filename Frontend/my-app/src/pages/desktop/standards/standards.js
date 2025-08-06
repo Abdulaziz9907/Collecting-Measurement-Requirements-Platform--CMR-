@@ -273,11 +273,11 @@ export default function Standards() {
                 </div>
               </div>
             </div>
-            <Footer />
+            
           </div>
         </div>
       </div>
-
+<Footer />
       <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={refreshData} />
     </>
   );

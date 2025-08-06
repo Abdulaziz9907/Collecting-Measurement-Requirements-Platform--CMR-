@@ -116,9 +116,10 @@ export default function Departments_create() {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+                <Footer />
+
     </div>
   );
 }
