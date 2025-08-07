@@ -74,9 +74,9 @@ export default function Sidebar() {
   const buttonStyles = {
     zIndex: 1040,
     background: sidebarVisible
-      ? 'linear-gradient(135deg, #5a5a5aff 0%, #4e4e4eff 100%)'
+      ? 'linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%)'
       : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-    border: sidebarVisible ? '1px solid #535353ff' : '1px solid #dee2e6',
+    border: sidebarVisible ? '1px solid var(--secondary-bg)' : '1px solid #dee2e6',
     padding: '8px 10px',
     borderRadius: '8px',
     display: 'flex',
@@ -148,7 +148,7 @@ export default function Sidebar() {
         className="text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
           width: '240px',
-          background: 'linear-gradient(180deg, #444444ff 0%, #414141ff 100%)',
+          background: 'linear-gradient(180deg, var(--primary-bg) 0%, var(--secondary-bg) 100%)',
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
           opacity: sidebarVisible ? 1 : 0,
           pointerEvents: sidebarVisible ? 'auto' : 'none',
@@ -189,7 +189,7 @@ export default function Sidebar() {
         className="navbar align-items-start p-0 sidebar sidebar-dark accordion navbar-dark d-none d-md-block"
         style={{
           width: '240px',
-          background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+          background: 'linear-gradient(180deg, var(--primary-bg) 0%, var(--secondary-bg) 100%)',
         }}
       >
         <div className="container-fluid d-flex flex-column p-0">
@@ -242,7 +242,7 @@ export default function Sidebar() {
   }
 
   .sidebar-link.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
     color: #fff !important;
     box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
     transform: none;
