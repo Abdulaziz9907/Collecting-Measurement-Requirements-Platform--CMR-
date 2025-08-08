@@ -4,23 +4,13 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const Footer = () => {
   return (
-    <nav className="navbar py-3 px-4" style={{ backgroundColor: '#010B38' }} dir="rtl">
-      <div className="container-fluid d-flex align-items-center justify-content-between">
+    <nav className="navbar py-3 px-4 text-center" style={{ backgroundColor: '#0f172a' }}>
+      <div className="container-fluid d-flex align-items-center justify-content-center">
 
-        {/* Logo + Title (Right aligned in RTL) */}
-        <div className="d-flex align-items-center gap-3">
-          <img
-            src="/assets/img/logo_white.png"
-            alt="Logo"
-            className="img-fluid"
-            style={{ width: '170px', objectFit: 'contain' }}
-          />
-          <div className="d-flex flex-column justify-content-center">
-            <h5 className="mb-0" style={{ color: '#fff' }}>
-              منصة التحول الرقمي
-            </h5>
-          </div>
-        </div>
+        
+            <h6 className=" fw-light mt-1 mb-1 " style={{ color: '#ddddddff' ,fontSize: '16px'}}>
+جميع الحقوق محفوظة للهيئة الملكية للجبيل وينبع 2025م
+            </h6>
 
       </div>
     </nav>

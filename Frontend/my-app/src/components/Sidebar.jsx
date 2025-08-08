@@ -171,7 +171,7 @@ export default function Sidebar() {
           background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
         }}
       >
-        <div className="container-fluid d-flex flex-column p-0 ms-3">
+        <div className="container-fluid d-flex flex-column p-0 ">
           <hr className="my-0 sidebar-divider" style={{
             borderColor: 'rgba(255, 255, 255, 0.1)',
             opacity: 1
@@ -214,12 +214,11 @@ export default function Sidebar() {
   align-items: center;
   height: 48px;             /* desired link height */
   padding: 0 24px;          /* horizontal padding only */
-  margin: 4px 0;            /* vertical spacing */
+  margin: 0px 0;            /* vertical spacing */
   font-size: 15px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   position: relative;
-  border-radius: 12px;
   transition: all 0.3s ease;
   white-space: nowrap;      /* prevent text wrap */
 }
@@ -227,22 +226,17 @@ export default function Sidebar() {
 /* 2. Hover effects */
 .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.08);
-  transform: translateX(-6px);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
-  width: 190px !important;
 }
 
 .sidebar-link-mobile:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateX(-6px);
 }
 
 /* 3. Active (selected) state */
 .sidebar-link.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background:  #778fc24d;
   color: #fff !important;
-  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
-  width: 190px !important;
 }
 
 .sidebar-link-mobile.active {

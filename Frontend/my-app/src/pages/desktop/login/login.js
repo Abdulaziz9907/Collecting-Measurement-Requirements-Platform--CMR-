@@ -50,25 +50,15 @@ export default function Login({ onLogin }) {
           --secondary-color: #764ba2;
           --accent-color: #010B38;
           --accent-hover: #021452;
-          --card-bg: rgba(255, 255, 255, 0.85);
+          --card-bg: rgba(255, 255, 255, 1);
           --card-border: rgba(255, 255, 255, 0.3);
           --overlay-bg: rgba(0, 0, 0, 0.35);
           --input-bg: #fff;
-          --input-border: #fff;
+          --input-border: #e2e2e2ff;
           --text-color: #343a40;
         }
 
-      @keyframes gradientShine {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
+   
 
         .video-background {
           position: relative;
@@ -123,12 +113,11 @@ export default function Login({ onLogin }) {
 
         .card-header-custom {
   position: relative;
-  background: linear-gradient(-45deg, #667eea, #39076bff, #667eea);
+  background: #FFFFFF;
   background-size: 400% 400%;
   color: white;
   text-align: center;
   padding: 2.5rem 2rem 2rem;
-  animation: gradientShine 6s ease-in-out infinite alternate;
   border-bottom: 1px solid rgba(231, 224, 224, 0.15);
 }
 
@@ -149,11 +138,14 @@ export default function Login({ onLogin }) {
         .floating-label-container.has-error i {
           color: #dc3545 !important;
         }
+          .welcome-text{
+          color: rgba(5, 0, 53, 1);
+          }
 
         .floating-label input {
           background: var(--input-bg);
           border: 2px solid var(--input-border);
-          border-radius: 16px;
+          border-radius: 8px;
           color: var(--text-color);
           padding: 1rem 3.5rem 1rem 1.125rem;
           font-size: 1rem;
@@ -219,6 +211,7 @@ export default function Login({ onLogin }) {
           font-size: 2.5rem;
           font-weight: 700;
           margin-bottom: 1rem;
+          
         }
 
         .info-description {
@@ -256,21 +249,23 @@ export default function Login({ onLogin }) {
           <div className="content-layer">
             <div className="container">
               <div className="row justify-content-center" style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}>
-                <div className="col-lg-6 col-md-8 mb-4 mb-lg-0 order-2 order-lg-1">
-                  <div className="info-card d-none d-lg-block">
-                    <h1 className="info-title">عن التحول الرقمي</h1>
-                    <p className="info-description mb-0">
-                      التحول الرقمي هو استخدام التكنولوجيا لتحسين الخدمات والعمليات،
-                      مثل تحويل المعاملات الورقية إلى إلكترونية، بهدف زيادة الكفاءة
-                      وتسهيل حياة الأفراد.
-                    </p>
-                  </div>
-                </div>
+             <div className="col-lg-7 text-center justify-content-center bg-opacity-50 p-4 rounded" >
+                <h1 className=' ' style={{ textAlign: 'right', color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
+                <p className='fw-light mt-4 ' style={{ textAlign: 'right', fontSize: '28px', textIndent: '1em',  textAlign: 'justify',color: 'rgba(209, 209, 209, 1)' }}>
+                  
+تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو مدينة صناعية ذكية ومستدامة. تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة، وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات.                     
+                    كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في المملكة.
+                     </p>
+
+
+
+</div>
 
                 <div className="col-lg-5 col-md-8 col-sm-10 order-1 order-lg-2 login-wrapper mt-5 mt-lg-0">
                   <div className="login-card">
                     <div className="card-header-custom">
-                      <h4 className="welcome-text">تسجيل الدخول</h4>
+                      <h2 className="welcome-text">
+                        تسجيل الدخول</h2>
                     </div>
                     <div className="card-body-custom">
                       <form onSubmit={(e) => {

@@ -56,23 +56,42 @@ export default function Report() {
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
+  // ===== Helpers: robust status normalization & id coercion =====
+  const normalizeStr = (v) => (v ?? '').toString().trim().toLowerCase();
+
+  const statusToKey = (raw) => {
+    const s = normalizeStr(raw);
+    // Arabic variants + English fallbacks
+    if (['مكتمل', 'مكتملة', 'completed', 'complete', 'done'].includes(s)) return 'completed';
+    if (['معتمد', 'معتمدة', 'approved', 'approve'].includes(s)) return 'approved';
+    if (
+      ['غير معتمد', 'غير معتمدة', 'rejected', 'not approved', 'declined', 'رفض'].includes(s)
+    )
+      return 'rejected';
+    if (
+      ['تحت العمل', 'قيد العمل', 'under work', 'in progress', 'ongoing', 'progress'].includes(s)
+    )
+      return 'underWork';
+    if (['لم يبدأ', 'لم تبدا', 'not started', 'new', 'pending'].includes(s)) return 'notStarted';
+    return null; // unknown/unmapped status
+  };
+
+  // Choose how to compute "progress":
+  //   'completedOnly' -> progress = completed / total
+  //   'completedPlusApproved' -> progress = (completed + approved) / total
+  const PROGRESS_MODE = 'completedPlusApproved';
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`${API_BASE}/api/standards`).then(res => res.json()),
-      fetch(`${API_BASE}/api/departments`).then(res => res.json())
+      fetch(`${API_BASE}/api/standards`).then((res) => res.json()),
+      fetch(`${API_BASE}/api/departments`).then((res) => res.json())
     ])
       .then(([standards, departments]) => {
         setStandardsData(standards);
         setDepartments(departments);
 
-        const statusMap = {
-          'معتمد': 'approved',
-          'غير معتمد': 'rejected',
-          'مكتمل': 'completed',
-          'تحت العمل': 'underWork',
-          'لم يبدأ': 'notStarted'
-        };
+        // Totals across all departments
         const totalCounts = {
           approved: 0,
           rejected: 0,
@@ -81,10 +100,10 @@ export default function Report() {
           notStarted: 0
         };
 
-        const perDept = departments.map(dep => {
-          const deptStandards = standards.filter(
-            s => s.assigned_department_id === dep.department_id
-          );
+        // Build per-department stats (include every department even if 0)
+        const perDept = departments.map((dep) => {
+          const depId = Number(dep.department_id);
+
           const counts = {
             approved: 0,
             rejected: 0,
@@ -92,40 +111,64 @@ export default function Report() {
             underWork: 0,
             notStarted: 0
           };
-          deptStandards.forEach(s => {
-            const key = statusMap[s.status];
-            if (key) counts[key]++;
+
+          // standards may come with string or number department ids; coerce both sides
+          const deptStandards = standards.filter((s) => {
+            const sid = Number(s.assigned_department_id);
+            return !Number.isNaN(sid) && sid === depId;
           });
+
+          // count statuses robustly
+          for (const s of deptStandards) {
+            const key = statusToKey(s.status);
+            if (key && counts[key] !== undefined) counts[key] += 1;
+          }
+
+          // compute total and progress
           const total = deptStandards.length;
-          const progressRate = total ? Math.round((counts.completed / total) * 100) : 0;
-          Object.keys(counts).forEach(k => (totalCounts[k] += counts[k]));
+          const numerator =
+            PROGRESS_MODE === 'completedPlusApproved'
+              ? counts.completed + counts.approved
+              : counts.completed;
+
+          const progressRate = total > 0 ? Math.round((numerator / total) * 100) : 0;
+
+          // add to global totals
+          for (const k of Object.keys(counts)) totalCounts[k] += counts[k];
+
           return {
-            department: dep.department_name,
+            department: dep.department_name?.trim() || `الإدارة #${depId}`,
             total,
             progressRate,
             ...counts
           };
         });
 
+        // Save totals & per-dept stats
         setTotals({ total: standards.length, ...totalCounts });
+
+        // If you want to sort by progress descending, uncomment the next line:
+        // setDeptStats([...perDept].sort((a, b) => b.progressRate - a.progressRate));
         setDeptStats(perDept);
 
+        // Monthly progress (by creation month)
         const monthly = {};
-        standards.forEach(s => {
+        for (const s of standards) {
           const created = new Date(s.created_at);
+          if (isNaN(created)) continue;
           const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
           monthly[key] = (monthly[key] || 0) + 1;
-        });
+        }
         const sortedKeys = Object.keys(monthly).sort();
-        setMonthlyProgress(sortedKeys.map(m => ({ month: m, count: monthly[m] })));
+        setMonthlyProgress(sortedKeys.map((m) => ({ month: m, count: monthly[m] })));
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredStats =
     selectedDepartments.length === 0
       ? deptStats
-      : deptStats.filter(d => selectedDepartments.includes(d.department));
+      : deptStats.filter((d) => selectedDepartments.includes(d.department));
 
   const getSummaryData = (mode) => {
     if (mode === 'all') {
@@ -138,8 +181,15 @@ export default function Report() {
         { key: 'notStarted', title: 'لم يبدأ', value: totals.notStarted }
       ];
     }
-    const combined = { total: 0, completed: 0, approved: 0, rejected: 0, underWork: 0, notStarted: 0 };
-    filteredStats.forEach(d => {
+    const combined = {
+      total: 0,
+      completed: 0,
+      approved: 0,
+      rejected: 0,
+      underWork: 0,
+      notStarted: 0
+    };
+    filteredStats.forEach((d) => {
       combined.total += d.total;
       combined.completed += d.completed;
       combined.approved += d.approved;
@@ -157,9 +207,7 @@ export default function Report() {
     ];
   };
 
-  const summaryData = getSummaryData(
-    selectedDepartments.length === 0 ? 'all' : 'custom'
-  );
+  const summaryData = getSummaryData(selectedDepartments.length === 0 ? 'all' : 'custom');
 
   const summaryCardColors = {
     total: '#0d6efd',
@@ -171,35 +219,35 @@ export default function Report() {
   };
 
   const pieData = {
-    labels: summaryData.filter(s => s.key !== 'total').map(s => s.title),
+    labels: summaryData.filter((s) => s.key !== 'total').map((s) => s.title),
     datasets: [
       {
-        data: summaryData.filter(s => s.key !== 'total').map(s => s.value),
+        data: summaryData.filter((s) => s.key !== 'total').map((s) => s.value),
         backgroundColor: summaryData
-          .filter(s => s.key !== 'total')
-          .map(s => summaryCardColors[s.key]),
+          .filter((s) => s.key !== 'total')
+          .map((s) => summaryCardColors[s.key]),
         borderWidth: 1
       }
     ]
   };
 
   const barChartData = {
-    labels: filteredStats.map(d => d.department),
+    labels: filteredStats.map((d) => d.department),
     datasets: [
       {
         label: 'نسبة الإنجاز',
-        data: filteredStats.map(d => d.progressRate),
+        data: filteredStats.map((d) => d.progressRate),
         backgroundColor: '#4F7689'
       }
     ]
   };
 
   const lineChartData = {
-    labels: monthlyProgress.map(p => p.month),
+    labels: monthlyProgress.map((p) => p.month),
     datasets: [
       {
         label: 'مقدار التقدم الشهري',
-        data: monthlyProgress.map(p => p.count),
+        data: monthlyProgress.map((p) => p.count),
         fill: true,
         borderColor: '#0d6efd',
         backgroundColor: 'rgba(13, 110, 253, 0.1)',
@@ -210,7 +258,7 @@ export default function Report() {
 
   const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      filteredStats.map(d => ({
+      filteredStats.map((d) => ({
         'الإدارة': d.department,
         'المجموع': d.total,
         'مكتمل': d.completed,
@@ -262,7 +310,7 @@ export default function Report() {
                       <>
                         {/* Top Controls */}
                         <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
-                          {['admin', 'administrator'].includes(user?.role?.toLowerCase()) && (
+                          {['admin', 'administrator'].includes(user?.role?.toLowerCase?.()) && (
                             <button className="btn btn-outline-success btn-sm" onClick={exportToExcel}>
                               <i className="fas fa-file-excel ms-1"></i> تصدير Excel
                             </button>
@@ -286,19 +334,19 @@ export default function Report() {
                                   كل الإدارات
                                 </label>
                               </div>
-                              {departments.map(dep => (
+                              {departments.map((dep) => (
                                 <div className="form-check" key={dep.department_id}>
                                   <input
                                     className="form-check-input"
                                     type="checkbox"
                                     id={`dep-${dep.department_id}`}
                                     checked={selectedDepartments.includes(dep.department_name)}
-                                    onChange={e => {
+                                    onChange={(e) => {
                                       if (e.target.checked) {
-                                        setSelectedDepartments(prev => [...prev, dep.department_name]);
+                                        setSelectedDepartments((prev) => [...prev, dep.department_name]);
                                       } else {
-                                        setSelectedDepartments(prev =>
-                                          prev.filter(d => d !== dep.department_name)
+                                        setSelectedDepartments((prev) =>
+                                          prev.filter((d) => d !== dep.department_name)
                                         );
                                       }
                                     }}
@@ -340,12 +388,19 @@ export default function Report() {
                                     maintainAspectRatio: false,
                                     indexAxis: 'y',
                                     scales: {
-                                      x: { min: 0, max: 100, title: { display: true, text: 'نسبة التقدم (%)' }, grid: { display: false } },
+                                      x: {
+                                        min: 0,
+                                        max: 100,
+                                        title: { display: true, text: 'نسبة التقدم (%)' },
+                                        grid: { display: false }
+                                      },
                                       y: { grid: { display: false } }
                                     },
                                     plugins: {
                                       legend: { display: false },
-                                      tooltip: { callbacks: { label: ctx => `${ctx.parsed.x}%` } }
+                                      tooltip: {
+                                        callbacks: { label: (ctx) => `${ctx.parsed.x}%` }
+                                      }
                                     }
                                   }}
                                 />
@@ -386,7 +441,7 @@ export default function Report() {
                                     },
                                     plugins: {
                                       legend: { display: false },
-                                      tooltip: { callbacks: { label: ctx => `${ctx.parsed.y}` } }
+                                      tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}` } }
                                     }
                                   }}
                                 />
