@@ -118,7 +118,7 @@ export default function Standards() {
 
   return (
     <>
-      <div dir="rtl">
+      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
         <Header />
         <div id="wrapper">
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
@@ -133,10 +133,17 @@ export default function Standards() {
 
                 <div className="row">
                   <div className="col-md-1 col-xl-1" />
-                  <div className="col-md-10 col-xl-10 my-3 surface">
+                  <div className="col-md-10 col-xl-10 p-4 my-3 bg-white d-flex flex-column"
+                    style={{
+                      minHeight: `${rowsPerPage * 48 + 150}px`,
+                      position: 'relative',
+                      borderTop: "3px solid #4F7689",
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+                    }}
+                  >
 
                     {/* Top Controls */}
-                    <div className="head-flat d-flex justify-content-start align-items-center flex-wrap gap-2">
+                    <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
                       <input
                         className="form-control form-control-sm"
                         style={{ width: '160px' }}
@@ -181,7 +188,7 @@ export default function Standards() {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          <Link className="btn btn-outline-primary btn-sm" to="/standards_create">إضافة معيار</Link>
+                          <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
                           {['admin','administrator'].includes(user?.role?.toLowerCase()) && (
                             <button className="btn btn-outline-primary btn-sm" onClick={exportToExcel}>تصدير Excel</button>
                           )}
@@ -191,8 +198,7 @@ export default function Standards() {
                     </div>
 
                     {/* Table */}
-                    <div className="body-flat" style={{ minHeight: `${rowsPerPage * 48 + 100}px`, position: 'relative' }}>
-                      <div className="table-responsive" style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}>
+                    <div className="table-responsive" style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}>
                       <table className="table text-center align-middle">
                         <thead>
                           <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
@@ -231,7 +237,7 @@ export default function Standards() {
                                 {user?.role?.toLowerCase() !== 'user' && (
                                   <>
                                     <td>
-                                      <i className="fas fa-pen text-primary" onClick={() => navigate(`/standards_edit/${item.standard_id}`)}></i>
+                                      <i className="fas fa-pen text-success" onClick={() => navigate(`/standards_edit/${item.standard_id}`)}></i>
                                     </td>
                                     <td>
                                       <i
@@ -252,19 +258,18 @@ export default function Standards() {
                           )}
                         </tbody>
                       </table>
-                      </div>
-
-                      {/* Pagination */}
-                      {!loading && filteredData.length > rowsPerPage && (
-                        <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100" style={{ zIndex: 10 }}>
-                          <div>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
-                            <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                          </div>
-                          <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
-                        </div>
-                      )}
                     </div>
+
+                    {/* Pagination */}
+                    {!loading && filteredData.length > rowsPerPage && (
+                      <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100" style={{ zIndex: 10 }}>
+                        <div>
+                          <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                          <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
+                        </div>
+                        <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-1 col-xl-1" />
                 </div>
@@ -274,7 +279,7 @@ export default function Standards() {
           </div>
         </div>
       </div>
-      <Footer />
+<Footer />
       <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={refreshData} />
     </>
   );

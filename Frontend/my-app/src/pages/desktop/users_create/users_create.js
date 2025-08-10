@@ -74,7 +74,7 @@ export default function Users_create() {
   };
 
   return (
-    <div dir="rtl">
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -98,9 +98,8 @@ export default function Users_create() {
               </div>
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 my-3 surface">
-                  <div className="head-flat">إنشاء مستخدم</div>
-                  <div className="body-flat">
+                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                  <h4>إنشاء مستخدم</h4>
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                     <div className="mb-3">
                       <label className="form-label">رقم الموظف</label>
@@ -159,7 +158,6 @@ export default function Users_create() {
                       إرسال
                     </button>
                   </form>
-                  </div>
                 </div>
                 <div className="col-md-1 col-xl-2" />
               </div>
