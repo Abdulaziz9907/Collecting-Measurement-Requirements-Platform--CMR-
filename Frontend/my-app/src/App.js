@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
-import './theme.css';
 
 // Pages
 import Login from './pages/desktop/login/login';
