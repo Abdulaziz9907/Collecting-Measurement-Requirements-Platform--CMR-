@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import './assets/bootstrap/css/bootstrap.min.css';
+import './assets/fonts/fontawesome-all.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -20,6 +21,7 @@ import {
 } from 'chart.js';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
+import PageContainer from '../../../components/PageContainer.jsx';
 
 ChartJS.register(
   CategoryScale,
@@ -486,15 +488,14 @@ const hijriFormat = (date) => {
   };
 
   return (
-    <>
+    <PageContainer>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
-        <Header />
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
-          <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
+      <Header />
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1">
+        <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          <div id="content" className="flex-grow-1">
               <div className="container-fluid">
 
                 {/* Breadcrumbs */}
@@ -889,10 +890,10 @@ const hijriFormat = (date) => {
 
               </div>
             </div>
-            <Footer />
           </div>
         </div>
       </div>
-    </>
+      <Footer />
+    </PageContainer>
   );
 }
