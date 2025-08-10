@@ -5,7 +5,7 @@ import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,6 +16,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from 'chart.js';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
@@ -28,7 +29,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement
 );
 
 export default function Report() {
@@ -266,6 +268,20 @@ export default function Report() {
       { key: 'notStarted', title: 'لم يبدأ', value: combined.notStarted },
     ];
   }, [totals, filteredStats, selectedDepartments.length]);
+
+  const statusPieData = useMemo(() => {
+    const items = summaryData.filter((s) => s.key !== 'total');
+    return {
+      labels: items.map((s) => s.title),
+      datasets: [
+        {
+          data: items.map((s) => s.value),
+          backgroundColor: items.map((s) => KPI_COLOR[s.key]),
+          borderWidth: 0,
+        },
+      ],
+    };
+  }, [summaryData]);
 
   // bar: progress 0..100 per department (horizontal)
   const progressBarData = {
@@ -619,6 +635,27 @@ export default function Report() {
                                         },
                                         plugins: {
                                           legend: { display: false },
+                                        },
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Charts row 3: Status Distribution */}
+                            <div className="row g-4 mb-4">
+                              <div className="col-12 col-lg-6">
+                                <div className="bg-white p-3 rounded shadow-sm">
+                                  <h6 className="mb-3">توزيع حالات المعايير</h6>
+                                  <div style={{ height: 300 }}>
+                                    <Pie
+                                      data={statusPieData}
+                                      options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                          legend: { position: 'bottom' },
                                         },
                                       }}
                                     />
