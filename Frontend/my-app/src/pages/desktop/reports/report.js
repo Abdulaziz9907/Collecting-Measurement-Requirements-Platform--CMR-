@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown, Spinner } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -278,6 +277,20 @@ export default function Report() {
           data: items.map((s) => s.value),
           backgroundColor: items.map((s) => KPI_COLOR[s.key]),
           borderWidth: 0,
+        },
+      ],
+    };
+  }, [summaryData]);
+
+  const statusBarData = useMemo(() => {
+    const items = summaryData.filter((s) => s.key !== 'total');
+    return {
+      labels: items.map((s) => s.title),
+      datasets: [
+        {
+          label: 'عدد المعايير',
+          data: items.map((s) => s.value),
+          backgroundColor: items.map((s) => KPI_COLOR[s.key]),
         },
       ],
     };
@@ -656,6 +669,25 @@ export default function Report() {
                                         maintainAspectRatio: false,
                                         plugins: {
                                           legend: { position: 'bottom' },
+                                        },
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-12 col-lg-6">
+                                <div className="bg-white p-3 rounded shadow-sm">
+                                  <h6 className="mb-3">عدد المعايير لكل حالة</h6>
+                                  <div style={{ height: 300 }}>
+                                    <Bar
+                                      data={statusBarData}
+                                      options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: { legend: { display: false } },
+                                        scales: {
+                                          x: { grid: { display: false } },
+                                          y: { beginAtZero: true, grid: { drawBorder: false } },
                                         },
                                       }}
                                     />
