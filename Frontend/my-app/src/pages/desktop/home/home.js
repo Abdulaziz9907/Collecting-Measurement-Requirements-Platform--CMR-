@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Spinner } from 'react-bootstrap';
-import "./assets/bootstrap/css/bootstrap.min.css";
-import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -191,12 +189,6 @@ export default function Standards_menu() {
         .kpi .sub { font-size:.8rem; color:#6b7280; }
         .kpi-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
         @media (max-width:992px){ .kpi-grid { grid-template-columns: 1fr; } }
-        /* Quick links */
-        .quick-link { display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px dashed #d6dee9; border-radius:12px; background:#f9fbff; transition: background .15s ease, transform .15s ease; text-decoration:none; color:#0b2440; }
-        .quick-link:hover { background:#eef5ff; transform: translateY(-1px); text-decoration:none; }
-        .quick-grid { display:grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap:10px; }
-        @media (max-width:1200px){ .quick-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width:576px){ .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         /* Recent table */
         .table-card { border:1px solid #eef2f7; border-radius:14px; overflow:hidden; background:#fff; }
         .table-card .head { padding:12px 16px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:center; background:#fbfdff; }
@@ -352,30 +344,6 @@ export default function Standards_menu() {
                 </div>
               )}
 
-              {/* Quick Links */}
-              {!loading && !error && (
-                <div className="row justify-content-center">
-                  <div className="col-12 col-xl-10 mb-4">
-                    <div className="panel">
-                      <div className="panel-header d-flex align-items-center justify-content-between">
-                        <strong>روابط سريعة</strong>
-                        <small className="opacity-75">تنقل سريع إلى أشهر الفلاتر</small>
-                      </div>
-                      <div className="p-3 p-sm-4">
-                        <div className="quick-grid">
-                          <QuickLink href="/standards?status=completed" icon="fa-circle-check" text="المكتملة" />
-                          <QuickLink href="/standards?status=approved" icon="fa-badge-check" text="المعتمدة" />
-                          <QuickLink href="/standards?status=rejected" icon="fa-circle-xmark" text="غير المعتمدة" />
-                          <QuickLink href="/standards?status=underWork" icon="fa-person-digging" text="تحت العمل" />
-                          <QuickLink href="/standards?status=notStarted" icon="fa-hourglass-start" text="لم يبدأ" />
-                          <QuickLink href="/standards" icon="fa-table-list" text="كل المعايير" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Recent Updates (if timestamps exist) */}
               {!loading && !error && recentItems.length > 0 && (
                 <div className="row justify-content-center">
@@ -499,13 +467,3 @@ function Donut({ size = 220, items = [] }) {
   );
 }
 
-function QuickLink({ href, icon, text }) {
-  // map FA icon names to classes; fallback to fa-arrow-left
-  const iconClass = icon ? `fa-solid ${icon}` : 'fa-solid fa-arrow-left';
-  return (
-    <a className="quick-link" href={href}>
-      <i className={iconClass} />
-      <span className="fw-bold">{text}</span>
-    </a>
-  );
-}
