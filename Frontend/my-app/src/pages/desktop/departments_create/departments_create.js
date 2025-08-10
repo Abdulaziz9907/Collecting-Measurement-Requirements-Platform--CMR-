@@ -61,7 +61,7 @@ export default function Departments_create() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl">
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -89,8 +89,9 @@ export default function Departments_create() {
               </div>
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  <h4>إنشاء جهة جديدة</h4>
+                <div className="col-md-10 col-xl-8 my-3 surface">
+                  <div className="head-flat">إنشاء جهة جديدة</div>
+                  <div className="body-flat">
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                     <div className="mb-3">
                       <label className="form-label">اسم الجهة</label>
@@ -111,6 +112,7 @@ export default function Departments_create() {
                       إرسال
                     </button>
                   </form>
+                  </div>
                 </div>
                 <div className="col-md-1 col-xl-2" />
               </div>
