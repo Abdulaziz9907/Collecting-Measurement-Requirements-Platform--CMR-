@@ -142,7 +142,7 @@ export default function Standards_edit() {
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl">
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -172,7 +172,9 @@ export default function Standards_edit() {
 
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
+                <div className="col-md-10 col-xl-8 my-3 surface">
+                  <div className="head-flat">تعديل بطاقة معيار</div>
+                  <div className="body-flat">
                   {isLoading ? (
                     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
                       <div className="spinner-border m-5" role="status">
@@ -270,6 +272,7 @@ export default function Standards_edit() {
                       </button>
                     </form>
                   )}
+                  </div>
                 </div>
                 <div className="col-md-1 col-xl-2" />
               </div>
