@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import "./assets/bootstrap/css/bootstrap.min.css";
-import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
-import PageContainer from '../../../components/PageContainer.jsx';
 
 export default function Departments_create() {
   const [validated, setValidated] = useState(false);
@@ -63,7 +61,7 @@ export default function Departments_create() {
   };
 
   return (
-    <PageContainer>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -120,7 +118,8 @@ export default function Departments_create() {
           </div>
         </div>
       </div>
-      <Footer />
-    </PageContainer>
+                <Footer />
+
+    </div>
   );
 }

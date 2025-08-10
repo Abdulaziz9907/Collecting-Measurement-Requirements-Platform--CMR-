@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import "./assets/bootstrap/css/bootstrap.min.css";
-import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
-import PageContainer from '../../../components/PageContainer.jsx';
 
 function escapeInput(str) {
   return str.replace(/[&<>'"]/g, (char) => {
@@ -134,7 +132,7 @@ export default function Standards_create() {
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
   return (
-    <PageContainer>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
 
       {showSuccess && (
@@ -259,7 +257,8 @@ export default function Standards_create() {
 
         </div>
       </div>
-      <Footer />
-    </PageContainer>
+                <Footer />
+
+    </div>
   );
 }

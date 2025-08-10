@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import './assets/bootstrap/css/bootstrap.min.css';
-import './assets/fonts/fontawesome-all.min.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
-import PageContainer from '../../../components/PageContainer.jsx';
 
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -63,7 +61,7 @@ export default function Departments() {
   };
 
   return (
-    <PageContainer>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
       <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
@@ -199,7 +197,8 @@ export default function Departments() {
           </div>
         </div>
       </div>
-      <Footer />
-    </PageContainer>
+                <Footer />
+
+    </div>
   );
 }

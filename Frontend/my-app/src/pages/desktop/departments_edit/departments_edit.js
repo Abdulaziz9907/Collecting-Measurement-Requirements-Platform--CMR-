@@ -6,8 +6,6 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
-import "./assets/fonts/fontawesome-all.min.css";
-import PageContainer from '../../../components/PageContainer.jsx';
 
 export default function Departments_edit() {
   const [validated, setValidated] = useState(false);
@@ -79,7 +77,7 @@ export default function Departments_edit() {
   };
 
   return (
-    <PageContainer>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -143,7 +141,8 @@ export default function Departments_edit() {
           </div>
         </div>
       </div>
-      <Footer />
-    </PageContainer>
+                <Footer />
+
+    </div>
   );
 }

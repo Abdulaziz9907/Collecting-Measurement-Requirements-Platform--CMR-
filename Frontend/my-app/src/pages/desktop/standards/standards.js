@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import './assets/bootstrap/css/bootstrap.min.css';
-import './assets/fonts/fontawesome-all.min.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -10,7 +9,6 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
-import PageContainer from '../../../components/PageContainer.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -119,9 +117,10 @@ export default function Standards() {
   };
 
   return (
-    <PageContainer>
-      <Header />
-      <div id="wrapper">
+    <>
+      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+        <Header />
+        <div id="wrapper">
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           <div className="d-flex flex-column" id="content-wrapper">
             <div id="content">
@@ -280,8 +279,8 @@ export default function Standards() {
           </div>
         </div>
       </div>
-      <Footer />
+<Footer />
       <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={refreshData} />
-    </PageContainer>
+    </>
   );
 }
