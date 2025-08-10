@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import "./assets/bootstrap/css/bootstrap.min.css";
+import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
+import PageContainer from '../../../components/PageContainer.jsx';
 
 function escapeInput(str) {
   return str.replace(/[&<>'"]/g, (char) => {
@@ -142,7 +144,7 @@ export default function Standards_edit() {
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <PageContainer>
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -278,7 +280,7 @@ export default function Standards_edit() {
 
         </div>
       </div>
-                <Footer />
-    </div>
+      <Footer />
+    </PageContainer>
   );
 }
