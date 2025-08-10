@@ -163,7 +163,7 @@ export default function Standards_create() {
               </div>
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: "3px solid #4F7689", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
+                <div className="col-md-10 col-xl-8 p-4 my-3 surface">
                   <h4>إنشاء بطاقة معيار</h4>
                   <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
 
