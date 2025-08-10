@@ -3,10 +3,7 @@ import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
-import Header from '../../../components/Header.jsx';
-import Sidebar from '../../../components/Sidebar.jsx';
-import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
-import Footer from '../../../components/Footer.jsx';
+import PageShell from '../../../components/PageShell.jsx';
 
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -61,144 +58,114 @@ export default function Departments() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
-      <Header />
-      <div id="wrapper">
-        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
-            <div className="container-fluid">
-              <div className="row p-4">
-                <div className="col-md-12">
-                  <Breadcrumbs />
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-1 col-xl-1" />
-                <div
-                  className="col-md-10 col-xl-10 p-4 my-3 bg-white d-flex flex-column"
-                  style={{
-                    minHeight: `${rowsPerPage * 48 + 150}px`,
-                    position: 'relative',
-                    borderTop: '3px solid #4F7689',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
-                    <input
-                      className="form-control form-control-sm"
-                      style={{ width: '160px' }}
-                      type="search"
-                      placeholder="بحث..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Dropdown>
-                      <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        {uniqueBuildings.map((num, idx) => (
-                          <label
-                            key={idx}
-                            className="dropdown-item d-flex align-items-center gap-2 m-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="checkbox"
-                              className="form-check-input m-0"
-                              checked={buildingFilter.includes(num)}
-                              onChange={() => handleCheckboxFilter(num)}
-                            />
-                            <span className="form-check-label">{num}</span>
-                          </label>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
-                  </div>
-                  <div
-                    className="table-responsive"
-                    style={{
-                      overflowX: 'auto',
-                      minHeight: `${rowsPerPage * 48}px`,
-                      marginBottom: '80px'
-                    }}
+    <PageShell sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible}>
+      <div className="surface allow-overflow">
+        <div className="head-flat">
+          <h4 className="m-0">الجهات</h4>
+        </div>
+        <div className="body-flat position-relative" style={{ minHeight: `${rowsPerPage * 48 + 150}px` }}>
+          <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
+            <input
+              className="form-control form-control-sm"
+              style={{ width: '160px' }}
+              type="search"
+              placeholder="بحث..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Dropdown>
+              <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
+              <Dropdown.Menu>
+                {uniqueBuildings.map((num, idx) => (
+                  <label
+                    key={idx}
+                    className="dropdown-item d-flex align-items-center gap-2 m-0"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <table className="table text-center align-middle">
-                      <thead>
-                        <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
-                          <th style={{ color: '#6c757d' }}>اسم الجهة</th>
-                          <th style={{ color: '#6c757d' }}>رقم المبنى</th>
-                          <th style={{ color: '#6c757d' }}>تعديل</th>
-                          <th style={{ color: '#6c757d' }}>حذف</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loading ? (
-                          <tr>
-                            <td colSpan="4" className="text-center py-5">
-                              <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : paginatedData.length === 0 ? (
-                          <tr><td colSpan="4" className="text-muted">لا توجد نتائج</td></tr>
-                        ) : (
-                          paginatedData.map((item) => (
-                            <tr key={item.department_id}>
-                              <td className="text-primary">{item.department_name}</td>
-                              <td>{item.building_number}</td>
-                              <td>
-                                <i className="fas fa-pen text-success" onClick={() => navigate(`/departments_edit/${item.department_id}`)}></i>
-                              </td>
-                              <td>
-                                <i
-                                  className="fas fa-times text-danger"
-                                  style={{ cursor: 'pointer' }}
-                                  onClick={async () => {
-                                    try {
-                                      await fetch(`${API_BASE}/api/departments/${item.department_id}`, { method: 'DELETE' });
-                                      setLoading(true);
-                                      fetch(`${API_BASE}/api/departments`)
-                                        .then(res => res.json())
-                                        .then(setData)
-                                        .catch(() => setData([]))
-                                        .finally(() => setLoading(false));
-                                    } catch {}
-                                  }}
-                                ></i>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!loading && filteredData.length > rowsPerPage && (
-                    <div
-                      className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100"
-                      style={{
-                        zIndex: 10,
-                        paddingInline: '1rem'
-                      }}
-                    >
-                      <div>
-                        <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
-                        <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                      </div>
-                      <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
-                    </div>
-                  )}
-                </div>
-                <div className="col-md-1 col-xl-1" />
-              </div>
-            </div>
+                    <input
+                      type="checkbox"
+                      className="form-check-input m-0"
+                      checked={buildingFilter.includes(num)}
+                      onChange={() => handleCheckboxFilter(num)}
+                    />
+                    <span className="form-check-label">{num}</span>
+                  </label>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+            <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
           </div>
+          <div
+            className="table-responsive"
+            style={{
+              overflowX: 'auto',
+              minHeight: `${rowsPerPage * 48}px`,
+              marginBottom: '80px'
+            }}
+          >
+            <table className="table text-center align-middle">
+              <thead>
+                <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
+                  <th style={{ color: '#6c757d' }}>اسم الجهة</th>
+                  <th style={{ color: '#6c757d' }}>رقم المبنى</th>
+                  <th style={{ color: '#6c757d' }}>تعديل</th>
+                  <th style={{ color: '#6c757d' }}>حذف</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  [...Array(rowsPerPage)].map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan="4"><div className="skeleton skeleton-table-row"></div></td>
+                    </tr>
+                  ))
+                ) : paginatedData.length === 0 ? (
+                  <tr><td colSpan="4" className="text-muted">لا توجد نتائج</td></tr>
+                ) : (
+                  paginatedData.map((item) => (
+                    <tr key={item.department_id}>
+                      <td className="text-primary">{item.department_name}</td>
+                      <td>{item.building_number}</td>
+                      <td>
+                        <i className="fas fa-pen text-success" onClick={() => navigate(`/departments_edit/${item.department_id}`)}></i>
+                      </td>
+                      <td>
+                        <i
+                          className="fas fa-times text-danger"
+                          style={{ cursor: 'pointer' }}
+                          onClick={async () => {
+                            try {
+                              await fetch(`${API_BASE}/api/departments/${item.department_id}`, { method: 'DELETE' });
+                              setLoading(true);
+                              fetch(`${API_BASE}/api/departments`)
+                                .then(res => res.json())
+                                .then(setData)
+                                .catch(() => setData([]))
+                                .finally(() => setLoading(false));
+                            } catch {}
+                          }}
+                        ></i>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {!loading && filteredData.length > rowsPerPage && (
+            <div
+              className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100"
+              style={{ zIndex: 10, paddingInline: '1rem' }}
+            >
+              <div>
+                <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
+              </div>
+              <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
+            </div>
+          )}
         </div>
       </div>
-                <Footer />
-
-    </div>
+    </PageShell>
   );
 }
