@@ -1,0 +1,88 @@
+:root {
+  --panel-border: #4F7689;
+  --panel-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+  --hover-shadow: 0 12px 28px rgba(16, 24, 40, 0.12);
+}
+
+.panel {
+  position: relative;
+  border-top: 3px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.panel-header {
+  position: relative;
+  color: #fff;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  background: linear-gradient(120deg, #667eea, #4F7689, #667eea);
+  background-size: 220% 220%;
+  animation: wave 7s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+  100% { background-position:0% 50%; }
+}
+
+.btn-soft {
+  border: 1px solid rgba(255,255,255,.45);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  padding: .35rem .75rem;
+  border-radius: 10px;
+  font-size: .9rem;
+  transition: transform .15s ease, background .2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.btn-soft:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.18);
+}
+
+.kpi {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 14px 10px;
+  min-height: 92px;
+  color: #fff;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(0,0,0,.08);
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+
+.kpi:hover { transform: translateY(-3px); }
+.kpi-val { margin:0 0 4px; font-weight:800; font-size:1.25rem; }
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e9edf3;
+  border-radius: 10px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation: shimmer 1.3s infinite;
+}
+
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+.badge-soft { padding:4px 10px; border-radius:999px; font-size:.8rem; border:1px solid; }
+.badge-approved { color:#0f5132; border-color:#badbcc; background:#d1e7dd; }
+.badge-rejected { color:#842029; border-color:#f5c2c7; background:#f8d7da; }
+.badge-completed{ color:#055160; border-color:#b6effb; background:#cff4fc; }
+.badge-underwork{ color:#664d03; border-color:#ffecb5; background:#fff3cd; }
+.badge-notstarted{ color:#383d41; border-color:#d6d8db; background:#e2e3e5; }

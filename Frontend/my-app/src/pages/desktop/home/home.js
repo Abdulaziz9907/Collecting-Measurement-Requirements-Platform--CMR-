@@ -11,6 +11,7 @@ import Footer from '../../../components/Footer.jsx';
 export default function Standards_menu() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [summary, setSummary] = useState({
+    departments: 0,
     total: 0,
     approved: 0,
     rejected: 0,
@@ -38,6 +39,7 @@ export default function Standards_menu() {
 
   const summaryCards = useMemo(() => ([
     { key: 'total', title: 'مجموع المعايير' },
+    { key: 'departments', title: 'عدد الإدارات' },
     { key: 'completed', title: 'معايير مكتملة' },
     { key: 'approved', title: 'معايير معتمدة' },
     { key: 'rejected', title: 'معايير غير معتمدة' },
@@ -47,6 +49,7 @@ export default function Standards_menu() {
 
   const summaryCardColors = useMemo(() => ({
     total: '#0d6efd',
+    departments: '#4F7689',
     completed: '#17a2b8',
     approved: '#198754',
     rejected: '#dc3545',
@@ -63,9 +66,13 @@ export default function Standards_menu() {
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetch(`${API_BASE}/api/standards`, { signal: abortRef.current.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const standards = await res.json();
+      const [standardsRes, departmentsRes] = await Promise.all([
+        fetch(`${API_BASE}/api/standards`, { signal: abortRef.current.signal }),
+        fetch(`${API_BASE}/api/departments`, { signal: abortRef.current.signal })
+      ]);
+      if (!standardsRes.ok || !departmentsRes.ok) throw new Error('HTTP error');
+      const standards = await standardsRes.json();
+      const departments = await departmentsRes.json();
 
       let data = standards || [];
       if (user?.role?.toLowerCase() === 'user') {
@@ -84,13 +91,14 @@ export default function Standards_menu() {
         if (key) counts[key]++;
       }
 
-      setSummary({ total: data.length, ...counts });
+      setSummary({ total: data.length, departments: departments.length, ...counts });
       setStandardsRaw(data);
       setLastUpdated(new Date());
     } catch (e) {
       if (e.name !== 'AbortError') {
         setError('تعذر تحميل البيانات. حاول مرة أخرى.');
         setSummary({
+          departments: 0,
           total: 0, approved: 0, rejected: 0, completed: 0, underWork: 0, notStarted: 0
         });
         setStandardsRaw([]);
