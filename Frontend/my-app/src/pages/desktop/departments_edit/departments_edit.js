@@ -105,7 +105,7 @@ export default function Departments_edit() {
               </div>
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 surface">
+                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                   {!department ? (
                     <div className="text-center py-5">
                       <div className="spinner-border text-primary" role="status">

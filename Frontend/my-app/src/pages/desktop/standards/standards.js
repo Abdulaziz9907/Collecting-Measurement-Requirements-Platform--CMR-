@@ -133,10 +133,12 @@ export default function Standards() {
 
                 <div className="row">
                   <div className="col-md-1 col-xl-1" />
-                  <div className="col-md-10 col-xl-10 p-4 my-3 surface d-flex flex-column"
+                  <div className="col-md-10 col-xl-10 p-4 my-3 bg-white d-flex flex-column"
                     style={{
                       minHeight: `${rowsPerPage * 48 + 150}px`,
-                      position: 'relative'
+                      position: 'relative',
+                      borderTop: "3px solid #4F7689",
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                     }}
                   >
 

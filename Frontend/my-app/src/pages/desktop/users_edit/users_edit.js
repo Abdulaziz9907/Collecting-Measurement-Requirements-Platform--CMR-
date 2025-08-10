@@ -120,7 +120,7 @@ export default function Users_edit() {
               </div>
               <div className="row">
                 <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 surface">
+                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                   {isLoading ? (
                     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
                       <div className="spinner-border m-5" role="status">
