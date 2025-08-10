@@ -54,9 +54,9 @@ export default function Sidebar() {
   const buttonStyles = {
     zIndex: 1040,
     background: sidebarVisible 
-      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+      ? 'linear-gradient(135deg, #333333ff 0%, #2c2c2cff 100%)' 
       : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-    border: sidebarVisible ? '1px solid #667eea' : '1px solid #dee2e6',
+    border: sidebarVisible ? '1px solid #313131ff' : '1px solid #dee2e6',
     padding: '8px 10px',
     borderRadius: '8px',
     display: 'flex',
@@ -66,7 +66,7 @@ export default function Sidebar() {
     width: '42px',
     height: '42px',
     boxShadow: sidebarVisible 
-      ? '0 4px 15px rgba(102, 126, 234, 0.3)' 
+      ? '0 4px 15px rgba(43, 43, 43, 0.3)' 
       : '0 2px 8px rgba(0,0,0,0.1)',
     transition: 'all 0.3s ease',
   };
@@ -95,18 +95,6 @@ export default function Sidebar() {
         style={buttonStyles}
         onClick={() => setSidebarVisible((prev) => !prev)}
         aria-label="Toggle sidebar"
-        onMouseEnter={(e) => {
-          if (!sidebarVisible) {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!sidebarVisible) {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-          }
-        }}
       >
         {[...Array(3)].map((_, i) => (
           <div
@@ -123,12 +111,12 @@ export default function Sidebar() {
         ))}
       </button>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar (same look as desktop) */}
       <div
         className="text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
           width: '240px',
-          background: 'linear-gradient(180deg, #1e3c72 0%, #2a5298 100%)',
+          background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)', 
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
           opacity: sidebarVisible ? 1 : 0,
           pointerEvents: sidebarVisible ? 'auto' : 'none',
@@ -147,7 +135,7 @@ export default function Sidebar() {
             return (
               <li className="nav-item p-0 m-0" key={idx}>
                 <Link
-                  className={`sidebar-link-mobile ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
+                  className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                   to={item.href}
                   onClick={() => {
                     setSidebarVisible(false);
@@ -172,10 +160,7 @@ export default function Sidebar() {
         }}
       >
         <div className="container-fluid d-flex flex-column p-0 ">
-          <hr className="my-0 sidebar-divider" style={{
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            opacity: 1
-          }} />
+          <hr className="my-0 sidebar-divider" />
           <ul className="navbar-nav text-light mt-4 w-100" id="accordionSidebar">
             {navItems.map((item, idx) => {
               const isActive =
@@ -186,9 +171,7 @@ export default function Sidebar() {
               return (
                 <li className="nav-item" key={idx}>
                   <Link
-                    className={`nav-link d-flex align-items-center sidebar-link ${
-                      isActive ? 'active' : ''
-                    } ${item.isLogout ? 'logout' : ''}`}
+                    className={`nav-link d-flex align-items-center sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
                     onClick={() => item.onClick && item.onClick()}
                   >
@@ -203,65 +186,40 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Enhanced Sidebar Styles */}
-    <style>{`
-  /* Enhanced Sidebar Styles */
-
-/* 1. Base link styles with fixed height and no wrapping */
-.sidebar-link,
-.sidebar-link-mobile {
+      {/* Styles */}
+      <style>{`
+.sidebar-link {
   display: flex;
   align-items: center;
-  height: 48px;             /* desired link height */
-  padding: 0 24px;          /* horizontal padding only */
-  margin: 0px 0;            /* vertical spacing */
+  height: 48px;
+  padding: 0 24px;
   font-size: 15px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   position: relative;
   transition: all 0.3s ease;
-  white-space: nowrap;      /* prevent text wrap */
+  white-space: nowrap;
+  text-decoration: none; /* remove underline */
 }
 
-/* 2. Hover effects */
 .sidebar-link:hover {
+  text-decoration: none; /* prevent underline on hover */
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
 }
 
-.sidebar-link-mobile:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* 3. Active (selected) state */
 .sidebar-link.active {
-  background:  #778fc24d;
+  background: #778fc24d;
   color: #fff !important;
 }
 
-.sidebar-link-mobile.active {
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* 4. Logout link variations */
 .sidebar-link.logout {
   color: #ef4444 !important;
 }
+
 .sidebar-link.logout:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #dc2626 !important;
 }
 
-.sidebar-link-mobile.logout {
-  color: #ff6b6b !important;
-}
-.sidebar-link-mobile.logout:hover {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff5252 !important;
-}
-
-/* 5. Active-dot indicator */
 .active-dot {
   width: 8px;
   height: 8px;
@@ -274,13 +232,13 @@ export default function Sidebar() {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
   animation: pulse 1s infinite ease-in-out;
 }
+
 @keyframes pulse {
-  0%   { transform: translateY(-50%) scale(1); }
-  50%  { transform: translateY(-50%) scale(1.2); }
+  0% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.2); }
   100% { transform: translateY(-50%) scale(1); }
 }
 
-/* 6. Divider styling */
 .sidebar-divider {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   height: 1px;
@@ -288,45 +246,8 @@ export default function Sidebar() {
   margin: 0 24px;
 }
 
-/* 7. Custom scrollbar */
-.navbar-nav::-webkit-scrollbar {
-  width: 6px;
-}
-.navbar-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-.navbar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-.navbar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 8. Hamburger toggle button size */
-button[aria-label="Toggle sidebar"] {
-  width: 50px;    /* new width */
-  height: 50px;   /* new height */
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-/* 9. Mobile-specific tweaks */
-@media (max-width: 767px) {
-  .sidebar-link-mobile {
-    margin: 3px 12px;
-    padding: 0 18px;
-    height: 48px;
-  }
-  .sidebar-link-mobile.active::after {
-    right: -8px;
-  }
-}
-
-`}</style>
-
+        }
+      `}</style>
     </>
   );
 }
-
