@@ -3,10 +3,7 @@ import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
-import Header from '../../../components/Header.jsx';
-import Sidebar from '../../../components/Sidebar.jsx';
-import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
-import Footer from '../../../components/Footer.jsx';
+import PageShell from '../../../components/PageShell.jsx';
 
 export default function Users() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -84,117 +81,130 @@ export default function Users() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
-      <Header />
-      <div id="wrapper">
-        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
-            <div className="container-fluid">
-              <div className="row p-4">
-                <div className="col-md-12">
-                  <Breadcrumbs />
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-1 col-xl-1" />
-                <div className="col-md-10 col-xl-10 p-4 my-3 bg-white d-flex flex-column" style={{ minHeight: `${rowsPerPage * 48 + 150}px`, position: 'relative', borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
-                    <input className="form-control form-control-sm" style={{ width: '160px' }} type="search" placeholder="بحث..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                    <Dropdown>
-                      <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        {uniqueRoles.map((r, idx) => (
-                          <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" className="form-check-input m-0" checked={roleFilter.includes(r)} onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)} />
-                            <span className="form-check-label">{r}</span>
-                          </label>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    <Dropdown>
-                      <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
-                      <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        {uniqueDepartments.map((dep, idx) => (
-                          <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" className="form-check-input m-0" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
-                            <span className="form-check-label">{dep}</span>
-                          </label>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
-                  </div>
-                  <div className="table-responsive" style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}>
-                  <table className="table text-center align-middle">
-                      <thead>
-                        <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
-                          <th style={{ color: '#6c757d' }}>رقم الموظف</th>
-                          <th style={{ color: '#6c757d' }}>اسم المستخدم</th>
-                          <th style={{ color: '#6c757d' }}>الاسم الأول</th>
-                          <th style={{ color: '#6c757d' }}>الاسم الأخير</th>
-                          <th style={{ color: '#6c757d' }}>الدور</th>
-                          <th style={{ color: '#6c757d' }}>الإدارة</th>
-                           {!isUser && <th style={{ color: '#6c757d' }}>تعديل</th>}
-                          {!isUser && <th style={{ color: '#6c757d' }}>حذف</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loading ? (
-                          <tr>
-                             <td colSpan={isUser ? 6 : 8} className="text-center py-5">
-                              <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : paginatedUsers.length === 0 ? (
-                          <tr><td colSpan={isUser ? 6 : 8} className="text-muted">لا توجد نتائج</td></tr>
-                        ) : (
-                          paginatedUsers.map(u => (
-                            <tr key={u.id}>
-                              <td>{u.employee_id}</td>
-                              <td className="text-primary">{u.username}</td>
-                              <td>{u.first_name}</td>
-                              <td>{u.last_name}</td>
-                              <td>{u.role}</td>
-                              <td>{departments.find(d => d.department_id === u.department_id)?.department_name}</td>
-                               {!isUser && (
-                                <td>
-                                  <i className="fas fa-pen text-success" onClick={() => navigate(`/users_edit/${u.employee_id}`)}></i>
-                                </td>
-                              )}
-                              {!isUser && (
-                                <td>
-                                  <i className="fas fa-times text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteUser(u.employee_id)}></i>
-                                </td>
-                              )}
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!loading && filteredUsers.length > rowsPerPage && (
-                    <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100" style={{ zIndex: 10, paddingInline: '1rem' }}>
-                      <div>
-                        <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
-                        <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                      </div>
-                      <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
-                    </div>
-                  )}
-                </div>
-                <div className="col-md-1 col-xl-1" />
-              </div>
-            </div>
+    <PageShell sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible}>
+      <div className="surface allow-overflow">
+        <div className="head-flat">
+          <h4 className="m-0">المستخدمون</h4>
+        </div>
+        <div className="body-flat position-relative" style={{ minHeight: `${rowsPerPage * 48 + 150}px` }}>
+          <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
+            <input
+              className="form-control form-control-sm"
+              style={{ width: '160px' }}
+              type="search"
+              placeholder="بحث..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Dropdown>
+              <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
+              <Dropdown.Menu>
+                {uniqueRoles.map((r, idx) => (
+                  <label
+                    key={idx}
+                    className="dropdown-item d-flex align-items-center gap-2 m-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      className="form-check-input m-0"
+                      checked={roleFilter.includes(r)}
+                      onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)}
+                    />
+                    <span className="form-check-label">{r}</span>
+                  </label>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+            {!isUser && (
+              <Dropdown>
+                <Dropdown.Toggle size="sm" variant="outline-secondary">الجهة</Dropdown.Toggle>
+                <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {uniqueDepartments.map((dep, idx) => (
+                    <label
+                      key={idx}
+                      className="dropdown-item d-flex align-items-center gap-2 m-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="form-check-input m-0"
+                        checked={departmentFilter.includes(dep)}
+                        onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                      />
+                      <span className="form-check-label">{dep}</span>
+                    </label>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
+            {!isUser && <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>}
           </div>
+          <div
+            className="table-responsive"
+            style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}
+          >
+            <table className="table text-center align-middle">
+              <thead>
+                <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
+                  <th style={{ color: '#6c757d' }}>رقم الموظف</th>
+                  <th style={{ color: '#6c757d' }}>اسم المستخدم</th>
+                  <th style={{ color: '#6c757d' }}>الاسم الأول</th>
+                  <th style={{ color: '#6c757d' }}>الاسم الأخير</th>
+                  <th style={{ color: '#6c757d' }}>الدور</th>
+                  <th style={{ color: '#6c757d' }}>الجهة</th>
+                  {!isUser && <th style={{ color: '#6c757d' }}>تعديل</th>}
+                  {!isUser && <th style={{ color: '#6c757d' }}>حذف</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  [...Array(rowsPerPage)].map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan={isUser ? 6 : 8}><div className="skeleton skeleton-table-row"></div></td>
+                    </tr>
+                  ))
+                ) : paginatedUsers.length === 0 ? (
+                  <tr><td colSpan={isUser ? 6 : 8} className="text-muted">لا توجد نتائج</td></tr>
+                ) : (
+                  paginatedUsers.map(u => (
+                    <tr key={u.employee_id}>
+                      <td>{u.employee_id}</td>
+                      <td className="text-primary">{u.username}</td>
+                      <td>{u.first_name}</td>
+                      <td>{u.last_name}</td>
+                      <td>{u.role}</td>
+                      <td>{departments.find(d => d.department_id === u.department_id)?.department_name || ''}</td>
+                      {!isUser && (
+                        <td>
+                          <i className="fas fa-pen text-success" onClick={() => navigate(`/users_edit/${u.employee_id}`)}></i>
+                        </td>
+                      )}
+                      {!isUser && (
+                        <td>
+                          <i className="fas fa-times text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteUser(u.employee_id)}></i>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {!loading && filteredUsers.length > rowsPerPage && (
+            <div
+              className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100"
+              style={{ zIndex: 10, paddingInline: '1rem' }}
+            >
+              <div>
+                <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
+              </div>
+              <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
+            </div>
+          )}
         </div>
       </div>
-                <Footer />
-
-    </div>
-    
+    </PageShell>
   );
 }
