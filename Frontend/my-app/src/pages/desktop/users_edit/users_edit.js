@@ -21,6 +21,54 @@ export default function Users_edit() {
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
+  /* ===== Minimal theme + skeleton (matches other pages) ===== */
+  const LocalTheme = () => (
+    <style>{`
+      :root{
+        --radius:14px;
+        --shadow:0 10px 24px rgba(16,24,40,.08);
+        --surface:#fff;
+        --surface-muted:#fbfdff;
+        --stroke:#eef2f7;
+        --skeleton-bg:#e9edf3;
+        --skeleton-sheen:rgba(255,255,255,.6);
+        --skeleton-speed:1.2s;
+      }
+      .page-bg { background:#f6f8fb; min-height:100vh; }
+      .surface {
+        background:var(--surface);
+        border:1px solid var(--stroke);
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .head-flat {
+        padding:12px 16px;
+        background:var(--surface-muted);
+        border-bottom:1px solid var(--stroke);
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+      }
+      .head-match { height:56px; padding-block:10px; }
+      .head-match > * { margin:0; }
+      .body-flat { padding:16px; }
+      .page-spacer { height:140px; }
+
+      /* Skeleton */
+      .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
+      .skel::after {
+        content:""; position:absolute; inset:0; transform:translateX(-100%);
+        background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%);
+        animation:shimmer var(--skeleton-speed) infinite;
+      }
+      @keyframes shimmer { 100% { transform: translateX(100%); } }
+      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
+
+      .skel-line  { height:14px; width:40%; }
+      .skel-input { height:38px; width:100%; border-radius:8px; }
+      .skel-btn   { height:38px; width:120px; border-radius:8px; }
+    `}</style>
+  );
+
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
@@ -96,7 +144,8 @@ export default function Users_edit() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+      <LocalTheme />
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -108,89 +157,155 @@ export default function Users_edit() {
           <div className="alert alert-danger mb-0" role="alert">حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى</div>
         </div>
       )}
-      <div id="wrapper">
+
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
+
+        <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          <div id="content" className="flex-grow-1">
             <div className="container-fluid">
+              {/* Breadcrumbs row */}
               <div className="row p-4">
-                <div className="col-md-12">
+                <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
-              <div className="row">
-                <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  {isLoading ? (
-                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-                      <div className="spinner-border m-5" role="status">
-                        <span className="sr-only">Loading...</span>
-                      </div>
+
+              {/* Centered card like other pages */}
+              <div className="row justify-content-center">
+                <div className="col-12 col-xl-10">
+                  <div className="surface" aria-busy={isLoading}>
+                    {/* Header */}
+                    <div className="head-flat head-match">
+                      <h5 className="m-0">تعديل مستخدم</h5>
                     </div>
-                  ) : (
-                    <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                      <div className="mb-3">
-                        <label className="form-label">اسم المستخدم</label>
-                        <input type="text" className="form-control" name="username" required defaultValue={user?.username || ''} />
-                        <div className="invalid-feedback">يرجى إدخال اسم المستخدم</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">كلمة المرور</label>
-                        <input type="text" className="form-control" name="password" required defaultValue={user?.password || ''} />
-                        <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">الاسم الأول</label>
-                        <input type="text" className="form-control" name="first_name" required defaultValue={user?.first_name || ''} />
-                        <div className="invalid-feedback">يرجى إدخال الاسم الأول</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">الاسم الأخير</label>
-                        <input type="text" className="form-control" name="last_name" required defaultValue={user?.last_name || ''} />
-                        <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">البريد الإلكتروني</label>
-                        <input type="email" className="form-control" name="email" defaultValue={user?.email || ''} />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">الدور</label>
-                        <select className="form-select" name="role" required defaultValue={user?.role || ''} onChange={e => setUser(prev => ({ ...prev, role: e.target.value }))}>
-                          <option value="">اختر الدور...</option>
-                          <option value="User">User</option>
-                          <option value="Management">Management</option>
-                        </select>
-                        <div className="invalid-feedback">يرجى تحديد الدور</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">الإدارة</label>
-                        <select className="form-select" name="department" required value={user?.department_id || ''} onChange={e => setUser(prev => ({ ...prev, department_id: parseInt(e.target.value, 10) }))}>
-                          <option value="">اختر الإدارة...</option>
-                          {departments.map(d => (
-                            <option key={d.department_id} value={d.department_id}>{d.department_name}</option>
+
+                    {/* Body */}
+                    <div className="body-flat">
+                      {isLoading ? (
+                        // ===== Loading Skeleton (mirrors form layout; no spinner) =====
+                        <div className="row g-3">
+                          {/* Each block: label line + input block (full width like the form) */}
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div className="col-12" key={`skel-${i}`}>
+                              <div className="skel skel-line mb-2" style={{ width: i === 2 ? '30%' : '40%' }} />
+                              <div className="skel skel-input" />
+                            </div>
                           ))}
-                        </select>
-                        <div className="invalid-feedback">يرجى اختيار الإدارة</div>
-                      </div>
-                      <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                        <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                        <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
-                      </div>
-                      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                        {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                        تحديث
-                      </button>
-                    </form>
-                  )}
+                          {/* Role */}
+                          <div className="col-12">
+                            <div className="skel skel-line mb-2" style={{ width: '30%' }} />
+                            <div className="skel skel-input" />
+                          </div>
+                          {/* Department */}
+                          <div className="col-12">
+                            <div className="skel skel-line mb-2" style={{ width: '30%' }} />
+                            <div className="skel skel-input" />
+                          </div>
+                          {/* Checkbox row */}
+                          <div className="col-12 d-flex align-items-center gap-2 pt-2">
+                            <div className="skel" style={{ width: 20, height: 20, borderRadius: 4 }} />
+                            <div className="skel skel-line" style={{ width: 180 }} />
+                          </div>
+                          {/* Buttons row: Submit on one side, Cancel on the other */}
+                          <div className="col-12 d-flex justify-content-between align-items-center mt-2">
+                            <div className="skel skel-btn" />
+                            <div className="skel skel-btn" />
+                          </div>
+                        </div>
+                      ) : (
+                        <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                          <div className="mb-3">
+                            <label className="form-label">اسم المستخدم</label>
+                            <input type="text" className="form-control" name="username" required defaultValue={user?.username || ''} />
+                            <div className="invalid-feedback">يرجى إدخال اسم المستخدم</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">كلمة المرور</label>
+                            <input type="text" className="form-control" name="password" required defaultValue={user?.password || ''} />
+                            <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">الاسم الأول</label>
+                            <input type="text" className="form-control" name="first_name" required defaultValue={user?.first_name || ''} />
+                            <div className="invalid-feedback">يرجى إدخال الاسم الأول</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">الاسم الأخير</label>
+                            <input type="text" className="form-control" name="last_name" required defaultValue={user?.last_name || ''} />
+                            <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">البريد الإلكتروني</label>
+                            <input type="email" className="form-control" name="email" defaultValue={user?.email || ''} />
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">الدور</label>
+                            <select
+                              className="form-select"
+                              name="role"
+                              required
+                              defaultValue={user?.role || ''}
+                              onChange={e => setUser(prev => ({ ...prev, role: e.target.value }))}
+                            >
+                              <option value="">اختر الدور...</option>
+                              <option value="User">User</option>
+                              <option value="Management">Management</option>
+                            </select>
+                            <div className="invalid-feedback">يرجى تحديد الدور</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">الإدارة</label>
+                            <select
+                              className="form-select"
+                              name="department"
+                              required
+                              value={user?.department_id || ''}
+                              onChange={e => setUser(prev => ({ ...prev, department_id: parseInt(e.target.value, 10) }))}
+                            >
+                              <option value="">اختر الإدارة...</option>
+                              {departments.map(d => (
+                                <option key={d.department_id} value={d.department_id}>{d.department_name}</option>
+                              ))}
+                            </select>
+                            <div className="invalid-feedback">يرجى اختيار الإدارة</div>
+                          </div>
+                          <div className="d-flex align-items-center gap-2 pb-4 pt-4">
+                            <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
+                            <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                          </div>
+
+                          {/* Submit on one side, Cancel on the other (same layout as create) */}
+                          <div className="d-flex justify-content-between align-items-center">
+                            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                              {isSubmitting && (
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              )}
+                              تحديث
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary"
+                              onClick={() => navigate('/users')}
+                              disabled={isSubmitting}
+                            >
+                              إلغاء
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="col-md-1 col-xl-2" />
               </div>
+
+              <div className="page-spacer" />
             </div>
           </div>
+          <Footer />
         </div>
       </div>
-                <Footer />
-
     </div>
   );
 }

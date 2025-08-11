@@ -58,8 +58,6 @@ export default function Login({ onLogin }) {
           --text-color: #343a40;
         }
 
-   
-
         .video-background {
           position: relative;
           min-height: 100vh;
@@ -112,14 +110,14 @@ export default function Login({ onLogin }) {
         }
 
         .card-header-custom {
-  position: relative;
-  background: #FFFFFF;
-  background-size: 400% 400%;
-  color: white;
-  text-align: center;
-  padding: 2.5rem 2rem 2rem;
-  border-bottom: 1px solid rgba(231, 224, 224, 0.15);
-}
+          position: relative;
+          background: #FFFFFF;
+          background-size: 400% 400%;
+          color: white;
+          text-align: center;
+          padding: 2.5rem 2rem 2rem;
+          border-bottom: 1px solid rgba(231, 224, 224, 0.15);
+        }
 
         .card-body-custom {
           padding: 2rem 2.5rem 2.5rem;
@@ -138,9 +136,10 @@ export default function Login({ onLogin }) {
         .floating-label-container.has-error i {
           color: #dc3545 !important;
         }
-          .welcome-text{
+
+        .welcome-text{
           color: rgba(5, 0, 53, 1);
-          }
+        }
 
         .floating-label input {
           background: var(--input-bg);
@@ -211,7 +210,6 @@ export default function Login({ onLogin }) {
           font-size: 2.5rem;
           font-weight: 700;
           margin-bottom: 1rem;
-          
         }
 
         .info-description {
@@ -219,7 +217,7 @@ export default function Login({ onLogin }) {
           line-height: 1.6;
         }
 
-        @media (min-width: 992px) {
+        @media (min-width: 1260px) {
           .login-wrapper {
             max-width: 460px;
             margin-left: 30px;
@@ -248,30 +246,55 @@ export default function Login({ onLogin }) {
 
           <div className="content-layer">
             <div className="container">
-              <div className="row justify-content-center" style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}>
-             <div className="col-lg-7 text-center justify-content-center bg-opacity-50 p-4 rounded" >
-                <h1 className=' ' style={{ textAlign: 'right', color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
-                <p className='fw-light mt-4 ' style={{ textAlign: 'right', fontSize: '28px', textIndent: '1em',  textAlign: 'justify',color: 'rgba(209, 209, 209, 1)' }}>
-                  
-تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو مدينة صناعية ذكية ومستدامة. تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة، وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات.                     
-                    كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في المملكة.
-                     </p>
+              <div
+                className="row justify-content-center"
+                style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}
+              >
+           {/* LEFT TEXT COLUMN — hidden on md and below */}
+<div
+  className="col-lg-7 d-none d-lg-block justify-content-center bg-opacity-50 p-4 rounded"
+  dir="rtl"
+  lang="ar"
+>
+  <h1
+    className="mb-3 text-lg-end"
+    style={{ color: 'rgba(209, 209, 209, 1)' }}
+  >
+    أهمية معايير التحول الرقمي
+  </h1>
 
-
-
+  <p
+    className="fw-light mt-4"
+    style={{
+      fontSize: '25px',
+      color: 'rgba(209, 209, 209, 1)',
+      textAlign: 'justify',      
+      textAlignLast: 'right',
+      lineHeight: 1.8
+    }}
+  >
+    تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو
+    مدينة صناعية ذكية ومستدامة. تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة،
+    وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات. كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر
+    للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في
+    المملكة.
+  </p>
 </div>
 
+
+                {/* RIGHT LOGIN COLUMN */}
                 <div className="col-lg-5 col-md-8 col-sm-10 order-1 order-lg-2 login-wrapper mt-5 mt-lg-0">
                   <div className="login-card">
                     <div className="card-header-custom">
-                      <h2 className="welcome-text">
-                        تسجيل الدخول</h2>
+                      <h2 className="welcome-text">تسجيل الدخول</h2>
                     </div>
                     <div className="card-body-custom">
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleLogin();
-                      }}>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleLogin();
+                        }}
+                      >
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
                           <div className="floating-label">
                             <input
@@ -310,7 +333,11 @@ export default function Login({ onLogin }) {
 
                         <button type="submit" className="btn btn-login" disabled={isLoading}>
                           {isLoading ? (
-                            <div className="spinner-border text-light" role="status" style={{ width: '1.3rem', height: '1.3rem' }}>
+                            <div
+                              className="spinner-border text-light"
+                              role="status"
+                              style={{ width: '1.3rem', height: '1.3rem' }}
+                            >
                               <span className="visually-hidden">Loading...</span>
                             </div>
                           ) : (
@@ -324,6 +351,7 @@ export default function Login({ onLogin }) {
                     </div>
                   </div>
                 </div>
+                {/* END RIGHT LOGIN COLUMN */}
               </div>
             </div>
           </div>

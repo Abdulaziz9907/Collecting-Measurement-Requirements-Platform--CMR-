@@ -18,7 +18,7 @@ export default function Breadcrumbs() {
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
 
-  const breadcrumbs = [{ path: '/', label: 'الرئيسية' }];
+  const breadcrumbs = [{ path: '/home', label: 'الرئيسية' }];
 
   const mainSeg = segments.find(seg => !/^\d+$/.test(seg));
   if (mainSeg) {

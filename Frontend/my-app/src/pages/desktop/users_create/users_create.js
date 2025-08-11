@@ -5,6 +5,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function Users_create() {
   const [validated, setValidated] = useState(false);
@@ -15,6 +16,42 @@ export default function Users_create() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const navigate = useNavigate();
+
+  /* ===== Minimal theme (card + exact header height). Does NOT change font. ===== */
+  const LocalTheme = () => (
+    <style>{`
+      :root{
+        --radius:14px;
+        --shadow:0 10px 24px rgba(16,24,40,.08);
+        --surface:#fff;
+        --surface-muted:#fbfdff;
+        --stroke:#eef2f7;
+      }
+      .page-bg { background:#f6f8fb; min-height:100vh; }
+      .surface {
+        background:var(--surface);
+        border:1px solid var(--stroke);
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .head-flat {
+        padding:12px 16px;
+        background:var(--surface-muted);
+        border-bottom:1px solid var(--stroke);
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+      }
+      /* ✅ exact same height as Standards/Reports */
+      .head-match {
+        height:56px;            /* fixed height */
+        padding-block:10px;     /* keep visual balance */
+      }
+      .head-match > * { margin:0; } /* avoid extra height from margins */
+      .body-flat { padding:16px; }
+      .page-spacer { height:140px; } /* comfy gap before footer */
+    `}</style>
+  );
 
   useEffect(() => {
     fetch(`${API_BASE}/api/departments`)
@@ -74,8 +111,10 @@ export default function Users_create() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+      <LocalTheme />
       <Header />
+
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">تم إنشاء المستخدم بنجاح</div>
@@ -86,87 +125,116 @@ export default function Users_create() {
           <div className="alert alert-danger mb-0" role="alert">حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى</div>
         </div>
       )}
-      <div id="wrapper">
+
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
+
+        <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          <div id="content" className="flex-grow-1">
             <div className="container-fluid">
+              {/* Breadcrumbs row (same as Standards) */}
               <div className="row p-4">
-                <div className="col-md-12">
+                <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
-              <div className="row">
-                <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  <h4>إنشاء مستخدم</h4>
-                  <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                      <label className="form-label">رقم الموظف</label>
-                      <input type="number" className="form-control" name="employee_id" required />
-                      <div className="invalid-feedback">يرجى إدخال رقم الموظف</div>
+
+              {/* Same grid as Standards: center + col-12 col-xl-10 */}
+              <div className="row justify-content-center">
+                <div className="col-12 col-xl-10">
+                  <div className="surface">
+                    {/* Header inside the card, exact height */}
+                    <div className="head-flat head-match">
+                      <h5 className="m-0">إنشاء مستخدم</h5>
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">اسم المستخدم</label>
-                      <input type="text" className="form-control" name="username" required />
-                      <div className="invalid-feedback">يرجى إدخال اسم المستخدم</div>
+
+                    {/* Body — unchanged fields/layout/buttons */}
+                    <div className="body-flat">
+                      <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                        <div className="mb-3">
+                          <label className="form-label">رقم الموظف</label>
+                          <input type="number" className="form-control" name="employee_id" required />
+                          <div className="invalid-feedback">يرجى إدخال رقم الموظف</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">اسم المستخدم</label>
+                          <input type="text" className="form-control" name="username" required />
+                          <div className="invalid-feedback">يرجى إدخال اسم المستخدم</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">كلمة المرور</label>
+                          <input type="password" className="form-control" name="password" required />
+                          <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">الاسم الأول</label>
+                          <input type="text" className="form-control" name="first_name" required />
+                          <div className="invalid-feedback">يرجى إدخال الاسم الأول</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">الاسم الأخير</label>
+                          <input type="text" className="form-control" name="last_name" required />
+                          <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">البريد الإلكتروني</label>
+                          <input type="email" className="form-control" name="email" />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">الدور</label>
+                          <select className="form-select" name="role" required>
+                            <option value="">اختر الدور...</option>
+                            <option value="User">User</option>
+                            <option value="Management">Management</option>
+                          </select>
+                          <div className="invalid-feedback">يرجى تحديد الدور</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">الإدارة</label>
+                          <select className="form-select" name="department" required>
+                            <option value="">اختر الإدارة...</option>
+                            {departments.map(d => (
+                              <option key={d.department_id} value={d.department_id}>{d.department_name}</option>
+                            ))}
+                          </select>
+                          <div className="invalid-feedback">يرجى اختيار الإدارة</div>
+                        </div>
+                        <div className="d-flex align-items-center gap-2 pb-4 pt-4">
+                          <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
+                          <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                        </div>
+
+                        {/* Submit on one side, Cancel on the other (swapped order) */}
+                        <div className="d-flex justify-content-between align-items-center">
+                          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                            {isSubmitting && (
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            )}
+                            إرسال
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => navigate('/users')}
+                            disabled={isSubmitting}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">كلمة المرور</label>
-                      <input type="password" className="form-control" name="password" required />
-                      <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">الاسم الأول</label>
-                      <input type="text" className="form-control" name="first_name" required />
-                      <div className="invalid-feedback">يرجى إدخال الاسم الأول</div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">الاسم الأخير</label>
-                      <input type="text" className="form-control" name="last_name" required />
-                      <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">البريد الإلكتروني</label>
-                      <input type="email" className="form-control" name="email" />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">الدور</label>
-                      <select className="form-select" name="role" required>
-                        <option value="">اختر الدور...</option>
-                        <option value="User">User</option>
-                        <option value="Management">Management</option>
-                      </select>
-                      <div className="invalid-feedback">يرجى تحديد الدور</div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">الإدارة</label>
-                      <select className="form-select" name="department" required>
-                        <option value="">اختر الإدارة...</option>
-                        {departments.map(d => (
-                          <option key={d.department_id} value={d.department_id}>{d.department_name}</option>
-                        ))}
-                      </select>
-                      <div className="invalid-feedback">يرجى اختيار الإدارة</div>
-                    </div>
-                    <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                      <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                      <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                      {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                      إرسال
-                    </button>
-                  </form>
+                  </div>
                 </div>
-                <div className="col-md-1 col-xl-2" />
               </div>
+
+              {/* Same spacer as other pages */}
+              <div className="page-spacer" />
             </div>
           </div>
-          
+          <Footer />
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

@@ -14,20 +14,66 @@ export default function Departments_edit() {
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
+  /* ===== Minimal shell + skeleton to match other pages ===== */
+  const LocalTheme = () => (
+    <style>{`
+      :root{
+        --radius:14px;
+        --shadow:0 10px 24px rgba(16,24,40,.08);
+        --surface:#fff;
+        --surface-muted:#fbfdff;
+        --stroke:#eef2f7;
+        --skeleton-bg:#e9edf3;
+        --skeleton-sheen:rgba(255,255,255,.6);
+        --skeleton-speed:1.2s;
+      }
+      .page-bg { background:#f6f8fb; min-height:100vh; }
+      .surface {
+        background:var(--surface);
+        border:1px solid var(--stroke);
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .head-flat {
+        padding:12px 16px;
+        background:var(--surface-muted);
+        border-bottom:1px solid var(--stroke);
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+      }
+      .head-match { height:56px; padding-block:10px; }
+      .head-match > * { margin:0; }
+      .body-flat { padding:16px; }
+      .page-spacer { height:140px; }
+
+      /* Skeleton */
+      .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
+      .skel::after {
+        content:""; position:absolute; inset:0; transform:translateX(-100%);
+        background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%);
+        animation:shimmer var(--skeleton-speed) infinite;
+      }
+      @keyframes shimmer { 100% { transform: translateX(100%); } }
+      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
+      .skel-line  { height:14px; width:40%; }
+      .skel-input { height:38px; width:100%; border-radius:8px; }
+      .skel-btn   { height:38px; width:120px; border-radius:8px; }
+    `}</style>
+  );
+
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
     fetch(`${API_BASE}/api/departments/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => { if (isMounted) setDepartment(data); })
-      .catch(err => { console.error('Error fetching department', err); if (isMounted) setDepartment(null); });
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(data => { if (isMounted) { setDepartment(data); setIsLoading(false); } })
+      .catch(err => { console.error('Error fetching department', err); if (isMounted) { setDepartment(null); setIsLoading(false); } });
     return () => { isMounted = false; };
   }, [API_BASE, id]);
 
@@ -77,7 +123,8 @@ export default function Departments_edit() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+      <LocalTheme />
       <Header />
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -93,56 +140,99 @@ export default function Departments_edit() {
           </div>
         </div>
       )}
-      <div id="wrapper">
+
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
+
+        <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          <div id="content" className="flex-grow-1">
             <div className="container-fluid">
               <div className="row p-4">
-                <div className="col-md-12">
+                <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
-              <div className="row">
-                <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  {!department ? (
-                    <div className="text-center py-5">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
+
+              {/* Centered card like other pages */}
+              <div className="row justify-content-center">
+                <div className="col-12 col-xl-10">
+                  <div className="surface" aria-busy={isLoading}>
+                    {/* Header */}
+                    <div className="head-flat head-match">
+                      <h5 className="m-0">تعديل جهة</h5>
                     </div>
-                  ) : (
-                    <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                      <div className="mb-3">
-                        <label className="form-label">اسم الجهة</label>
-                        <input type="text" className="form-control" name="department_name" required defaultValue={department.department_name || ''} />
-                        <div className="invalid-feedback">يرجى إدخال اسم الجهة</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">رقم المبنى</label>
-                        <input type="number" className="form-control" name="building_number" required defaultValue={department.building_number || ''} />
-                        <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
-                      </div>
-                      <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                        <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                        <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
-                      </div>
-                      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                        {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                        تحديث
-                      </button>
-                    </form>
-                  )}
+
+                    {/* Body */}
+                    <div className="body-flat">
+                      {isLoading ? (
+                        // Loading skeleton (mirrors form fields, no spinner)
+                        <div className="row g-3">
+                          <div className="col-12">
+                            <div className="skel skel-line mb-2" style={{ width: '30%' }} />
+                            <div className="skel skel-input" />
+                          </div>
+                          <div className="col-12">
+                            <div className="skel skel-line mb-2" style={{ width: '30%' }} />
+                            <div className="skel skel-input" />
+                          </div>
+                          <div className="col-12 d-flex align-items-center gap-2 pt-2">
+                            <div className="skel" style={{ width: 20, height: 20, borderRadius: 4 }} />
+                            <div className="skel skel-line" style={{ width: 180 }} />
+                          </div>
+                          <div className="col-12 d-flex justify-content-between align-items-center mt-2">
+                            <div className="skel skel-btn" />
+                            <div className="skel skel-btn" />
+                          </div>
+                        </div>
+                      ) : (
+                        <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                          <div className="mb-3">
+                            <label className="form-label">اسم الجهة</label>
+                            <input type="text" className="form-control" name="department_name" required defaultValue={department?.department_name || ''} />
+                            <div className="invalid-feedback">يرجى إدخال اسم الجهة</div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">رقم المبنى</label>
+                            <input type="number" className="form-control" name="building_number" required defaultValue={department?.building_number || ''} />
+                            <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
+                          </div>
+                          <div className="d-flex align-items-center gap-2 pb-4 pt-4">
+                            <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
+                            <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                          </div>
+
+                          {/* Submit on one side, Cancel on the other (like Users_edit) */}
+                          <div className="d-flex justify-content-between align-items-center">
+                            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                              {isSubmitting && (
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              )}
+                              تحديث
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary"
+                              onClick={() => navigate('/departments')}
+                              disabled={isSubmitting}
+                            >
+                              إلغاء
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="col-md-1 col-xl-2" />
               </div>
+
+              <div className="page-spacer" />
             </div>
           </div>
+
+          <Footer />
         </div>
       </div>
-                <Footer />
-
     </div>
   );
 }

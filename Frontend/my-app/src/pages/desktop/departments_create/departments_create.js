@@ -5,6 +5,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function Departments_create() {
   const [validated, setValidated] = useState(false);
@@ -14,6 +15,38 @@ export default function Departments_create() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const navigate = useNavigate();
+
+  /* ===== Minimal shell to match other pages (card + exact header height) ===== */
+  const LocalTheme = () => (
+    <style>{`
+      :root{
+        --radius:14px;
+        --shadow:0 10px 24px rgba(16,24,40,.08);
+        --surface:#fff;
+        --surface-muted:#fbfdff;
+        --stroke:#eef2f7;
+      }
+      .page-bg { background:#f6f8fb; min-height:100vh; }
+      .surface {
+        background:var(--surface);
+        border:1px solid var(--stroke);
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .head-flat {
+        padding:12px 16px;
+        background:var(--surface-muted);
+        border-bottom:1px solid var(--stroke);
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+      }
+      .head-match { height:56px; padding-block:10px; }
+      .head-match > * { margin:0; }
+      .body-flat { padding:16px; }
+      .page-spacer { height:140px; }
+    `}</style>
+  );
 
   useEffect(() => {
     if (showError) {
@@ -51,7 +84,7 @@ export default function Departments_create() {
         } else {
           setShowSuccess(true);
           form.reset();
-          setValidated(false); // ✅ Reset validation state on success
+          setValidated(false);
         }
       } catch {
         setShowError(true);
@@ -61,8 +94,10 @@ export default function Departments_create() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+      <LocalTheme />
       <Header />
+
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
@@ -77,49 +112,74 @@ export default function Departments_create() {
           </div>
         </div>
       )}
-      <div id="wrapper">
+
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
+        <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          <div id="content" className="flex-grow-1">
             <div className="container-fluid">
               <div className="row p-4">
-                <div className="col-md-12">
+                <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
-              <div className="row">
-                <div className="col-md-1 col-xl-2" />
-                <div className="col-md-10 col-xl-8 p-4 my-3 bg-white" style={{ borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  <h4>إنشاء جهة جديدة</h4>
-                  <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                      <label className="form-label">اسم الجهة</label>
-                      <input type="text" className="form-control" name="department_name" required />
-                      <div className="invalid-feedback">يرجى إدخال اسم الجهة</div>
+
+              {/* Centered card like Standards/Users */}
+              <div className="row justify-content-center">
+                <div className="col-12 col-xl-11">
+                  <div className="surface">
+                    <div className="head-flat head-match">
+                      <h5 className="m-0">إنشاء جهة جديدة</h5>
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">رقم المبنى</label>
-                      <input type="number" className="form-control" name="building_number" required />
-                      <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
+
+                    <div className="body-flat">
+                      <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                        <div className="mb-3">
+                          <label className="form-label">اسم الجهة</label>
+                          <input type="text" className="form-control" name="department_name" required />
+                          <div className="invalid-feedback">يرجى إدخال اسم الجهة</div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">رقم المبنى</label>
+                          <input type="number" className="form-control" name="building_number" required />
+                          <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
+                        </div>
+                        <div className="d-flex align-items-center gap-2 pb-4 pt-4">
+                          <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
+                          <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                        </div>
+
+                        {/* Submit on one side, Cancel on the other (like Users_create) */}
+                        <div className="d-flex justify-content-between align-items-center">
+                          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                            {isSubmitting && (
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            )}
+                            إرسال
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => navigate('/departments')}
+                            disabled={isSubmitting}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                    <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                      <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                      <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                      {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                      إرسال
-                    </button>
-                  </form>
+                  </div>
                 </div>
-                <div className="col-md-1 col-xl-2" />
               </div>
+
+              <div className="page-spacer" />
             </div>
           </div>
+
+          <Footer />
         </div>
       </div>
-                <Footer />
-
     </div>
   );
 }

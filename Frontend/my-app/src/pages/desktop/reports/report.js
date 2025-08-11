@@ -40,6 +40,7 @@ export default function Report() {
   const [deptStats, setDeptStats] = useState([]);
   const [monthlyProgress, setMonthlyProgress] = useState([]);
   const [users, setUsers] = useState([]);
+  const [standardsRaw, setStandardsRaw] = useState([]); // ⬅️ raw standards for detailed export
 
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -69,8 +70,8 @@ export default function Report() {
   const abortRef = useRef(null);
 
   // ====== Skeleton control (no flicker + race-safe) ======
-  const LOAD_MIN_MS = 450;       // minimum time the skeleton stays up
-  const loadSeqRef = useRef(0);  // prevents older requests from hiding newer skeletons
+  const LOAD_MIN_MS = 450;
+  const loadSeqRef = useRef(0);
 
   /* ================= theme & styles ================ */
   const LocalTheme = () => (
@@ -128,15 +129,13 @@ export default function Report() {
       .skeleton-block { height: 280px; }
       .skeleton-table-row { height: 44px; margin-bottom: 8px; border-radius: 8px; }
 
-      .chart-wrap-md { height: 280px; }  /* used for both pie and stats to match exactly */
+      .chart-wrap-md { height: 280px; }
       .chart-wrap-lg { height: 300px; }
 
-      /* smaller legend chips without background */
       .legend-inline { position:absolute; top:8px; inset-inline-start:12px; display:flex; gap:8px; flex-wrap:wrap; }
       .legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; color: var(--text); }
       .legend-chip .dot { width:8px; height:8px; border-radius:999px; display:inline-block; }
 
-      /* users/departments widget tiles */
       .stats-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
       @media (max-width:576px){ .stats-grid{ grid-template-columns: 1fr; } }
       .mini-stat { border:1px solid var(--stroke); border-radius:12px; padding:12px; background:#fff; display:flex; align-items:center; gap:10px; height:100%; }
@@ -145,10 +144,9 @@ export default function Report() {
       /* table */
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
       .table-card .head { padding:12px 16px; border-bottom:1px solid var(--stroke); background: var(--surface-muted); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
-      .table-card .body { padding:0; }
+      .table-card .body { padding: 16px 16px 0; } /* bottom flush */
       .table thead th { cursor: pointer; white-space: nowrap; }
 
-      /* bootstrap dropdown polish */
       .dropdown-menu { --bs-dropdown-link-hover-bg: #f1f5f9; --bs-dropdown-link-active-bg: #e2e8f0; }
       .dropdown-item { color: var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color: var(--text) !important; }
@@ -166,8 +164,6 @@ export default function Report() {
     if (['لم يبدأ', 'لم تبدا', 'not started', 'new', 'pending'].includes(s)) return 'notStarted';
     return null;
   };
-  const fmt = (n) => Number(n || 0).toLocaleString('ar-SA');
-
   const STATUS_LABEL = {
     completed: 'مكتمل',
     approved: 'معتمد',
@@ -182,36 +178,44 @@ export default function Report() {
     underWork: '#ffc107',
     notStarted: '#6c757d',
   };
-  const KPI_COLOR = {
-    total: '#0d6efd',
-    ...STATUS_COLOR,
+  const KPI_COLOR = { total: '#0d6efd', ...STATUS_COLOR };
+  const fmt = (n) => Number(n || 0).toLocaleString('ar-SA');
+
+  const hijriFormat = (date) => {
+    if (!date) return '';
+    const primary = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      hour12: true,
+      timeZone: 'Asia/Riyadh',
+    });
+    const cal = primary.resolvedOptions().calendar || '';
+    const fmtDt = cal.includes('islamic-umalqura')
+      ? primary
+      : new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+          dateStyle: 'long',
+          timeStyle: 'short',
+          hour12: true,
+          timeZone: 'Asia/Riyadh',
+        });
+    return fmtDt.format(date);
   };
 
-const hijriFormat = (date) => {
-  if (!date) return '';
-  // Prefer islamic-umalqura; fall back to islamic if not available
-  const primary = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
-    dateStyle: 'long',
-    timeStyle: 'short',
-    hour12: true,
-    timeZone: 'Asia/Riyadh',
-  });
-  const cal = primary.resolvedOptions().calendar || '';
-  const fmt = cal.includes('islamic-umalqura')
-    ? primary
-    : new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-        hour12: true,
-        timeZone: 'Asia/Riyadh',
-      });
-  return fmt.format(date);
-};
+  const depIdToName = useMemo(() => {
+    const m = new Map();
+    (departments || []).forEach((d) => m.set(Number(d.department_id), d.department_name));
+    return m;
+  }, [departments]);
+
+  const getRole = (u) =>
+    (u?.role ?? u?.user_role ?? u?.account_type ?? u?.type ?? '').toString().trim();
+
+  const isManagementAccount = (u) => getRole(u).toLowerCase() === 'management';
+    const isUserAccount = (u) => getRole(u).toLowerCase() === 'user';
 
 
   /* --------- data load --------- */
   const loadData = async () => {
-    // bump sequence and start skeleton
     loadSeqRef.current += 1;
     const seq = loadSeqRef.current;
 
@@ -242,6 +246,7 @@ const hijriFormat = (date) => {
           ? Number(s.assigned_department_id) === Number(user.department_id)
           : true
       );
+      setStandardsRaw(filtered); // ⬅️ store for export
 
       const totalCounts = { approved: 0, rejected: 0, completed: 0, underWork: 0, notStarted: 0 };
 
@@ -254,14 +259,11 @@ const hijriFormat = (date) => {
           if (key && counts[key] !== undefined) counts[key] += 1;
         }
         const total = rows.length;
-
         const numerator =
           progressMode === 'approvedOnly'
             ? counts.approved
             : counts.completed + counts.approved;
-
         const progressRate = total > 0 ? Math.round((numerator / total) * 100) : 0;
-
         for (const k of Object.keys(counts)) totalCounts[k] += counts[k];
 
         return {
@@ -299,18 +301,15 @@ const hijriFormat = (date) => {
       const finish = () => {
         if (loadSeqRef.current === seq) setLoading(false);
       };
-      if (elapsed < LOAD_MIN_MS) {
-        setTimeout(finish, LOAD_MIN_MS - elapsed);
-      } else {
-        finish();
-      }
+      if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed);
+      else finish();
     }
   };
 
   useEffect(() => {
     loadData();
     return () => abortRef.current?.abort();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE, progressMode]);
 
   /* --------- filtering/sorting --------- */
@@ -339,12 +338,8 @@ const hijriFormat = (date) => {
   }, [filteredStats, sortKey, sortDir]);
 
   const toggleSort = (key) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('desc'); }
   };
 
   /* --------- derived visuals --------- */
@@ -382,13 +377,7 @@ const hijriFormat = (date) => {
     const items = summaryData.filter((s) => s.key !== 'total');
     return {
       labels: items.map((s) => s.title),
-      datasets: [
-        {
-          data: items.map((s) => s.value),
-          backgroundColor: items.map((s) => KPI_COLOR[s.key]),
-          borderWidth: 0,
-        },
-      ],
+      datasets: [{ data: items.map((s) => s.value), backgroundColor: items.map((s) => KPI_COLOR[s.key]), borderWidth: 0 }],
     };
   }, [summaryData]);
 
@@ -408,25 +397,10 @@ const hijriFormat = (date) => {
   };
   const lineChartData = {
     labels: monthlyProgress.map((p) => p.month),
-    datasets: [
-      {
-        label: 'المعايير المُضافة شهرياً',
-        data: monthlyProgress.map((p) => p.count),
-        fill: true,
-        borderColor: '#0d6efd',
-        backgroundColor: 'rgba(13, 110, 253, 0.12)',
-        tension: 0.35,
-      },
-    ],
+    datasets: [{ label: 'المعايير المُضافة شهرياً', data: monthlyProgress.map((p) => p.count), fill: true, borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.12)', tension: 0.35 }],
   };
 
   /* --------- users & departments stats --------- */
-  const getRole = (u) =>
-    (u?.role ?? u?.user_role ?? u?.account_type ?? u?.type ?? '').toString().trim();
-
-  // EXACTLY "Management" (case-insensitive)
-  const isManagementAccount = (u) => getRole(u).toLowerCase() === 'management';
-
   const usersByDept = useMemo(() => {
     const map = new Map();
     for (const u of users || []) {
@@ -440,49 +414,177 @@ const hijriFormat = (date) => {
   const totalUsers = users?.length || 0;
   const totalDepartments = (departments || []).length || 0;
   const managementAccountsCount = (users || []).filter(isManagementAccount).length;
+  const usersAccountsCount = (users || []).filter(isUserAccount).length;
 
-  const largestDept = useMemo(() => {
-    let best = { depId: null, count: 0, name: '' };
-    usersByDept.forEach((count, depId) => {
-      if (count > best.count) best = {
-        depId,
-        count,
-        name: (departments.find(d => Number(d.department_id) === depId)?.department_name) || `الإدارة #${depId}`
-      };
-    });
-    return best;
-  }, [usersByDept, departments]);
 
-  /* --------- export --------- */
+  /* ----------------- ADVANCED EXPORT ----------------- */
+  const excelCol = (n) => {
+    // 0->A
+    let s = '';
+    n++;
+    while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  };
+
+  const riyadhNow = () => new Date(); // use Intl below with tz to format
+  const formatGregorian = (d) =>
+    new Intl.DateTimeFormat('ar-SA', { dateStyle: 'full', timeStyle: 'medium', hour12: true, timeZone: 'Asia/Riyadh' }).format(d);
+  const formatGregorianFile = (d) => {
+    // YYYY-MM-DD_HH-mm-ss @ Asia/Riyadh
+    const p = (n) => String(n).padStart(2, '0');
+    const dt = new Date(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d));
+    // Above trick won’t include time; fallback to manual from parts:
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).formatToParts(d).reduce((a, p) => (a[p.type] = p.value, a), {});
+    const yyyy = parts.year, MM = parts.month, DD = parts.day, HH = parts.hour, mm = parts.minute, ss = parts.second;
+    return `${yyyy}-${MM}-${DD}_${HH}-${mm}-${ss}`;
+  };
+
   const exportToExcel = () => {
-    const wsDept = XLSX.utils.json_to_sheet(
-      sortedStats.map((d) => ({
-        'الإدارة': d.department,
-        'المجموع': d.total,
-        'مكتمل': d.completed,
-        'معتمد': d.approved,
-        'غير معتمد': d.rejected,
-        'تحت العمل': d.underWork,
-        'لم يبدأ': d.notStarted,
-        'المتبقي': d.remaining,
-        'نسبة التقدم': `${d.progressRate}%`,
-      }))
-    );
-    const wsSummary = XLSX.utils.json_to_sheet(
-      summaryData.map((s) => ({ البند: s.title, القيمة: s.value }))
-    );
-    const wsUsers = XLSX.utils.json_to_sheet([
-      { البند: 'إجمالي المستخدمين', القيمة: totalUsers },
-      { البند: 'إجمالي الإدارات', القيمة: totalDepartments },
-      { البند: 'حسابات الإدارة', القيمة: managementAccountsCount },
-      { البند: 'أكبر إدارة (عدد المستخدمين)', القيمة: largestDept.name ? `${largestDept.name} (${largestDept.count})` : '—' },
-    ]);
+    const now = riyadhNow();
+    const gDate = formatGregorian(now);
+    const hDate = hijriFormat(now);
+    const selectedDeptsLabel = selectedDepartments.length === 0 ? 'كل الإدارات' : selectedDepartments.join(', ');
+    const progressModeLabel = progressMode === 'approvedOnly' ? 'معتمد فقط' : 'مكتمل + معتمد';
 
+    // 0) Workbook + props
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'الملخص');
-    XLSX.utils.book_append_sheet(wb, wsDept, 'الإدارات');
-    XLSX.utils.book_append_sheet(wb, wsUsers, 'المستخدمون');
-    XLSX.writeFile(wb, 'تقرير_الإدارات.xlsx');
+    wb.Props = {
+      Title: 'تقرير الإدارات',
+      Subject: 'لوحة التقارير',
+      Author: (user && (user.fullName || user.name || user.username)) || 'CMR',
+      CreatedDate: now
+    };
+
+    // 1) Metadata sheet
+    const metaAOA = [
+      ['تقرير الإدارات'],
+      ['تاريخ ووقت التصدير (ميلادي)', gDate],
+      ['تاريخ ووقت التصدير (هجري)', hDate],
+      ['وضع حساب التقدم', progressModeLabel],
+      ['الإدارات المُختارة', selectedDeptsLabel],
+      ['آخر تحديث للبيانات داخل النظام', lastUpdated ? formatGregorian(lastUpdated) : '—'],
+      ['إجمالي المعايير', totals.total],
+      ['مكتمل', totals.completed],
+      ['معتمد', totals.approved],
+      ['تحت العمل', totals.underWork],
+      ['لم يبدأ', totals.notStarted],
+      ['غير معتمد', totals.rejected],
+    ];
+    const wsMeta = XLSX.utils.aoa_to_sheet(metaAOA);
+    wsMeta['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }]; // merge title
+    wsMeta['!cols'] = [{ wch: 28 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsMeta, 'تفاصيل التصدير');
+
+    // 2) Departments (with formulas)
+    const deptHeader = ['الإدارة','المجموع','مكتمل','معتمد','تحت العمل','لم يبدأ','غير معتمد','المتبقي','نسبة التقدم (%)'];
+    const deptAOA = [deptHeader];
+    sortedStats.forEach((d, i) => {
+      const r = i + 2; // row number in Excel (1-based, header at 1)
+      deptAOA.push([
+        d.department,
+        d.total,
+        d.completed,
+        d.approved,
+        d.underWork,
+        d.notStarted,
+        d.rejected,
+        { f: `MAX(0,B${r}-(C${r}+D${r}))`, t: 'n' },
+        { f: `IF(B${r}=0,0,ROUND(((C${r}+D${r})/B${r})*100,0))`, t: 'n' },
+      ]);
+    });
+    const wsDept = XLSX.utils.aoa_to_sheet(deptAOA);
+    wsDept['!cols'] = [{ wch: 36 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 18 }];
+    wsDept['!autofilter'] = { ref: `A1:${excelCol(deptHeader.length - 1)}${deptAOA.length}` };
+    XLSX.utils.book_append_sheet(wb, wsDept, 'الإدارات (تفصيلي)');
+
+    // 3) Standards details (respect selected departments)
+    const headersStd = [
+      'ID',
+      'العنوان/الاسم',
+      'الحالة (أصلي)',
+      'الحالة (موحدة)',
+      'الإدارة (ID)',
+      'الإدارة',
+      'تاريخ الإنشاء (UTC)',
+      'تاريخ الإنشاء (الرياض)',
+      'آخر تحديث (UTC)',
+      'آخر تحديث (الرياض)',
+      'الوصف'
+    ];
+    const isDeptSelected = selectedDepartments.length > 0;
+    const stdRows = [];
+    for (const s of standardsRaw) {
+      const depId = Number(s.assigned_department_id);
+      const depName = depIdToName.get(depId) || `الإدارة #${depId}`;
+      if (isDeptSelected && !selectedDepartments.includes(depName)) continue;
+
+      const id = s.standard_id ?? s.id ?? s.standardId ?? '';
+      const title = s.title ?? s.name ?? s.standard_title ?? s.standard_name ?? '';
+      const statusOriginal = s.status ?? '';
+      const key = statusToKey(statusOriginal);
+      const statusUnified = key ? STATUS_LABEL[key] : '';
+      const createdUTC = s.created_at ? new Date(s.created_at) : null;
+      const updatedUTC = s.updated_at ? new Date(s.updated_at) : null;
+      const createdRiyadh = createdUTC ? formatGregorian(createdUTC) : '';
+      const updatedRiyadh = updatedUTC ? formatGregorian(updatedUTC) : '';
+      const desc = s.description ?? s.notes ?? '';
+
+      stdRows.push([
+        id,
+        title,
+        statusOriginal,
+        statusUnified,
+        depId,
+        depName,
+        createdUTC ? new Date(createdUTC).toISOString() : '',
+        createdRiyadh,
+        updatedUTC ? new Date(updatedUTC).toISOString() : '',
+        updatedRiyadh,
+        desc
+      ]);
+    }
+    const wsStd = XLSX.utils.aoa_to_sheet([headersStd, ...stdRows]);
+    wsStd['!cols'] = [
+      { wch: 10 }, { wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 28 },
+      { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 28 }, { wch: 50 }
+    ];
+    wsStd['!autofilter'] = { ref: `A1:${excelCol(headersStd.length - 1)}${stdRows.length + 1}` };
+    XLSX.utils.book_append_sheet(wb, wsStd, 'المعايير (كاملة)');
+
+    // 4) Users details
+    const headersUsers = ['ID','الاسم','اسم المستخدم','البريد','الدور','الإدارة (ID)','الإدارة'];
+    const userRows = (users || []).map((u) => {
+      const depId = Number(u?.department_id ?? u?.dept_id ?? u?.departmentId ?? -1);
+      const depName = depIdToName.get(depId) || (depId > 0 ? `الإدارة #${depId}` : '');
+      return [
+        u.user_id ?? u.id ?? '',
+        u.fullName ?? u.name ?? '',
+        u.username ?? '',
+        u.email ?? u.mail ?? '',
+        getRole(u),
+        depId > 0 ? depId : '',
+        depName
+      ];
+    });
+    const wsUsers = XLSX.utils.aoa_to_sheet([headersUsers, ...userRows]);
+    wsUsers['!cols'] = [{ wch: 10 }, { wch: 26 }, { wch: 20 }, { wch: 32 }, { wch: 18 }, { wch: 12 }, { wch: 28 }];
+    wsUsers['!autofilter'] = { ref: `A1:${excelCol(headersUsers.length - 1)}${userRows.length + 1}` };
+    XLSX.utils.book_append_sheet(wb, wsUsers, 'المستخدمون (كامل)');
+
+    // 5) Monthly chart data
+    const headersMonthly = ['الشهر (YYYY-MM)', 'عدد المعايير المُضافة'];
+    const monthlyRows = (monthlyProgress || []).map((m) => [m.month, m.count]);
+    const wsMonthly = XLSX.utils.aoa_to_sheet([headersMonthly, ...monthlyRows]);
+    wsMonthly['!cols'] = [{ wch: 18 }, { wch: 20 }];
+    wsMonthly['!autofilter'] = { ref: `A1:${excelCol(headersMonthly.length - 1)}${monthlyRows.length + 1}` };
+    XLSX.utils.book_append_sheet(wb, wsMonthly, 'الزمن الشهري');
+
+    // Save with Riyadh timestamp in name
+    const fileTs = formatGregorianFile(now);
+    XLSX.writeFile(wb, `تقرير_الإدارات_${fileTs}.xlsx`);
   };
 
   return (
@@ -512,12 +614,12 @@ const hijriFormat = (date) => {
                         <div className="d-flex flex-column">
                           <span>لوحة التقارير</span>
                           <small className="muted">
-                            {lastUpdated ? `آخر تحديث: ${hijriFormat(lastUpdated)}` : 'جاري التحميل...'}
+                            {lastUpdated ? ` آخر تحديث: ${hijriFormat(lastUpdated)}` : 'جاري التحميل...'}
                           </small>
                         </div>
 
                         <div className="head-actions">
-                          {/* Departments dropdown (plain Bootstrap) */}
+                          {/* Departments dropdown */}
                           <Dropdown autoClose="outside" align="end" flip={false}>
                             <Dropdown.Toggle variant="outline-secondary" size="sm">
                               {selectedDepartments.length === 0
@@ -527,13 +629,7 @@ const hijriFormat = (date) => {
                             <Dropdown.Menu
                               style={{ minWidth: 320 }}
                               renderOnMount
-                              popperConfig={{
-                                strategy: 'fixed',
-                                modifiers: [
-                                  { name: 'offset', options: { offset: [0, 8] } },
-                                  { name: 'flip', enabled: false },
-                                ],
-                              }}
+                              popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}
                             >
                               <li className="px-3 pt-2 pb-1">
                                 <input
@@ -549,11 +645,7 @@ const hijriFormat = (date) => {
                                 <button className="btn btn-link p-0" onClick={() => setSelectedDepartments([])}>مسح الاختيار</button>
                               </li>
                               <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-                                <Dropdown.Item
-                                  as="button"
-                                  className="d-flex align-items-center gap-2"
-                                  onClick={() => setSelectedDepartments([])}
-                                >
+                                <Dropdown.Item as="button" className="d-flex align-items-center gap-2" onClick={() => setSelectedDepartments([])}>
                                   <input className="form-check-input ms-2" type="checkbox" checked={selectedDepartments.length === 0} readOnly />
                                   <span>كل الإدارات</span>
                                 </Dropdown.Item>
@@ -577,7 +669,7 @@ const hijriFormat = (date) => {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          {/* Progress mode toggles (plain bootstrap buttons) */}
+                          {/* Progress mode toggles */}
                           <div className="d-inline-flex align-items-center gap-2">
                             <button
                               type="button"
@@ -600,7 +692,7 @@ const hijriFormat = (date) => {
                           {/* Export + Refresh */}
                           {['admin', 'administrator'].includes(user?.role?.toLowerCase?.()) && (
                             <button className="btn btn-success btn-sm" onClick={exportToExcel} title="تصدير Excel (XLSX)">
-                              <i className="fas fa-file-excel ms-1" /> تصدير Excel (XLSX)
+                              <i className="fas fa-file-excel ms-1" /> تصدير Excel
                             </button>
                           )}
                           <button className="btn btn-outline-primary btn-sm" onClick={loadData} title="تحديث البيانات">
@@ -632,7 +724,7 @@ const hijriFormat = (date) => {
                   </div>
                 </div>
 
-                {/* Charts Row 1 — equal sizes */}
+                {/* Charts Row 1 */}
                 <div className="row justify-content-center g-4">
                   <div className="col-12 col-xl-5">
                     <div className="surface" aria-busy={loading}>
@@ -731,7 +823,7 @@ const hijriFormat = (date) => {
                   </div>
                 </div>
 
-                {/* Row 3 — Pie + Users/Departments Stats (exact same height via chart-wrap-md) */}
+                {/* Row 3 */}
                 <div className="row justify-content-center g-4 mt-1">
                   <div className="col-12 col-xl-5">
                     <div className="surface" aria-busy={loading}>
@@ -757,57 +849,56 @@ const hijriFormat = (date) => {
                     </div>
                   </div>
 
-                  {/* EXACT MATCH HEIGHT: wrap stats content in chart-wrap-md */}
-                  <div className="col-12 col-xl-5">
-                    <div className="surface" aria-busy={loading}>
-                      <div className="head-flat">إحصائيات المستخدمين والإدارات</div>
-                      <div className="body-flat">
-                        {loading ? (
-                          <div className="skeleton skeleton-block" />
-                        ) : (
-                          <div className="chart-wrap-md d-flex align-items-center">
-                            <div className="w-100">
-                              <div className="stats-grid">
-                                <div className="mini-stat">
-                                  <div className="mini-icon"><i className="fas fa-users" /></div>
-                                  <div>
-                                    <div className="fw-bold">إجمالي المستخدمين</div>
-                                    <div className="text-muted">{fmt(totalUsers)}</div>
+                    <div className="col-12 col-xl-5">
+                      <div className="surface" aria-busy={loading}>
+                        <div className="head-flat">إحصائيات المستخدمين والإدارات</div>
+                        <div className="body-flat">
+                          {loading ? (
+                            <div className="skeleton skeleton-block" />
+                          ) : (
+                            <div className="chart-wrap-md d-flex align-items-center">
+                              <div className="w-100">
+                                <div className="stats-grid">
+                                  <div className="mini-stat">
+                                    <div className="mini-icon"><i className="fas fa-users" /></div>
+                                    <div>
+                                      <div className="fw-bold">إجمالي المستخدمين</div>
+                                      <div className="text-muted">{fmt(totalUsers)}</div>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="mini-stat">
-                                  <div className="mini-icon"><i className="fas fa-sitemap" /></div>
-                                  <div>
-                                    <div className="fw-bold">إجمالي الإدارات</div>
-                                    <div className="text-muted">{fmt(totalDepartments)}</div>
+                                  <div className="mini-stat">
+                                    <div className="mini-icon"><i className="fas fa-sitemap" /></div>
+                                    <div>
+                                      <div className="fw-bold">إجمالي الإدارات</div>
+                                      <div className="text-muted">{fmt(totalDepartments)}</div>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="mini-stat">
-                                  <div className="mini-icon"><i className="fas fa-user-shield" /></div>
-                                  <div>
-                                    <div className="fw-bold">حسابات الإدارة</div>
-                                    <div className="text-muted">{fmt(managementAccountsCount)}</div>
+                                  <div className="mini-stat">
+                                    <div className="mini-icon"><i className="fas fa-user-shield" /></div>
+                                    <div>
+                                      <div className="fw-bold">إجمالي حسابات ممثلين الإدارات   </div>
+                                      <div className="text-muted">{fmt(usersAccountsCount)}</div>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="mini-stat">
-                                  <div className="mini-icon"><i className="fas fa-crown" /></div>
-                                  <div>
-                                    <div className="fw-bold">أكبر إدارة (مستخدمين)</div>
-                                    <div className="text-muted">
-                                      {largestDept?.name ? `${largestDept.name} — ${fmt(largestDept.count)}` : '—'}
+                                  <div className="mini-stat">
+                                    <div className="mini-icon"><i className="fas fa-crown" /></div>
+                                    <div>
+                                      <div className="fw-bold">إجمالي حسابات الإدارة العليا </div>
+                                      <div className="text-muted">
+                                        {fmt(managementAccountsCount)}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
+                                {users.length === 0 && (
+                                  <small className="text-muted d-block mt-2">* لم يتم العثور على بيانات مستخدمين. تأكد من مسار API.</small>
+                                )}
                               </div>
-                              {users.length === 0 && (
-                                <small className="text-muted d-block mt-2">* لم يتم العثور على بيانات مستخدمين. تأكد من مسار API.</small>
-                              )}
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
                 </div>
 
                 {/* Table */}
@@ -815,7 +906,7 @@ const hijriFormat = (date) => {
                   <div className="col-12 col-xl-10">
                     <div className="table-card" aria-busy={loading}>
                       <div className="head-flat">
-                        <div>تفاصيل الإدارات</div>
+                        <div>ملخص </div>
                       </div>
                       <div className="body">
                         {loading ? (

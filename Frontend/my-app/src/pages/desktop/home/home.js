@@ -55,12 +55,11 @@ export default function Standards_menu() {
 
   const abortRef = useRef(null);
 
-  // === Smooth skeleton control (race-safe + min display time)
+  // === Smooth skeleton control
   const LOAD_MIN_MS = 450;
   const loadSeqRef = useRef(0);
 
   const loadData = async () => {
-    // bump sequence to invalidate older calls
     loadSeqRef.current += 1;
     const seq = loadSeqRef.current;
 
@@ -120,24 +119,21 @@ export default function Standards_menu() {
     return Math.max(0, Math.min(100, p));
   };
 
-  /* ---------- TIME FIX (assume UTC if missing TZ, format in Asia/Riyadh) ---------- */
+  /* ---------- TIME ---------- */
   const TIMEZONE = 'Asia/Riyadh';
-  const ASSUME_UTC_WHEN_MISSING_TZ = true;
-
   const parseToDate = (val) => {
     if (!val) return null;
     if (val instanceof Date) return isNaN(val) ? null : val;
     if (typeof val === 'string') {
       const s = val.trim().replace(' ', 'T');
       const hasTZ = /[zZ]|[+\-]\d{2}:\d{2}$/.test(s);
-      const normalized = hasTZ ? s : (ASSUME_UTC_WHEN_MISSING_TZ ? `${s}Z` : s);
+      const normalized = hasTZ ? s : `${s}Z`;
       const d = new Date(normalized);
       return isNaN(d) ? null : d;
     }
     const d = new Date(val);
     return isNaN(d) ? null : d;
   };
-
   const formatDateTimeAR = (val) => {
     const d = parseToDate(val);
     if (!d) return '';
@@ -148,7 +144,6 @@ export default function Standards_menu() {
       timeZone: TIMEZONE,
     }).format(d);
   };
-  /* ------------------------------------------------------------------------------- */
 
   const getStdNumber = (s) =>
     s?.standard_number ?? s?.standardNo ?? s?.number ?? s?.code ?? s?.ref ?? s?.id ?? null;
@@ -156,27 +151,26 @@ export default function Standards_menu() {
   const getStdName = (s) =>
     s?.name ?? s?.title ?? s?.standard_name ?? s?.display_name ?? null;
 
-  const approvalRate = pct(summary.approved, summary.total);
-  const completionRate = pct(summary.completed, summary.total);
-  const inProgressRate = pct(summary.underWork, summary.total);
-
   const dateKey = standardsRaw?.[0] && ('updated_at' in standardsRaw[0] ? 'updated_at' :
                                         ('created_at' in standardsRaw[0] ? 'created_at' : null));
-  const recentItems = useMemo(() => {
+
+  const recentAll = useMemo(() => {
     if (!dateKey) return [];
     return [...standardsRaw]
       .filter(x => x && x[dateKey])
-      .sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]))
-      .slice(0, 8);
+      .sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
   }, [standardsRaw, dateKey]);
 
-  const legendOrder = [
-    { k: 'completed', t: 'مكتمل' },
-    { k: 'approved', t: 'معتمد' },
-    { k: 'underWork', t: 'تحت العمل' },
-    { k: 'notStarted', t: 'لم يبدأ' },
-    { k: 'rejected', t: 'غير معتمد' },
-  ];
+  const recentLimit = (user?.role?.toLowerCase?.() === 'management') ? 8 : 5;
+  const recentItems = useMemo(() => recentAll.slice(0, recentLimit), [recentAll, recentLimit]);
+
+  const distItems = useMemo(() => ([
+    { key: 'completed',  label: 'مكتمل',     value: summary.completed,  color: summaryCardColors.completed,  pct: pct(summary.completed, summary.total) },
+    { key: 'approved',   label: 'معتمد',     value: summary.approved,   color: summaryCardColors.approved,   pct: pct(summary.approved,  summary.total) },
+    { key: 'underWork',  label: 'تحت العمل', value: summary.underWork,  color: summaryCardColors.underWork,  pct: pct(summary.underWork, summary.total) },
+    { key: 'notStarted', label: 'لم يبدأ',   value: summary.notStarted, color: summaryCardColors.notStarted, pct: pct(summary.notStarted, summary.total) },
+    { key: 'rejected',   label: 'غير معتمد', value: summary.rejected,   color: summaryCardColors.rejected,   pct: pct(summary.rejected,  summary.total) },
+  ]), [summary, summaryCardColors]);
 
   return (
     <div
@@ -222,33 +216,42 @@ export default function Standards_menu() {
         .line-skel { height:10px; border-radius:999px; background:#e9edf3; position:relative; overflow:hidden; }
         .circle-skel { border-radius:50%; background:#e9edf3; position:relative; overflow:hidden; }
 
-        /* KPI */
-        .kpi-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
-        @media (max-width:992px){ .kpi-grid { grid-template-columns: 1fr; } }
-        .kpi { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--stroke); border-radius: calc(var(--radius) - 2px); background: var(--surface); box-shadow: 0 6px 14px rgba(16,24,40,0.06); }
-        .kpi .ring { width:44px; height:44px; }
-        .kpi .vals { display:flex; flex-direction:column; }
-        .kpi .label { font-size:.95rem; font-weight:700; color:var(--text); }
-        .kpi .sub { font-size:.8rem; color: var(--text-muted); }
-
-        /* KPI skeleton */
-        .kpi-skeleton { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--stroke); border-radius: calc(var(--radius) - 2px); background: var(--surface); box-shadow: 0 6px 14px rgba(16,24,40,0.06); }
-        .kpi-skeleton .ring-skel { width:44px; height:44px; }
-        .kpi-skeleton .text-skel { flex:1; display:flex; flex-direction:column; gap:8px; }
-
-        /* Donut + legend */
-        .legend-grid { display:grid; grid-template-columns: 1fr 120px 90px; gap:8px; }
-        @media (max-width:768px){ .legend-grid { grid-template-columns: 1fr 100px 80px; } }
-        .legend-row { display:contents; }
-        .legend-label { display:flex; align-items:center; gap:8px; font-weight:700; color: var(--text); }
-        .legend-dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
-        .legend-count, .legend-pct { text-align:left; color: var(--text-muted); align-self:center; font-variant-numeric: tabular-nums; }
-
-        /* Donut skeleton */
-        .donut-skeleton { display:flex; align-items:center; gap:16px; width:100%; }
-        .donut-skeleton .donut { width:220px; height:220px; }
-        .donut-skeleton .legend { flex:1; display:grid; grid-template-columns: 1fr; gap:10px; }
-        .legend-line { display:flex; align-items:center; gap:10px; }
+        /* Distribution (Donut centered; legend centered in two aligned columns) */
+        .dist-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
+        .donut-wrap { display:flex; justify-content:center; }
+        .legend-grid {
+          display: grid;
+          grid-template-columns: max-content max-content; /* عمود للأسماء وعمود للنِّسب */
+          justify-content: center; /* كتلة الدليل ككل تكون في المنتصف */
+          align-items: center;
+          column-gap: 16px;
+          row-gap: 8px;
+        }
+        .legend-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          justify-self: end;  /* محاذاة عمود الأسماء */
+          font-weight: 800;
+          color: var(--text);
+          font-size: 1rem;
+        }
+        .legend-dot {
+          width: 14px; height: 14px; border-radius: 4px; display: inline-block;
+          box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
+        }
+        .legend-pct {
+          justify-self: start; /* محاذاة عمود النِّسب */
+          padding: 3px 8px;
+          border-radius: 8px;
+          background:#f1f5f9;
+          color:#0b2440;
+          font-variant-numeric: tabular-nums;
+          font-size:.9rem;
+          font-weight: 800;
+          min-width: 44px;
+          text-align: center;
+        }
 
         /* Recent table */
         .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
@@ -263,15 +266,6 @@ export default function Standards_menu() {
         .badge-completed{ color:#055160; border-color:#b6effb; background:#cff4fc; }
         .badge-underwork{ color:#664d03; border-color:#ffecb5; background:#fff3cd; }
         .badge-notstarted{ color:#383d41; border-color:#d6d8db; background:#e2e3e5; }
-
-        .btn-ghost { border:1px solid var(--stroke); background: #fff; color: var(--text); padding:.35rem .75rem; border-radius: 10px; font-size:.9rem; transition: transform .15s ease, background .2s ease, box-shadow .2s ease; }
-        .btn-ghost:hover { transform: translateY(-1px); background:#f7f9fc; box-shadow: 0 6px 12px rgba(16,24,40,0.06); }
-
-        .table-card.compact .head { padding: 12px 18px; }
-        .table-card.compact .body { padding: 4px; }
-        .table-row.compact { grid-template-columns: 1fr 128px 116px; gap: 12px; padding: 16px; }
-        @media (max-width: 992px) { .table-row.compact { grid-template-columns: 1fr 120px 100px; } }
-        @media (max-width: 576px) { .table-row.compact { grid-template-columns: 1fr; padding: 12px 14px; gap: 8px; } }
 
         .cell-title { min-width: 0; display: flex; align-items: center; gap: 8px; }
         .cell-title i { font-size: 14px; opacity: .9; }
@@ -390,88 +384,56 @@ export default function Standards_menu() {
                 </div>
               </div>
 
-              {/* KPIs */}
-              <div className="row justify-content-center">
-                <div className="col-12 col-xl-10 mb-4">
-                  <div className="surface" aria-busy={loading}>
-                    <div className="head-flat">مؤشرات سريعة</div>
-                    <div className="body-flat">
-                      {loading ? (
-                        <div className="kpi-grid" aria-hidden={!loading}>
-                          {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="kpi-skeleton">
-                              <div className="circle-skel ring-skel"></div>
-                              <div className="text-skel">
-                                <div className="line-skel" style={{ width: '120px' }} />
-                                <div className="line-skel" style={{ width: '180px' }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (!error && summary.total > 0) && (
-                        <div className="kpi-grid">
-                          <KPI label="نسبة الاعتماد" value={approvalRate} sub={`${fmt(summary.approved)} / ${fmt(summary.total)}`} />
-                          <KPI label="نسبة الإكمال" value={completionRate} sub={`${fmt(summary.completed)} / ${fmt(summary.total)}`} />
-                          <KPI label="نسبة تحت العمل" value={inProgressRate} sub={`${fmt(summary.underWork)} / ${fmt(summary.total)}`} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Distribution (donut + legend) */}
+              {/* Distribution (donut centered; legend two aligned centered columns) */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10 mb-4">
                   <div className="surface" aria-busy={loading}>
                     <div className="head-flat">توزيع الحالات</div>
-                    <div className="body-flat d-flex flex-column flex-lg-row align-items-center gap-4">
+                    <div className="body-flat">
                       {loading ? (
-                        <div className="donut-skeleton" aria-hidden={!loading}>
-                          <div className="circle-skel donut"></div>
-                          <div className="legend">
+                        <div className="dist-wrap" aria-hidden={!loading}>
+                          <div className="donut-wrap">
+                            <div className="circle-skel" style={{ width: 260, height: 260, borderRadius: '50%' }}></div>
+                          </div>
+                          <div className="legend-grid" style={{ width: '100%' }}>
                             {Array.from({ length: 5 }).map((_, i) => (
-                              <div className="legend-line" key={i}>
-                                <div className="circle-skel" style={{ width: 12, height: 12 }}></div>
-                                <div className="line-skel" style={{ width: '40%' }}></div>
-                                <div className="line-skel" style={{ width: '18%' }}></div>
-                              </div>
+                              <React.Fragment key={i}>
+                                <div className="legend-label">
+                                  <span className="circle-skel" style={{ width: 14, height: 14, borderRadius: 4 }}></span>
+                                  <div className="line-skel" style={{ width: '120px', height: 12 }}></div>
+                                </div>
+                                <div className="legend-pct">
+                                  <div className="line-skel" style={{ width: '40px', height: 12 }}></div>
+                                </div>
+                              </React.Fragment>
                             ))}
                           </div>
                         </div>
                       ) : (!error && summary.total > 0) && (
-                        <>
-                          <Donut
-                            size={220}
-                            items={[
-                              { label: 'مكتمل', value: summary.completed, color: summaryCardColors.completed },
-                              { label: 'معتمد', value: summary.approved, color: summaryCardColors.approved },
-                              { label: 'غير معتمد', value: summary.rejected, color: summaryCardColors.rejected },
-                              { label: 'تحت العمل', value: summary.underWork, color: summaryCardColors.underWork },
-                              { label: 'لم يبدأ', value: summary.notStarted, color: summaryCardColors.notStarted },
-                            ]}
-                          />
-                          <div className="flex-grow-1 w-100">
-                            <div className="legend-grid">
-                              {[
-                                { k: 'completed', t: 'مكتمل' },
-                                { k: 'approved', t: 'معتمد' },
-                                { k: 'underWork', t: 'تحت العمل' },
-                                { k: 'notStarted', t: 'لم يبدأ' },
-                                { k: 'rejected', t: 'غير معتمد' },
-                              ].map(({ k, t }) => (
-                                <div className="legend-row" key={k}>
-                                  <div className="legend-label">
-                                    <span className="legend-dot" style={{ backgroundColor: summaryCardColors[k] }} />
-                                    {t}
-                                  </div>
-                                  <div className="legend-pct">{pct(summary[k], summary.total)}%</div>
-                                  <div className="legend-count"></div>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="dist-wrap">
+                          <div className="donut-wrap">
+                            <Donut
+                              size={260}
+                              thickness={22}
+                              items={distItems.map(d => ({ label: d.label, value: d.value, color: d.color, pct: d.pct }))}
+                              centerTop={fmt(summary.total)}
+                              centerBottom="الإجمالي"
+                            />
                           </div>
-                        </>
+
+                          {/* legend: two columns (names | percentages), both centered */}
+                          <div className="legend-grid">
+                            {distItems.map(({ key, label, pct: p, color }) => (
+                              <React.Fragment key={key}>
+                                <div className="legend-label">
+                                  <span className="legend-dot" style={{ backgroundColor: color }} />
+                                  <span className="legend-text">{label}</span>
+                                </div>
+                                <div className="legend-pct">{p}%</div>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -485,7 +447,7 @@ export default function Standards_menu() {
                     <div className="head-flat">أخر التحديثات</div>
                     <div className="body">
                       {loading ? (
-                        Array.from({ length: 6 }).map((_, i) => (
+                        Array.from({ length: 5 }).map((_, i) => (
                           <div key={i} className="row-skeleton" aria-hidden={!loading}>
                             <div className="top">
                               <div className="circle-skel" style={{ width: 16, height: 16 }}></div>
@@ -546,37 +508,10 @@ export default function Standards_menu() {
   );
 }
 
-/* helpers */
-function KPI({ label, value, sub }) {
-  const radius = 20;
-  const stroke = 6;
-  const c = 2 * Math.PI * radius;
-  const dash = (value / 100) * c;
-
-  return (
-    <div className="kpi">
-      <svg className="ring" viewBox="0 0 52 52" aria-label={`${label} ${value}%`}>
-        <circle cx="26" cy="26" r={radius} stroke="#eef2f7" strokeWidth={stroke} fill="none" />
-        <circle
-          cx="26" cy="26" r={radius}
-          stroke="#4F7689" strokeWidth={stroke} fill="none"
-          strokeDasharray={`${dash} ${c - dash}`}
-          transform="rotate(-90 26 26)"
-          strokeLinecap="round"
-        />
-        <text x="26" y="30" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0b2440">{value}%</text>
-      </svg>
-      <div className="vals">
-        <div className="label">{label}</div>
-        <div className="sub">{sub}</div>
-      </div>
-    </div>
-  );
-}
-
-function Donut({ size = 220, items = [] }) {
+/* Donut helper */
+function Donut({ size = 260, thickness = 22, items = [], centerTop, centerBottom }) {
   const total = items.reduce((a, b) => a + (b.value || 0), 0);
-  const r = size / 2 - 18;
+  const r = size / 2 - thickness;
   const c = 2 * Math.PI * r;
   let offset = 0;
   const center = size / 2;
@@ -585,11 +520,11 @@ function Donut({ size = 220, items = [] }) {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="توزيع الحالات">
       <g transform={`translate(${center}, ${center})`}>
         {/* track */}
-        <circle r={r} fill="none" stroke="#eef2f7" strokeWidth="18" />
+        <circle r={r} fill="none" stroke="#eef2f7" strokeWidth={thickness} />
         {/* arcs */}
         {items.map((it, i) => {
-          const val = total ? (it.value / total) : 0;
-          const len = val * c;
+          const raw = total ? (it.value / total) : 0;
+          const len = raw * c;
           const dash = `${len} ${c - len}`;
           const arc = (
             <circle
@@ -597,20 +532,31 @@ function Donut({ size = 220, items = [] }) {
               r={r}
               fill="none"
               stroke={it.color}
-              strokeWidth="18"
+              strokeWidth={thickness}
               strokeDasharray={dash}
               strokeDashoffset={-offset}
               transform="rotate(-90)"
               strokeLinecap="butt"
-            />
+            >
+              <title>{`${it.label} — ${Math.round(raw * 100)}%`}</title>
+            </circle>
           );
           offset += len;
           return arc;
         })}
-        {/* center labels */}
-        <circle r={r - 28} fill="#fff" />
-        <text x="0" y="-4" textAnchor="middle" fontSize="18" fontWeight="800" fill="#0b2440">{total}</text>
-        <text x="0" y="16" textAnchor="middle" fontSize="11" fill="#6b7280">الإجمالي</text>
+
+        {/* Center text: total + label */}
+        {(centerTop || centerBottom) && (
+          <>
+            <circle r={r - thickness} fill="#fff" />
+            {centerTop && (
+              <text x="0" y="-4" textAnchor="middle" fontSize="20" fontWeight="800" fill="#0b2440">{centerTop}</text>
+            )}
+            {centerBottom && (
+              <text x="0" y="18" textAnchor="middle" fontSize="12" fill="#6b7280">{centerBottom}</text>
+            )}
+          </>
+        )}
       </g>
     </svg>
   );

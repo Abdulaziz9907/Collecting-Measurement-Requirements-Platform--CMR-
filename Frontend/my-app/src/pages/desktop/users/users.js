@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,6 +7,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import * as XLSX from 'xlsx';
 
 export default function Users() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -16,185 +17,426 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  const isUser = user?.role?.toLowerCase() === 'user';
+  const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
-  const rowsPerPage = 11;
+
+  // Same paging UX as Standards
+  const PAGE_OPTIONS = [15, 25, 50, 'all'];
+  const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
+  // Anti-flicker + concurrency safety (same constants/approach as Standards)
+  const LOAD_MIN_MS = 450;
+  const SPINNER_MIN_MS = 200;
+  const abortRef = useRef(null);
+  const loadSeqRef = useRef(0);
+
+  /* ===== Shared local theme (matches Standards) ===== */
+  const LocalTheme = () => (
+    <style>{`
+      :root {
+        --radius: 14px;
+        --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+        --surface: #ffffff;
+        --surface-muted: #fbfdff;
+        --stroke: #eef2f7;
+        --text: #0b2440;
+        --text-muted: #6b7280;
+        --brand: #4F7689;
+        --skeleton-bg: #e9edf3;
+        --skeleton-sheen: rgba(255,255,255,.6);
+        --skeleton-speed: 1.2s;
+      }
+
+      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
+      .head-flat {
+        padding: 12px 16px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke);
+        color: var(--text); font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      }
+      .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+      /* Column width hints (to match skeleton + keep layout steady) */
+      .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
+      .th-eid   { min-width: 120px; }
+      .th-uname { min-width: 180px; }
+      .th-fname { min-width: 150px; }
+      .th-lname { min-width: 150px; }
+      .th-role  { min-width: 120px; }
+      .th-dept  { min-width: 180px; }
+      .th-icon  { width: 60px; }
+
+      .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
+      .page-spacer { height: 140px; }
+
+      /* Remove bottom gap between table and footer bar */
+      .table-card .table { margin: 0 !important; }
+      .table-card .table-responsive { margin: 0; }
+
+      /* Skeleton blocks */
+      .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
+      .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
+      @keyframes shimmer { 100% { transform: translateX(100%); } }
+      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
+
+      .skel-line  { height: 12px; }
+      .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
+      .skel-link  { height: 12px; width: 48px; }
+      .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
+
+      /* Filler rows for fixed height */
+      .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
+
+      /* Dropdown polish */
+      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
+      .dropdown-item { color:var(--text) !important; }
+      .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
+    `}</style>
+  );
+
+  const refreshData = async (mode = 'auto') => {
+    const wantSkeleton = mode === 'skeleton' || (mode === 'auto' && !hasLoadedOnce);
+    setUseSkeleton(wantSkeleton);
     setLoading(true);
-    Promise.all([
-      fetch(`${API_BASE}/api/users`).then(res => res.json()),
-      fetch(`${API_BASE}/api/departments`).then(res => res.json())
-    ])
-      .then(([usersData, depData]) => {
-        setUsers(usersData);
-        setDepartments(depData);
-      })
-      .catch(() => {
-        setUsers([]);
-        setDepartments([]);
-      })
-      .finally(() => setLoading(false));
-  }, [API_BASE]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, roleFilter, departmentFilter]);
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
 
-  const uniqueRoles = [...new Set(users.map(u => u.role))];
-  const uniqueDepartments = departments.map(d => d.department_name);
+    loadSeqRef.current += 1;
+    const seq = loadSeqRef.current;
+    const t0 = performance.now();
 
-  const handleCheckboxFilter = (value, current, setFunc) => {
-    if (current.includes(value)) {
-      setFunc(current.filter(v => v !== value));
-    } else {
-      setFunc([...current, value]);
+    try {
+      const [usersRes, depsRes] = await Promise.all([
+        fetch(`${API_BASE}/api/users`, { signal }),
+        fetch(`${API_BASE}/api/departments`, { signal }),
+      ]);
+      if (!usersRes.ok || !depsRes.ok) throw new Error('HTTP error');
+
+      const usersJson = await usersRes.json();
+      const depsJson = await depsRes.json();
+
+      if (seq !== loadSeqRef.current) return;
+      setUsers(Array.isArray(usersJson) ? usersJson : []);
+      setDepartments(Array.isArray(depsJson) ? depsJson : []);
+    } catch (e) {
+      if (e?.name !== 'AbortError') {
+        if (seq !== loadSeqRef.current) return;
+        setUsers([]); setDepartments([]);
+      }
+    } finally {
+      const elapsed = performance.now() - t0;
+      const minWait = wantSkeleton ? LOAD_MIN_MS : SPINNER_MIN_MS;
+      const finish = () => {
+        if (seq === loadSeqRef.current) {
+          setHasLoadedOnce(true);
+          setLoading(false);
+        }
+      };
+      if (elapsed < minWait) setTimeout(finish, minWait - elapsed);
+      else finish();
     }
   };
 
-  const filteredUsers = users.filter(u => {
-    const dep = departments.find(d => d.department_id === u.department_id)?.department_name || '';
-    const text = `${u.username} ${u.first_name} ${u.last_name} ${u.role} ${dep}`;
-    return (
-      text.includes(searchTerm) &&
-      (roleFilter.length ? roleFilter.includes(u.role) : true) &&
-      (departmentFilter.length ? departmentFilter.includes(dep) : true)
-    );
-  });
+  useEffect(() => { refreshData('skeleton'); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, departmentFilter, pageSize]);
 
-  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const uniqueRoles = [...new Set(users.map(u => u?.role).filter(Boolean))];
+  const uniqueDepartments = departments.map(d => d?.department_name).filter(Boolean);
 
-  const goToPreviousPage = () => { if (currentPage > 1) setCurrentPage(currentPage - 1); };
-  const goToNextPage = () => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); };
+  const handleCheckboxFilter = (value, current, setFunc) => {
+    setFunc(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
+  };
+
+  // Filtering (case-insensitive, Arabic/English safe-ish)
+  const filteredUsers = useMemo(() => {
+    const q = (searchTerm || '').toLowerCase().trim();
+    return (users || []).filter(u => {
+      const depName = departments.find(d => d?.department_id === u?.department_id)?.department_name || '';
+      const txt = `${u?.employee_id ?? ''} ${u?.username ?? ''} ${u?.first_name ?? ''} ${u?.last_name ?? ''} ${u?.role ?? ''} ${depName}`.toLowerCase();
+      const okSearch = !q || txt.includes(q);
+      const okRole = roleFilter.length ? roleFilter.includes(u?.role) : true;
+      const okDept = departmentFilter.length ? departmentFilter.includes(depName) : true;
+      return okSearch && okRole && okDept;
+    });
+  }, [users, departments, searchTerm, roleFilter, departmentFilter]);
+
+  const colCount = isViewer ? 6 : 8;
+
+  // Pagination (same as Standards)
+  const isAll = pageSize === 'all';
+  const numericPageSize = isAll ? (filteredUsers.length || 0) : Number(pageSize);
+  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(filteredUsers.length / numericPageSize));
+  const paginatedUsers = isAll
+    ? filteredUsers
+    : filteredUsers.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
+
+  const hasPageData = paginatedUsers.length > 0;
+  const baseRowsCount = hasPageData ? paginatedUsers.length : 1;
+  const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
+
+  const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
+  const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
+
+  // Filler rows to keep steady height
+  const renderFillerRows = (count) =>
+    Array.from({ length: count }).map((_, r) => (
+      <tr key={`filler-${r}`} className="table-empty-row">
+        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
+      </tr>
+    ));
+
+  // Skeleton row matching columns
+  const SkeletonRow = ({ idx }) => (
+    <tr key={`sk-${idx}`}>
+      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>  {/* رقم الموظف */}
+      <td><span className="skel skel-line" style={{ width: '80%' }} /></td>  {/* اسم المستخدم */}
+      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>  {/* الاسم الأول */}
+      <td><span className="skel skel-line" style={{ width: '65%' }} /></td>  {/* الاسم الأخير */}
+      <td><span className="skel skel-badge" /></td>                          {/* الدور */}
+      <td><span className="skel skel-line" style={{ width: '75%' }} /></td>  {/* الإدارة */}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* تعديل */}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* حذف */}
+    </tr>
+  );
+
+  const skeletonCount = typeof pageSize === 'number'
+    ? pageSize
+    : Math.max(15, Math.min(25, filteredUsers.length || 15));
 
   const deleteUser = async (empId) => {
     try {
       await fetch(`${API_BASE}/api/users/${empId}`, { method: 'DELETE' });
-      setLoading(true);
-      const data = await fetch(`${API_BASE}/api/users`).then(res => res.json());
-      setUsers(data);
-      setLoading(false);
+      await refreshData('soft');
     } catch {}
   };
 
-  return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }}>
-      <Header />
-      <div id="wrapper">
-        <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-        <div className="d-flex flex-column" id="content-wrapper">
-          <div id="content">
-            <div className="container-fluid">
-              <div className="row p-4">
-                <div className="col-md-12">
-                  <Breadcrumbs />
-                </div>
-              </div>
+  const exportToExcel = () => {
+    const exportData = filteredUsers.map(u => {
+      const dep = departments.find(d => d?.department_id === u?.department_id)?.department_name || '';
+      return {
+        'رقم الموظف': u?.employee_id,
+        'اسم المستخدم': u?.username,
+        'الاسم الأول': u?.first_name,
+        'الاسم الأخير': u?.last_name,
+        'الدور': u?.role,
+        'الإدارة': dep,
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'المستخدمون');
+    XLSX.writeFile(wb, 'المستخدمون.xlsx');
+  };
 
-              <div className="row">
-                <div className="col-md-1 col-xl-1" />
-                <div className="col-md-10 col-xl-10 p-4 my-3 bg-white d-flex flex-column" style={{ minHeight: `${rowsPerPage * 48 + 150}px`, position: 'relative', borderTop: '3px solid #4F7689', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                  <div className="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3">
-                    <input className="form-control form-control-sm" style={{ width: '160px' }} type="search" placeholder="بحث..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                    <Dropdown>
-                      <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        {uniqueRoles.map((r, idx) => (
-                          <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" className="form-check-input m-0" checked={roleFilter.includes(r)} onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)} />
-                            <span className="form-check-label">{r}</span>
-                          </label>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    <Dropdown>
-                      <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
-                      <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        {uniqueDepartments.map((dep, idx) => (
-                          <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" className="form-check-input m-0" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
-                            <span className="form-check-label">{dep}</span>
-                          </label>
-                        ))}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                    <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
-                  </div>
-                  <div className="table-responsive" style={{ overflowX: 'auto', minHeight: `${rowsPerPage * 48}px`, marginBottom: '80px' }}>
-                  <table className="table text-center align-middle">
-                      <thead>
-                        <tr style={{ color: '#c9c9c9ff', fontSize: '0.875rem' }}>
-                          <th style={{ color: '#6c757d' }}>رقم الموظف</th>
-                          <th style={{ color: '#6c757d' }}>اسم المستخدم</th>
-                          <th style={{ color: '#6c757d' }}>الاسم الأول</th>
-                          <th style={{ color: '#6c757d' }}>الاسم الأخير</th>
-                          <th style={{ color: '#6c757d' }}>الدور</th>
-                          <th style={{ color: '#6c757d' }}>الإدارة</th>
-                           {!isUser && <th style={{ color: '#6c757d' }}>تعديل</th>}
-                          {!isUser && <th style={{ color: '#6c757d' }}>حذف</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loading ? (
-                          <tr>
-                             <td colSpan={isUser ? 6 : 8} className="text-center py-5">
-                              <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : paginatedUsers.length === 0 ? (
-                          <tr><td colSpan={isUser ? 6 : 8} className="text-muted">لا توجد نتائج</td></tr>
-                        ) : (
-                          paginatedUsers.map(u => (
-                            <tr key={u.id}>
-                              <td>{u.employee_id}</td>
-                              <td className="text-primary">{u.username}</td>
-                              <td>{u.first_name}</td>
-                              <td>{u.last_name}</td>
-                              <td>{u.role}</td>
-                              <td>{departments.find(d => d.department_id === u.department_id)?.department_name}</td>
-                               {!isUser && (
-                                <td>
-                                  <i className="fas fa-pen text-success" onClick={() => navigate(`/users_edit/${u.employee_id}`)}></i>
-                                </td>
-                              )}
-                              {!isUser && (
-                                <td>
-                                  <i className="fas fa-times text-danger" style={{ cursor: 'pointer' }} onClick={() => deleteUser(u.employee_id)}></i>
-                                </td>
-                              )}
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!loading && filteredUsers.length > rowsPerPage && (
-                    <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-white position-absolute bottom-0 start-0 w-100" style={{ zIndex: 10, paddingInline: '1rem' }}>
-                      <div>
-                        <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
-                        <button className="btn btn-outline-primary btn-sm me-2 m-2" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                      </div>
-                      <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
-                    </div>
-                  )}
+  return (
+    <>
+      <LocalTheme />
+      <div
+        dir="rtl"
+        style={{
+          fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          backgroundColor: '#f6f8fb',
+          minHeight: '100vh'
+        }}
+      >
+        <Header />
+        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+          <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+            <div id="content" className="flex-grow-1">
+              <div className="container-fluid">
+
+                <div className="row p-4">
+                  <div className="col-12"><Breadcrumbs /></div>
                 </div>
-                <div className="col-md-1 col-xl-1" />
+
+                <div className="row justify-content-center">
+                  <div className="col-12 col-xl-11">
+                    <div className="table-card" aria-busy={loading}>
+                      {/* Header */}
+                      <div className="head-flat">
+                        <div className="controls-inline">
+                          <input
+                            className="form-control form-control-sm"
+                            style={{ width: 200 }}
+                            type="search"
+                            placeholder="بحث..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+
+                          {!isViewer && (
+                            <>
+                              <Dropdown autoClose="outside" align="end" flip={false}>
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
+                                  {uniqueRoles.map((r, idx) => (
+                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={roleFilter.includes(r)}
+                                        onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)}
+                                      />
+                                      <span className="form-check-label">{r}</span>
+                                    </label>
+                                  ))}
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              <Dropdown autoClose="outside" align="end" flip={false}>
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
+                                <Dropdown.Menu style={{ maxHeight: 320, overflowY: 'auto' }} renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
+                                  {uniqueDepartments.map((dep, idx) => (
+                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={departmentFilter.includes(dep)}
+                                        onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                                      />
+                                      <span className="form-check-label">{dep}</span>
+                                    </label>
+                                  ))}
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
+                              {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                <button className="btn btn-success btn-sm" onClick={exportToExcel}>
+                                  <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        <div className="d-flex align-items-center gap-2">
+                          {(!loading || !useSkeleton) && (
+                            <small className="text-muted">النتائج: {filteredUsers.length.toLocaleString('ar-SA')}</small>
+                          )}
+                          <button
+                            className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+                            onClick={() => refreshData('soft')}
+                            title="تحديث"
+                          >
+                            <i className="fas fa-rotate-right" />
+                            تحديث
+                            {loading && !useSkeleton && (
+                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Table */}
+                      <div className="table-responsive">
+                        <table className="table table-hover text-center align-middle">
+                          <thead>
+                            <tr>
+                              <th className="th-eid">رقم الموظف</th>
+                              <th className="th-uname">اسم المستخدم</th>
+                              <th className="th-fname">الاسم الأول</th>
+                              <th className="th-lname">الاسم الأخير</th>
+                              <th className="th-role">الدور</th>
+                              <th className="th-dept">الإدارة</th>
+                              {!isViewer && <th className="th-icon">تعديل</th>}
+                              {!isViewer && <th className="th-icon">حذف</th>}
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {loading && useSkeleton ? (
+                              Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                            ) : hasPageData ? (
+                              paginatedUsers.map(u => {
+                                const depName = departments.find(d => d?.department_id === u?.department_id)?.department_name;
+                                return (
+                                  <tr key={u?.employee_id}>
+                                    <td>{u?.employee_id}</td>
+                                    <td className="text-primary">{u?.username}</td>
+                                    <td>{u?.first_name}</td>
+                                    <td>{u?.last_name}</td>
+                                    <td>{u?.role}</td>
+                                    <td>{depName}</td>
+                                    {!isViewer && (
+                                      <>
+                                        <td>
+                                          <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/users_edit/${u?.employee_id}`)}>
+                                            <i className="fas fa-pen" />
+                                          </button>
+                                        </td>
+                                        <td>
+                                          <button className="btn btn-link p-0 text-danger" onClick={() => deleteUser(u?.employee_id)}>
+                                            <i className="fas fa-times" />
+                                          </button>
+                                        </td>
+                                      </>
+                                    )}
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <tr className="table-empty-row">
+                                <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                              </tr>
+                            )}
+
+                            {/* Filler rows to keep height steady */}
+                            {!loading && renderFillerRows(fillerCount)}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Footer: page size + pagination */}
+                      <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div className="d-inline-flex align-items-center gap-2">
+                          <Dropdown align="start">
+                            <Dropdown.Toggle size="sm" variant="outline-secondary">
+                              عدد الصفوف: {isAll ? 'الكل' : pageSize}
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu>
+                              {PAGE_OPTIONS.map(opt => (
+                                <Dropdown.Item
+                                  key={opt}
+                                  as="button"
+                                  active={opt === pageSize}
+                                  onClick={() => { setPageSize(opt); setCurrentPage(1); }}
+                                >
+                                  {opt === 'all' ? 'الكل' : opt}
+                                </Dropdown.Item>
+                              ))}
+                            </Dropdown.Menu>
+                          </Dropdown>
+                        </div>
+
+                        {isAll ? (
+                          <div className="text-muted small">عرض {filteredUsers.length} صف</div>
+                        ) : (
+                          <div className="d-inline-flex align-items-center gap-2">
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                            <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="page-spacer" />
               </div>
             </div>
+            <Footer />
           </div>
         </div>
       </div>
-                <Footer />
-
-    </div>
-    
+    </>
   );
 }
