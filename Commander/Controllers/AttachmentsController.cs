@@ -38,6 +38,8 @@ namespace Commander.Controllers
             if (standard == null) return NotFound();
             if (file == null || file.Length == 0) return BadRequest();
 
+            var wasRejected = standard.Status == "غير معتمد";
+
             var uploadsFolder = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads");
             Directory.CreateDirectory(uploadsFolder);
             var fileName = Path.GetRandomFileName() + Path.GetExtension(file.FileName);
@@ -70,6 +72,9 @@ namespace Commander.Controllers
                 standard.Status = "مكتمل";
             else
                 standard.Status = "تحت العمل";
+
+            if (wasRejected)
+                standard.Rejection_reason = null;
             _standardRepo.UpdateStandard(standard);
             _standardRepo.SaveChanges();
             return CreatedAtAction(nameof(GetAll), new { standardId }, attachment);
