@@ -404,10 +404,20 @@ export default function Standards_edit() {
                             <label className="form-check-label text-nowrap" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
                           </div>
 
-                          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                            {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                            تحديث
-                          </button>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                              {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
+                              تحديث
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary"
+                              onClick={() => navigate('/standards')}
+                              disabled={isSubmitting}
+                            >
+                              إلغاء
+                            </button>
+                          </div>
                         </form>
                       )}
                     </div>

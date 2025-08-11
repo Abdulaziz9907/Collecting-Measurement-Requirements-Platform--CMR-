@@ -5,6 +5,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 
 function escapeInput(str) {
   return str.replace(/[&<>'"]/g, (char) => {
@@ -37,6 +38,7 @@ export default function Standards_create() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const navigate = useNavigate();
 
   /* ===== Minimal theme (card + exact header height). Does NOT change font. ===== */
   const LocalTheme = () => (
@@ -273,10 +275,20 @@ export default function Standards_create() {
                           <label className="form-check-label text-nowrap" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
                         </div>
 
-                        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                          {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
-                          إرسال
-                        </button>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                            {isSubmitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
+                            إرسال
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => navigate('/standards')}
+                            disabled={isSubmitting}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
                       </form>
                     </div>
                   </div>
