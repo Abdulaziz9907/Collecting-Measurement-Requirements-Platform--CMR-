@@ -8,6 +8,7 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import * as XLSX from 'xlsx';
+import DeleteModal from '../../../components/DeleteModal.jsx';
 
 export default function Users() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -19,6 +20,8 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
@@ -209,11 +212,17 @@ export default function Users() {
     ? pageSize
     : Math.max(15, Math.min(25, filteredUsers.length || 15));
 
-  const deleteUser = async (empId) => {
+  const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE}/api/users/${empId}`, { method: 'DELETE' });
+      await fetch(`${API_BASE}/api/users/${deleteId}`, { method: 'DELETE' });
+      setShowDelete(false);
       await refreshData('soft');
     } catch {}
+  };
+
+  const handleDeleteClick = (empId) => {
+    setDeleteId(empId);
+    setShowDelete(true);
   };
 
   const exportToExcel = () => {
@@ -373,9 +382,9 @@ export default function Users() {
                                           </button>
                                         </td>
                                         <td>
-                                          <button className="btn btn-link p-0 text-danger" onClick={() => deleteUser(u?.employee_id)}>
-                                            <i className="fas fa-times" />
-                                          </button>
+                                        <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(u?.employee_id)}>
+                                          <i className="fas fa-times" />
+                                        </button>
                                         </td>
                                       </>
                                     )}
@@ -437,6 +446,7 @@ export default function Users() {
           </div>
         </div>
       </div>
+      <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
     </>
   );
 }

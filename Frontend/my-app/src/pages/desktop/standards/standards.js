@@ -9,6 +9,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
+import DeleteModal from '../../../components/DeleteModal.jsx';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -22,6 +23,8 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalId, setModalId] = useState(null);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   // ✅ Simple click-to-sort state
   const [sortKey, setSortKey] = useState(null);   // 'standard_number'|'standard_name'|'department'|'status'|'created_at'
@@ -282,6 +285,19 @@ export default function Standards() {
     XLSX.writeFile(wb, 'المعايير.xlsx');
   };
 
+  const confirmDelete = async () => {
+    try {
+      await fetch(`${API_BASE}/api/standards/${deleteId}`, { method: 'DELETE' });
+      setShowDelete(false);
+      await refreshData('soft');
+    } catch {}
+  };
+
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
+    setShowDelete(true);
+  };
+
   // Helpers for header sort toggling
   const toggleSort = (key) => {
     if (sortKey !== key) { setSortKey(key); setSortDir('asc'); return; }
@@ -438,9 +454,7 @@ export default function Standards() {
                                         </button>
                                       </td>
                                       <td>
-                                        <button className="btn btn-link p-0 text-danger" onClick={async () => {
-                                          try { await fetch(`${API_BASE}/api/standards/${item.standard_id}`, { method: 'DELETE' }); await refreshData('soft'); } catch {}
-                                        }}>
+                                        <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(item.standard_id)}>
                                           <i className="fas fa-times" />
                                         </button>
                                       </td>
@@ -505,6 +519,7 @@ export default function Standards() {
       </div>
 
       <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={() => refreshData('soft')} />
+      <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
     </>
   );
 }

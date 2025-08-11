@@ -323,7 +323,7 @@ export default function Standards_menu() {
                       <div>
                         <button
                           type="button"
-                          className="btn btn-outline-primary btn-sm d-inline-flex align-items-center"
+                          className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
                           onClick={loadData}
                           disabled={loading}
                           aria-label="تحديث"
