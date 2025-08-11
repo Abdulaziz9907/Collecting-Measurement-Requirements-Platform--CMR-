@@ -384,8 +384,9 @@ export default function Departments() {
           </div>
         </div>
       </div>
-    </div>
-    <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
+
+      {/* Keep modal at root level of the fragment */}
+      <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
     </>
   );
 }

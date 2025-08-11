@@ -4,7 +4,7 @@ import { Modal, Button } from 'react-bootstrap';
 export default function DeleteModal({ show, onHide, onConfirm }) {
   return (
     <Modal show={show} onHide={onHide} centered dir="rtl">
-      <Modal.Header closeButton closeVariant="white" className="bg-danger text-white">
+      <Modal.Header className="bg-danger text-white">
         <Modal.Title>تأكيد الحذف</Modal.Title>
       </Modal.Header>
       <Modal.Body>

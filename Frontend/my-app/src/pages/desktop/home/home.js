@@ -161,8 +161,10 @@ export default function Standards_menu() {
       .sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
   }, [standardsRaw, dateKey]);
 
-  const recentLimit = (user?.role?.toLowerCase?.() === 'management') ? 8 : 5;
-  const recentItems = useMemo(() => recentAll.slice(0, recentLimit), [recentAll, recentLimit]);
+  // === Roles: hide Latest for Management/Managment; others see latest 5
+  const role = (user?.role || '').toString().toLowerCase();
+  const isManagement = role === 'management' || role === 'managment';
+  const recentItems = useMemo(() => recentAll.slice(0, 5), [recentAll]);
 
   const distItems = useMemo(() => ([
     { key: 'completed',  label: 'مكتمل',     value: summary.completed,  color: summaryCardColors.completed,  pct: pct(summary.completed, summary.total) },
@@ -221,8 +223,8 @@ export default function Standards_menu() {
         .donut-wrap { display:flex; justify-content:center; }
         .legend-grid {
           display: grid;
-          grid-template-columns: max-content max-content; /* عمود للأسماء وعمود للنِّسب */
-          justify-content: center; /* كتلة الدليل ككل تكون في المنتصف */
+          grid-template-columns: max-content max-content;
+          justify-content: center;
           align-items: center;
           column-gap: 16px;
           row-gap: 8px;
@@ -231,7 +233,7 @@ export default function Standards_menu() {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          justify-self: end;  /* محاذاة عمود الأسماء */
+          justify-self: end;
           font-weight: 800;
           color: var(--text);
           font-size: 1rem;
@@ -241,7 +243,7 @@ export default function Standards_menu() {
           box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
         }
         .legend-pct {
-          justify-self: start; /* محاذاة عمود النِّسب */
+          justify-self: start;
           padding: 3px 8px;
           border-radius: 8px;
           background:#f1f5f9;
@@ -440,63 +442,65 @@ export default function Standards_menu() {
                 </div>
               </div>
 
-              {/* Recent updates */}
-              <div className="row justify-content-center">
-                <div className="col-12 col-xl-10 mb-5">
-                  <div className="table-card compact" aria-busy={loading}>
-                    <div className="head-flat">أخر التحديثات</div>
-                    <div className="body">
-                      {loading ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="row-skeleton" aria-hidden={!loading}>
-                            <div className="top">
-                              <div className="circle-skel" style={{ width: 16, height: 16 }}></div>
-                              <div className="line-skel" style={{ width: '60%' }}></div>
+              {/* Recent updates — show only for non-management roles, and limit to 5 */}
+              {!isManagement && (
+                <div className="row justify-content-center">
+                  <div className="col-12 col-xl-10 mb-5">
+                    <div className="table-card compact" aria-busy={loading}>
+                      <div className="head-flat">أخر التحديثات</div>
+                      <div className="body">
+                        {loading ? (
+                          Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="row-skeleton" aria-hidden={!loading}>
+                              <div className="top">
+                                <div className="circle-skel" style={{ width: 16, height: 16 }}></div>
+                                <div className="line-skel" style={{ width: '60%' }}></div>
+                              </div>
+                              <div className="bottom">
+                                <div className="line-skel" style={{ width: '30%' }}></div>
+                                <div className="skeleton badge-skel"></div>
+                              </div>
                             </div>
-                            <div className="bottom">
-                              <div className="line-skel" style={{ width: '30%' }}></div>
-                              <div className="skeleton badge-skel"></div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (!error && hasLoadedOnce && recentItems.length > 0) ? (
-                        recentItems.map((it, idx) => {
-                          const num = getStdNumber(it);
-                          const name = getStdName(it);
-                          const titleAttr = [num ? `معيار ${num}` : 'معيار', name].filter(Boolean).join(' — ');
-                          const statusClass =
-                            it.status === 'معتمد' ? 'badge-approved' :
-                            it.status === 'غير معتمد' ? 'badge-rejected' :
-                            it.status === 'مكتمل' ? 'badge-completed' :
-                            it.status === 'تحت العمل' ? 'badge-underwork' :
-                            'badge-notstarted';
+                          ))
+                        ) : (!error && hasLoadedOnce && recentItems.length > 0) ? (
+                          recentItems.map((it, idx) => {
+                            const num = getStdNumber(it);
+                            const name = getStdName(it);
+                            const titleAttr = [num ? `معيار ${num}` : 'معيار', name].filter(Boolean).join(' — ');
+                            const statusClass =
+                              it.status === 'معتمد' ? 'badge-approved' :
+                              it.status === 'غير معتمد' ? 'badge-rejected' :
+                              it.status === 'مكتمل' ? 'badge-completed' :
+                              it.status === 'تحت العمل' ? 'badge-underwork' :
+                              'badge-notstarted';
 
-                          return (
-                            <div key={idx} className="table-row compact" title={titleAttr}>
-                              <div className="cell-title text-truncate">
-                                <i className="fas fa-file-lines" />
-                                <span className="name">{num ? `معيار ${num}` : 'معيار'}</span>
-                                {name ? <span className="sep">—</span> : null}
-                                {name ? <span className="truncate">{name}</span> : null}
+                            return (
+                              <div key={idx} className="table-row compact" title={titleAttr}>
+                                <div className="cell-title text-truncate">
+                                  <i className="fas fa-file-lines" />
+                                  <span className="name">{num ? `معيار ${num}` : 'معيار'}</span>
+                                  {name ? <span className="sep">—</span> : null}
+                                  {name ? <span className="truncate">{name}</span> : null}
+                                </div>
+                                <div className="cell-date">{formatDateTimeAR(it[dateKey])}</div>
+                                <div className="cell-status">
+                                  <span className={`badge-soft ${statusClass}`}>{it.status || 'غير محدد'}</span>
+                                </div>
+                                <div className="cell-meta">
+                                  <span className="date">{formatDateTimeAR(it[dateKey])}</span>
+                                  <span className={`badge-soft ${statusClass}`}>{it.status || 'غير محدد'}</span>
+                                </div>
                               </div>
-                              <div className="cell-date">{formatDateTimeAR(it[dateKey])}</div>
-                              <div className="cell-status">
-                                <span className={`badge-soft ${statusClass}`}>{it.status || 'غير محدد'}</span>
-                              </div>
-                              <div className="cell-meta">
-                                <span className="date">{formatDateTimeAR(it[dateKey])}</span>
-                                <span className={`badge-soft ${statusClass}`}>{it.status || 'غير محدد'}</span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (!error && hasLoadedOnce && !loading && recentItems.length === 0) ? (
-                        <div className="text-center py-4 muted">لا توجد تحديثات حديثة.</div>
-                      ) : null}
+                            );
+                          })
+                        ) : (!error && hasLoadedOnce && !loading && recentItems.length === 0) ? (
+                          <div className="text-center py-4 muted">لا توجد تحديثات حديثة.</div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
             </div>
           </div>
