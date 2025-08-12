@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
@@ -40,7 +40,7 @@ export default function Report() {
   const [deptStats, setDeptStats] = useState([]);
   const [monthlyProgress, setMonthlyProgress] = useState([]);
   const [users, setUsers] = useState([]);
-  const [standardsRaw, setStandardsRaw] = useState([]); // ⬅️ raw standards for detailed export
+  const [standardsRaw, setStandardsRaw] = useState([]); // raw standards for detailed export
 
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -150,6 +150,23 @@ export default function Report() {
       .dropdown-menu { --bs-dropdown-link-hover-bg: #f1f5f9; --bs-dropdown-link-active-bg: #e2e8f0; }
       .dropdown-item { color: var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color: var(--text) !important; }
+
+      /* pretty popovers */
+      .popover {
+        border-radius: 14px;
+        border: 1px solid var(--stroke);
+        box-shadow: 0 14px 32px rgba(16,24,40,.14);
+        max-width: 320px;
+      }
+      .popover-header {
+        background: linear-gradient(180deg, #fbfdff 0%, #f6f8fb 100%);
+        border-bottom: 1px solid var(--stroke);
+        font-weight: 800;
+        color: var(--text);
+      }
+      .popover-body {
+        color: var(--text);
+      }
     `}</style>
   );
 
@@ -211,8 +228,7 @@ export default function Report() {
     (u?.role ?? u?.user_role ?? u?.account_type ?? u?.type ?? '').toString().trim();
 
   const isManagementAccount = (u) => getRole(u).toLowerCase() === 'management';
-    const isUserAccount = (u) => getRole(u).toLowerCase() === 'user';
-
+  const isUserAccount = (u) => getRole(u).toLowerCase() === 'user';
 
   /* --------- data load --------- */
   const loadData = async () => {
@@ -246,7 +262,7 @@ export default function Report() {
           ? Number(s.assigned_department_id) === Number(user.department_id)
           : true
       );
-      setStandardsRaw(filtered); // ⬅️ store for export
+      setStandardsRaw(filtered); // store for export
 
       const totalCounts = { approved: 0, rejected: 0, completed: 0, underWork: 0, notStarted: 0 };
 
@@ -416,7 +432,6 @@ export default function Report() {
   const managementAccountsCount = (users || []).filter(isManagementAccount).length;
   const usersAccountsCount = (users || []).filter(isUserAccount).length;
 
-
   /* ----------------- ADVANCED EXPORT ----------------- */
   const excelCol = (n) => {
     // 0->A
@@ -426,14 +441,10 @@ export default function Report() {
     return s;
   };
 
-  const riyadhNow = () => new Date(); // use Intl below with tz to format
+  const riyadhNow = () => new Date();
   const formatGregorian = (d) =>
     new Intl.DateTimeFormat('ar-SA', { dateStyle: 'full', timeStyle: 'medium', hour12: true, timeZone: 'Asia/Riyadh' }).format(d);
   const formatGregorianFile = (d) => {
-    // YYYY-MM-DD_HH-mm-ss @ Asia/Riyadh
-    const p = (n) => String(n).padStart(2, '0');
-    const dt = new Date(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d));
-    // Above trick won’t include time; fallback to manual from parts:
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
@@ -587,6 +598,39 @@ export default function Report() {
     XLSX.writeFile(wb, `تقرير_الإدارات_${fileTs}.xlsx`);
   };
 
+  /* ----------------- HOVER EXPLANATIONS ----------------- */
+  const popApprovedOnly = (
+    <Popover id="pop-approved-only" dir="rtl">
+      <Popover.Header as="h6">وضع “معتمد فقط”</Popover.Header>
+      <Popover.Body>
+        <div className="small text-muted mb-2">
+          الصيغة: <code>نسبة التقدم = (عدد المعايير المعتمدة ÷ إجمالي المعايير) × 100</code>
+        </div>
+        <ul className="mb-0 ps-3">
+          <li>يُحتسب فقط ما تم اعتماده رسميًا.</li>
+          <li>المعايير المكتملة لا تُحتسب ضمن النسبة.</li>
+          <li>مفيد لرصد الإنجاز الفعلي   .</li>
+
+        </ul>
+      </Popover.Body>
+    </Popover>
+  );
+
+  const popCompletedPlusApproved = (
+    <Popover id="pop-completed-plus-approved" dir="rtl">
+      <Popover.Header as="h6">وضع “مكتمل + معتمد”</Popover.Header>
+      <Popover.Body>
+        <div className="small text-muted mb-2">
+          الصيغة: <code>نسبة التقدم = ((المكتملة + المعتمدة) ÷ إجمالي المعايير) × 100</code>
+        </div>
+        <ul className="mb-0 ps-3">
+          <li>يشمل المعايير المكتملة حتى لو لم تُعتمد بعد.</li>
+          <li>مفيد لرصد الإنجاز المتوقع قبل الاعتماد الرسمي.</li>
+        </ul>
+      </Popover.Body>
+    </Popover>
+  );
+
   return (
     <>
       <LocalTheme />
@@ -669,24 +713,26 @@ export default function Report() {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          {/* Progress mode toggles */}
+                          {/* Progress mode toggles with fancy hover popovers */}
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button
-                              type="button"
-                              className={`btn btn-outline-secondary btn-sm ${progressMode === 'approvedOnly' ? 'active' : ''}`}
-                              onClick={() => setProgressMode('approvedOnly')}
-                              title="معتمد فقط"
-                            >
-                              معتمد فقط
-                            </button>
-                            <button
-                              type="button"
-                              className={`btn btn-outline-secondary btn-sm ${progressMode === 'completedPlusApproved' ? 'active' : ''}`}
-                              onClick={() => setProgressMode('completedPlusApproved')}
-                              title="مكتمل + معتمد"
-                            >
-                              مكتمل + معتمد
-                            </button>
+                            <OverlayTrigger placement="bottom" delay={{ show: 120, hide: 80 }} overlay={popApprovedOnly}>
+                              <button
+                                type="button"
+                                className={`btn btn-outline-secondary btn-sm ${progressMode === 'approvedOnly' ? 'active' : ''}`}
+                                onClick={() => setProgressMode('approvedOnly')}
+                              >
+                                معتمد فقط
+                              </button>
+                            </OverlayTrigger>
+                            <OverlayTrigger placement="bottom" delay={{ show: 120, hide: 80 }} overlay={popCompletedPlusApproved}>
+                              <button
+                                type="button"
+                                className={`btn btn-outline-secondary btn-sm ${progressMode === 'completedPlusApproved' ? 'active' : ''}`}
+                                onClick={() => setProgressMode('completedPlusApproved')}
+                              >
+                                مكتمل + معتمد
+                              </button>
+                            </OverlayTrigger>
                           </div>
 
                           {/* Export + Refresh */}
@@ -853,56 +899,56 @@ export default function Report() {
                     </div>
                   </div>
 
-                    <div className="col-12 col-xl-5">
-                      <div className="surface" aria-busy={loading}>
-                        <div className="head-flat">إحصائيات المستخدمين والإدارات</div>
-                        <div className="body-flat">
-                          {loading ? (
-                            <div className="skeleton skeleton-block" />
-                          ) : (
-                            <div className="chart-wrap-md d-flex align-items-center">
-                              <div className="w-100">
-                                <div className="stats-grid">
-                                  <div className="mini-stat">
-                                    <div className="mini-icon"><i className="fas fa-users" /></div>
-                                    <div>
-                                      <div className="fw-bold">إجمالي المستخدمين</div>
-                                      <div className="text-muted">{fmt(totalUsers)}</div>
-                                    </div>
+                  <div className="col-12 col-xl-5">
+                    <div className="surface" aria-busy={loading}>
+                      <div className="head-flat">إحصائيات المستخدمين والإدارات</div>
+                      <div className="body-flat">
+                        {loading ? (
+                          <div className="skeleton skeleton-block" />
+                        ) : (
+                          <div className="chart-wrap-md d-flex align-items-center">
+                            <div className="w-100">
+                              <div className="stats-grid">
+                                <div className="mini-stat">
+                                  <div className="mini-icon"><i className="fas fa-users" /></div>
+                                  <div>
+                                    <div className="fw-bold">إجمالي المستخدمين</div>
+                                    <div className="text-muted">{fmt(totalUsers)}</div>
                                   </div>
-                                  <div className="mini-stat">
-                                    <div className="mini-icon"><i className="fas fa-sitemap" /></div>
-                                    <div>
-                                      <div className="fw-bold">إجمالي الإدارات</div>
-                                      <div className="text-muted">{fmt(totalDepartments)}</div>
-                                    </div>
+                                </div>
+                                <div className="mini-stat">
+                                  <div className="mini-icon"><i className="fas fa-sitemap" /></div>
+                                  <div>
+                                    <div className="fw-bold">إجمالي الإدارات</div>
+                                    <div className="text-muted">{fmt(totalDepartments)}</div>
                                   </div>
-                                  <div className="mini-stat">
-                                    <div className="mini-icon"><i className="fas fa-user-shield" /></div>
-                                    <div>
-                                      <div className="fw-bold">إجمالي حسابات ممثلين الإدارات   </div>
-                                      <div className="text-muted">{fmt(usersAccountsCount)}</div>
-                                    </div>
+                                </div>
+                                <div className="mini-stat">
+                                  <div className="mini-icon"><i className="fas fa-user-shield" /></div>
+                                  <div>
+                                    <div className="fw-bold">إجمالي حسابات ممثلين الإدارات</div>
+                                    <div className="text-muted">{fmt(usersAccountsCount)}</div>
                                   </div>
-                                  <div className="mini-stat">
-                                    <div className="mini-icon"><i className="fas fa-crown" /></div>
-                                    <div>
-                                      <div className="fw-bold">إجمالي حسابات الإدارة العليا </div>
-                                      <div className="text-muted">
-                                        {fmt(managementAccountsCount)}
-                                      </div>
+                                </div>
+                                <div className="mini-stat">
+                                  <div className="mini-icon"><i className="fas fa-crown" /></div>
+                                  <div>
+                                    <div className="fw-bold">إجمالي حسابات الإدارة العليا</div>
+                                    <div className="text-muted">
+                                      {fmt(managementAccountsCount)}
                                     </div>
                                   </div>
                                 </div>
-                                {users.length === 0 && (
-                                  <small className="text-muted d-block mt-2">* لم يتم العثور على بيانات مستخدمين. تأكد من مسار API.</small>
-                                )}
                               </div>
+                              {users.length === 0 && (
+                                <small className="text-muted d-block mt-2">* لم يتم العثور على بيانات مستخدمين. تأكد من مسار API.</small>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
+                  </div>
                 </div>
 
                 {/* Table */}

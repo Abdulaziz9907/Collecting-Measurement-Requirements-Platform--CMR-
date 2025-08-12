@@ -226,7 +226,7 @@ export default function Login({ onLogin }) {
         }
       `}</style>
 
-      <div className="d-flex flex-column min-vh-100">
+      <div className="d-flex flex-column min-vh-100 " style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
         <Header />
         <div className="video-background bg-black">
           <video

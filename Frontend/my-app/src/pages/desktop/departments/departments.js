@@ -18,8 +18,16 @@ export default function Departments() {
   const [loading, setLoading] = useState(true);
   const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  // Delete modal state
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState(''); // ✅ name to type for confirmation
+
+  // Import state + banner
+  const [importing, setImporting] = useState(false);
+  const [banner, setBanner] = useState({ type: null, text: '' });
+  const fileInputRef = useRef(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
@@ -61,7 +69,6 @@ export default function Departments() {
       }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* Column hints so skeleton aligns perfectly */
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-name  { min-width: 280px; }
       .th-bnum  { min-width: 140px; }
@@ -70,11 +77,9 @@ export default function Departments() {
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height: 140px; }
 
-      /* Remove table bottom gap */
       .table-card .table { margin: 0 !important; }
       .table-card .table-responsive { margin: 0; }
 
-      /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -85,15 +90,20 @@ export default function Departments() {
       .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
 
-      /* Filler rows to keep consistent height */
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      /* Dropdown polish */
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
     `}</style>
   );
+
+  // Auto-hide banner after 5s
+  useEffect(() => {
+    if (!banner.type) return;
+    const t = setTimeout(() => setBanner({ type: null, text: '' }), 5000);
+    return () => clearTimeout(t);
+  }, [banner.type]);
 
   const refreshData = async (mode = 'auto') => {
     const wantSkeleton = mode === 'skeleton' || (mode === 'auto' && !hasLoadedOnce);
@@ -145,6 +155,64 @@ export default function Departments() {
     );
   };
 
+  // Normalize Arabic/Persian digits to ASCII and parse int
+  const normalizeInt = (val) => {
+    if (val === null || val === undefined) return NaN;
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    const s = String(val).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch).replace(/[^\d-]+/g, '');
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : NaN;
+  };
+
+  // Normalize department name for duplicate checks
+  const normalizeName = (name = '') => {
+    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g; // حركات عربية
+    const tatweel = /\u0640/g; // تطويل
+    return String(name)
+      .replace(diacritics, '')
+      .replace(tatweel, '')
+      .replace(/\u200f|\u200e|\ufeff/g, '')
+      .replace(/\u00A0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  };
+
+  const stripHidden = (s='') =>
+    String(s)
+      .replace(/\u200f|\u200e|\ufeff/g, '')
+      .replace(/\u00A0/g, ' ')
+      .trim();
+
+  const normalizeHeaderKey = (k='') => stripHidden(k);
+
+  const HEADER_ALIASES = {
+    'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
+    'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
+  };
+
+  const buildHeaderMap = (firstRowObj) => {
+    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
+    const originalKeys = Object.keys(firstRowObj || {});
+    const lookup = new Map();
+    for (const canon in HEADER_ALIASES) {
+      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
+      let foundIndex = -1;
+      for (let i=0; i<keys.length && foundIndex === -1; i++) {
+        if (candidates.includes(keys[i])) foundIndex = i;
+      }
+      if (foundIndex !== -1) {
+        lookup.set(canon, originalKeys[foundIndex]);
+      }
+    }
+    return lookup;
+  };
+
+  const getCell = (row, headerMap, canonKey) => {
+    const actual = headerMap.get(canonKey);
+    return stripHidden(row[actual] ?? '');
+  };
+
   // Filtering
   const filteredData = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
@@ -177,34 +245,38 @@ export default function Departments() {
   // Skeleton rows aligned with columns
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>  {/* اسم الجهة */}
-      <td><span className="skel skel-line" style={{ width: '40%' }} /></td>  {/* رقم المبنى */}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* تعديل */}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* حذف */}
+      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
     </tr>
   );
   const skeletonCount = typeof pageSize === 'number' ? pageSize : Math.max(15, Math.min(25, filteredData.length || 15));
 
-  const confirmDelete = async () => {
-    try {
-      await fetch(`${API_BASE}/api/departments/${deleteId}`, { method: 'DELETE' });
-      setShowDelete(false);
-      await refreshData('soft');
-    } catch {}
-  };
-
-  const handleDeleteClick = (id) => {
-    setDeleteId(id);
-    setShowDelete(true);
-  };
-
-  // Filler rows to keep steady height
+  // Render filler rows to keep table height consistent
   const renderFillerRows = (count) =>
     Array.from({ length: count }).map((_, r) => (
       <tr key={`filler-${r}`} className="table-empty-row">
         {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
       </tr>
     ));
+
+  // Delete handlers
+  const handleDeleteClick = (id, name) => {
+    setDeleteId(id);
+    setDeleteName(name || '');
+    setShowDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await fetch(`${API_BASE}/api/departments/${deleteId}`, { method: 'DELETE' });
+      setShowDelete(false);
+      setDeleteId(null);
+      setDeleteName('');
+      await refreshData('soft');
+    } catch {}
+  };
 
   // Export to Excel (admins)
   const exportToExcel = () => {
@@ -218,11 +290,116 @@ export default function Departments() {
     XLSX.writeFile(wb, 'الجهات.xlsx');
   };
 
+  // Download template
+  const downloadTemplateExcel = () => {
+    const ws = XLSX.utils.aoa_to_sheet([['اسم الجهة', 'رقم المبنى']]);
+    ws['!cols'] = [{ wch: 30 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'قالب الجهات');
+    XLSX.writeFile(wb, 'قالب_الجهات.xlsx');
+  };
+
+  // Import Excel with duplicate-name protection + robust header mapping + counts
+  const handleExcelImport = async (file) => {
+    if (!file) return;
+    setImporting(true);
+    setBanner({ type: null, text: '' });
+
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const firstSheet = wb.SheetNames[0];
+      const ws = wb.Sheets[firstSheet];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+
+      if (!rows.length) {
+        setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' });
+        return;
+      }
+
+      // Flexible headers
+      const headerMap = buildHeaderMap(rows[0]);
+      const missing = ['اسم الجهة','رقم المبنى'].filter(k => !headerMap.get(k));
+      if (missing.length) {
+        setBanner({
+          type: 'danger',
+          text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}. تأكد من صحة العناوين أو استخدم "تحميل القالب".`
+        });
+        return;
+      }
+
+      // existing normalized names from DB
+      const existingNames = new Set((data || []).map(d => normalizeName(d?.department_name)));
+      const batchSeen = new Set();
+
+      let ok = 0, fail = 0, dup = 0, skipped = 0;
+
+      for (const r of rows) {
+        const nameRaw = getCell(r, headerMap, 'اسم الجهة');
+        const bnumRaw = getCell(r, headerMap, 'رقم المبنى');
+
+        const department_name = String(nameRaw).trim();
+        const building_number = normalizeInt(bnumRaw);
+
+        // Incomplete/invalid rows
+        if (!department_name || !Number.isFinite(building_number)) {
+          skipped++;
+          continue;
+        }
+
+        const norm = normalizeName(department_name);
+        if (!norm) { skipped++; continue; }
+
+        // Duplicate checks (existing or within-file)
+        if (existingNames.has(norm) || batchSeen.has(norm)) {
+          dup++;
+          continue;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/departments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ department_name, building_number }),
+          });
+          if (res.ok) {
+            ok++;
+            batchSeen.add(norm);
+            existingNames.add(norm);
+          } else {
+            fail++;
+          }
+        } catch {
+          fail++;
+        }
+      }
+
+      setBanner({
+        type: 'success',
+        text: `تمت المعالجة: ${ok} مضافة، ${dup} مكررة (تم تجاهلها)، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت.`
+      });
+      await refreshData('soft');
+    } catch (e) {
+      setBanner({ type: 'danger', text: 'تعذر قراءة الملف. تأكد من البيانات وأن الأعمدة مسماة بشكل صحيح. جرّب "تحميل القالب".' });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <>
       <LocalTheme />
       <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
         <Header />
+
+        {/* Auto-hiding banner */}
+        {banner.type && (
+          <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
+            <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
+          </div>
+        )}
+
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
@@ -266,10 +443,42 @@ export default function Departments() {
                           </Dropdown>
 
                           <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
+
                           {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                            <button className="btn btn-success btn-sm" onClick={exportToExcel}>
-                              <i className="fas fa-file-excel ms-1" /> تصدير Excel
-                            </button>
+                            <>
+                              <button className="btn btn-success btn-sm" onClick={exportToExcel}>
+                                <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                              </button>
+
+                              {/* Import Excel */}
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleExcelImport(e.target.files?.[0])}
+                              />
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={importing}
+                              >
+                                {importing ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-file-upload ms-1" /> استيراد Excel
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Download template */}
+                              <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
+                                <i className="fas fa-download ms-1" /> تحميل القالب
+                              </button>
+                            </>
                           )}
                         </div>
 
@@ -320,7 +529,8 @@ export default function Departments() {
                                       <td>
                                         <button
                                           className="btn btn-link p-0 text-danger"
-                                          onClick={() => handleDeleteClick(item.department_id)}
+                                          onClick={() => handleDeleteClick(item.department_id, item.department_name)}
+                                          title="حذف"
                                         >
                                           <i className="fas fa-times" />
                                         </button>
@@ -335,7 +545,6 @@ export default function Departments() {
                               </tr>
                             )}
 
-                            {/* Filler rows to keep height steady */}
                             {!loading && renderFillerRows(fillerCount)}
                           </tbody>
                         </table>
@@ -385,8 +594,14 @@ export default function Departments() {
         </div>
       </div>
 
-      {/* Keep modal at root level of the fragment */}
-      <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onConfirm={confirmDelete}
+        subject={`«${deleteName || 'هذه الجهة'}»`}
+        cascadeNote="قد يؤدي هذا إلى حذف أي مستخدمين أو معايير مرتبطة بهذه الجهة."
+        requireText={deleteName}   //  Require typing the department name to enable deletion
+      />
     </>
   );
 }

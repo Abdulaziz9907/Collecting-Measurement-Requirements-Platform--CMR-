@@ -19,16 +19,25 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
+  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalId, setModalId] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  // ✅ Simple click-to-sort state
-  const [sortKey, setSortKey] = useState(null);   // 'standard_number'|'standard_name'|'department'|'status'|'created_at'
-  const [sortDir, setSortDir] = useState('none'); // 'asc'|'desc'|'none'
+  // NEW: bulk selection + bulk delete modal
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+
+  // Sorting
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState('none');
+
+  // Import/template/banner
+  const [importing, setImporting] = useState(false);
+  const [banner, setBanner] = useState({ type: null, text: '' });
+  const fileInputRef = useRef(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
@@ -45,7 +54,10 @@ export default function Standards() {
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
-  /* ========== Theme & Skeleton tuned to table columns ========== */
+  // NEW: selection helpers (header checkbox + shift range)
+  const headerCbRef = useRef(null);
+  const lastPageIndexRef = useRef(null);
+
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -69,8 +81,8 @@ export default function Standards() {
       }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* columns width hints (help skeleton match layout) */
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
+      .th-select { width: 38px; }
       .th-num    { min-width: 96px; }
       .th-name   { min-width: 220px; }
       .th-dept   { min-width: 160px; }
@@ -79,7 +91,6 @@ export default function Standards() {
       .th-date   { min-width: 140px; }
       .th-icon   { width: 60px; }
 
-      /* clickable header button */
       .th-sort{
         background:transparent;
         border:0;
@@ -93,11 +104,9 @@ export default function Standards() {
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height: 140px; }
 
-      /* ✅ Remove the bottom gap between table and the footer bar */
       .table-card .table { margin: 0 !important; }
       .table-card .table-responsive { margin: 0; }
 
-      /* Skeleton building blocks (inside table cells) */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -108,15 +117,28 @@ export default function Standards() {
       .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
 
-      /* filler rows for fixed height pages */
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      /* Dropdown polish */
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
+
+      /* NEW: selection bar */
+      .selection-bar{
+        border-top:1px dashed var(--stroke);
+        border-bottom:1px dashed var(--stroke);
+        background: linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%);
+        padding: 8px 12px;
+      }
     `}</style>
   );
+
+  // Auto-hide banner after 10s
+  useEffect(() => {
+    if (!banner.type) return;
+    const t = setTimeout(() => setBanner({ type: null, text: '' }), 10000);
+    return () => clearTimeout(t);
+  }, [banner.type]);
 
   const refreshData = async (mode = 'auto') => {
     const wantSkeleton = mode === 'skeleton' || (mode === 'auto' && !hasLoadedOnce);
@@ -146,7 +168,6 @@ export default function Standards() {
         deps = (deps || []).filter(d => Number(d.department_id) === Number(user.department_id));
       }
 
-      // tag original order for "افتراضي"
       standards = (standards || []).map((s, i) => ({ ...s, __i: i }));
 
       if (seq !== loadSeqRef.current) return;
@@ -172,8 +193,6 @@ export default function Standards() {
   };
 
   useEffect(() => { refreshData('skeleton'); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
-
-  // Reset page when filters, page size, or sorting changes
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, departmentFilter, pageSize, sortKey, sortDir]);
 
   const uniqueStatuses = [...new Set(data.map(i => i?.status).filter(Boolean))];
@@ -193,6 +212,64 @@ export default function Standards() {
     setFunc(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
   };
 
+  /* ===== Helpers for import / validation ===== */
+  const stripHidden = (s='') =>
+    String(s)
+      .replace(/\u200f|\u200e|\ufeff/g, '')
+      .replace(/\u00A0/g, ' ')
+      .trim();
+
+  const normalizeHeaderKey = (k='') => stripHidden(k);
+
+  const HEADER_ALIASES = {
+    'رقم المعيار': ['رقم المعيار','رقم','المعيار','standard number','standard no','std no','standard_number'],
+    'اسم المعيار': ['اسم المعيار','اسم','standard name','standard_name','name'],
+    'الهدف': ['الهدف','هدف','goal'],
+    'متطلبات التطبيق': ['متطلبات التطبيق','متطلبات','requirements','reqs','standard requirements'],
+    'الجهة': ['الجهة','الإدارة','القسم','department','assigned department'],
+    'مستندات الإثبات': ['مستندات الإثبات','الاثباتات','أدلة','proofs','evidence','attachments']
+  };
+
+  const buildHeaderMap = (firstRowObj) => {
+    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
+    const originalKeys = Object.keys(firstRowObj || {});
+    const lookup = new Map();
+    for (const canon in HEADER_ALIASES) {
+      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
+      let foundIndex = -1;
+      for (let i=0; i<keys.length && foundIndex === -1; i++) {
+        if (candidates.includes(keys[i])) foundIndex = i;
+      }
+      if (foundIndex !== -1) {
+        lookup.set(canon, originalKeys[foundIndex]);
+      }
+    }
+    return lookup;
+  };
+
+  const getCell = (row, headerMap, canonKey) => {
+    const actual = headerMap.get(canonKey);
+    return stripHidden(row[actual] ?? '');
+  };
+
+  const normalizeDigits = (str = '') => {
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
+  };
+  const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
+  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
+
+  const normalizeName = (name = '') => {
+    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
+    const tatweel = /\u0640/g;
+    return String(name).replace(diacritics, '').replace(tatweel, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  };
+
+  const parseProofs = (raw = '') => {
+    const txt = String(raw).replace(/،/g, ',');
+    return txt.split(',').map(s => s.trim()).filter(Boolean);
+  };
+
   // Filtering
   const filteredData = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
@@ -206,33 +283,32 @@ export default function Standards() {
     });
   }, [data, searchTerm, statusFilter, departmentFilter]);
 
-  // ✅ Sorting (simple: click header to toggle asc -> desc -> none)
+  // Sorting
   const sortedData = useMemo(() => {
     if (sortDir === 'none' || !sortKey) return filteredData;
-
     const val = (item) => {
-      if (sortKey === 'department')   return (item?.department?.department_name || '').toLowerCase();
-      if (sortKey === 'created_at')   return new Date(item?.created_at || 0).getTime();
-      if (sortKey === 'standard_number') return (item?.standard_number || '').toLowerCase();
-      if (sortKey === 'standard_name')   return (item?.standard_name || '').toLowerCase();
-      if (sortKey === 'status')          return (item?.status || '').toLowerCase();
+      if (sortKey === 'department')     return (item?.department?.department_name || '').toLowerCase();
+      if (sortKey === 'created_at')     return new Date(item?.created_at || 0).getTime();
+      if (sortKey === 'standard_number')return (item?.standard_number || '').toLowerCase();
+      if (sortKey === 'standard_name')  return (item?.standard_name || '').toLowerCase();
+      if (sortKey === 'status')         return (item?.status || '').toLowerCase();
       return '';
     };
-
     const dir = sortDir === 'asc' ? 1 : -1;
     const copy = [...filteredData];
-    copy.sort((a, b) => {
+    copy.sort((a,b)=>{
       const av = val(a), bv = val(b);
       if (av < bv) return -1 * dir;
       if (av > bv) return  1 * dir;
-      // stable fallback to original API order
       return (a.__i ?? 0) - (b.__i ?? 0);
     });
     return copy;
   }, [filteredData, sortKey, sortDir]);
 
   const isViewer = user?.role?.toLowerCase?.() === 'user';
-  const colCount = isViewer ? 6 : 8;
+
+  // NEW: selection-aware col count (adds select column for admins)
+  const colCount = isViewer ? 6 : 9;
 
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (sortedData.length || 0) : Number(pageSize);
@@ -252,9 +328,10 @@ export default function Standards() {
       </tr>
     ));
 
-  // skeleton row that matches columns
+  // skeleton row matches columns (with selection col for admin)
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
       <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
       <td><span className="skel skel-line" style={{ width: '85%' }} /></td>
       <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
@@ -298,7 +375,6 @@ export default function Standards() {
     setShowDelete(true);
   };
 
-  // Helpers for header sort toggling
   const toggleSort = (key) => {
     if (sortKey !== key) { setSortKey(key); setSortDir('asc'); return; }
     if (sortDir === 'asc') { setSortDir('desc'); return; }
@@ -310,11 +386,267 @@ export default function Standards() {
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const downloadTemplateExcel = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['رقم المعيار', 'اسم المعيار', 'الهدف', 'متطلبات التطبيق', 'الجهة', 'مستندات الإثبات'],
+    ]);
+    ws['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 24 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'قالب المعايير');
+    XLSX.writeFile(wb, 'قالب_المعايير.xlsx');
+  };
+
+  /* ===== Import: unknown departments now counted in "failed" ===== */
+  const handleExcelImport = async (file) => {
+    if (!file) return;
+    setImporting(true);
+    setBanner({ type: null, text: '' });
+
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const firstSheet = wb.SheetNames[0];
+      const ws = wb.Sheets[firstSheet];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+
+      if (!rows.length) {
+        setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' });
+        return;
+      }
+
+      const headerMap = buildHeaderMap(rows[0]);
+      const required = ['رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات'];
+      const missing = required.filter(k => !headerMap.get(k));
+      if (missing.length) {
+        setBanner({
+          type: 'danger',
+          text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}. تأكد من صحة العناوين أو استخدم "تحميل القالب".`
+        });
+        return;
+      }
+
+      const deptMap = new Map(
+        (departments || []).map(d => [normalizeName(d.department_name), d.department_id])
+      );
+
+      const existingNumbers = new Set(
+        (data || []).map(s => normalizeStandardNumber(s.standard_number || ''))
+      );
+      const batchSeen = new Set();
+
+      let ok = 0, dup = 0, fail = 0, skipped = 0;
+      let unknownDeptCount = 0;
+      const unknownDeptNames = new Set();
+
+      for (const r of rows) {
+        const rawNum   = getCell(r, headerMap, 'رقم المعيار');
+        const name     = getCell(r, headerMap, 'اسم المعيار');
+        const goal     = getCell(r, headerMap, 'الهدف');
+        const reqs     = getCell(r, headerMap, 'متطلبات التطبيق');
+        const depRaw   = getCell(r, headerMap, 'الجهة');
+        const proofsRaw= getCell(r, headerMap, 'مستندات الإثبات');
+
+        const proofsList = parseProofs(proofsRaw);
+        if (!rawNum || !name || !goal || !reqs || !depRaw || proofsList.length === 0) {
+          skipped++;
+          continue;
+        }
+
+        const isStdValid = STD_RE.test(rawNum) || STD_RE.test(rawNum.replace(/\./g, '٫'));
+        const stdNumNorm = normalizeStandardNumber(rawNum);
+        if (!isStdValid || !stdNumNorm) { skipped++; continue; }
+
+        const depId = deptMap.get(normalizeName(depRaw));
+        if (!Number.isInteger(depId)) {
+          fail++;
+          unknownDeptCount++;
+          unknownDeptNames.add(depRaw);
+          continue;
+        }
+
+        if (existingNumbers.has(stdNumNorm) || batchSeen.has(stdNumNorm)) { dup++; continue; }
+
+        const payload = {
+          standard_number: stdNumNorm,
+          standard_name: name,
+          standard_goal: goal,
+          standard_requirments: reqs,
+          assigned_department_id: depId,
+          proof_required: proofsList.join(', '),
+          status: 'لم يبدأ'
+        };
+
+        const tryCreate = async () => {
+          let res = await fetch(`${API_BASE}/api/standards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const { status, ...rest } = payload;
+            res = await fetch(`${API_BASE}/api/standards`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(rest)
+            });
+          }
+          return res.ok;
+        };
+
+        try {
+          const okRes = await tryCreate();
+          if (okRes) {
+            ok++;
+            batchSeen.add(stdNumNorm);
+            existingNumbers.add(stdNumNorm);
+          } else {
+            fail++;
+          }
+        } catch {
+          fail++;
+        }
+      }
+
+      let msg = `تمت المعالجة: ${ok} مضافة، ${dup} مكررة، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت`;
+      if (unknownDeptCount > 0) {
+        const examples = Array.from(unknownDeptNames).slice(0, 3).join('، ');
+        msg += ` (جهة غير معروفة: ${unknownDeptCount}${examples ? ` — مثل: ${examples}` : ''})`;
+      }
+      msg += '.';
+
+      setBanner({ type: 'success', text: msg });
+      await refreshData('soft');
+    } catch (e) {
+      setBanner({
+        type: 'danger',
+        text: 'تعذر قراءة الملف. تأكد من أن البيانات في الورقة الأولى وأن الأعمدة مسماة بشكل صحيح. جرّب "تحميل القالب".'
+      });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  /* =======================
+     Bulk selection & delete
+     ======================= */
+  const pageIds = useMemo(() => paginatedData.map(r => r?.standard_id).filter(Boolean), [paginatedData]);
+  const pageSelectedCount = pageIds.reduce((acc, id) => acc + (selectedIds.has(id) ? 1 : 0), 0);
+  const pageAllSelected = !loading && pageIds.length > 0 && pageSelectedCount === pageIds.length;
+  const anySelected = selectedIds.size > 0;
+
+  // header checkbox indeterminate
+  useEffect(() => {
+    if (headerCbRef.current) {
+      headerCbRef.current.indeterminate = pageSelectedCount > 0 && !pageAllSelected;
+    }
+  }, [pageSelectedCount, pageAllSelected]);
+
+  const setSelectForIds = (ids, checked) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => { if (checked) next.add(id); else next.delete(id); });
+      return next;
+    });
+  };
+
+  const togglePageAll = (checked) => setSelectForIds(pageIds, checked);
+
+  const toggleOne = (id, pageIndex, e) => {
+    const checked = e.target.checked;
+    if (e.shiftKey && lastPageIndexRef.current != null) {
+      // range on current page
+      const a = Math.min(lastPageIndexRef.current, pageIndex);
+      const b = Math.max(lastPageIndexRef.current, pageIndex);
+      const idsInRange = paginatedData.slice(a, b + 1).map(r => r?.standard_id).filter(Boolean);
+      setSelectForIds(idsInRange, checked);
+    } else {
+      setSelectForIds([id], checked);
+    }
+    lastPageIndexRef.current = pageIndex;
+  };
+
+  const selectAllResults = () => {
+    const all = sortedData.map(r => r?.standard_id).filter(Boolean);
+    setSelectedIds(new Set(all));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const openBulkDelete = () => setShowBulkDelete(true);
+  const closeBulkDelete = () => setShowBulkDelete(false);
+
+  const tryBatchEndpoint = async (ids) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/standards/batch-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+      return res.ok;
+    } catch { return false; }
+  };
+
+  const deleteManyFallback = async (ids) => {
+    // simple concurrent deletes for speed
+    const CONCURRENCY = 6;
+    let cursor = 0;
+    let ok = 0, failed = 0;
+
+    const worker = async () => {
+      while (cursor < ids.length) {
+        const id = ids[cursor++];
+        try {
+          const res = await fetch(`${API_BASE}/api/standards/${id}`, { method: 'DELETE' });
+          if (res.ok) ok++; else failed++;
+        } catch { failed++; }
+      }
+    };
+
+    const jobs = Array.from({ length: Math.min(CONCURRENCY, ids.length) }, () => worker());
+    await Promise.all(jobs);
+    return { ok, failed };
+  };
+
+  const performBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    // 1) try batch endpoint
+    const batchOk = await tryBatchEndpoint(ids);
+    if (batchOk) {
+      setBanner({ type: 'success', text: `تم حذف ${ids.length} معيارًا بنجاح.` });
+      closeBulkDelete();
+      clearSelection();
+      await refreshData('soft');
+      return;
+    }
+
+    // 2) fallback
+    const res = await deleteManyFallback(ids);
+    closeBulkDelete();
+    clearSelection();
+    await refreshData('soft');
+
+    if (res.failed === 0) {
+      setBanner({ type: 'success', text: `تم حذف ${ids.length} معيارًا بنجاح.` });
+    } else {
+      setBanner({ type: 'warning', text: `تم الحذف: ${res.ok} | فشل: ${res.failed}` });
+    }
+  };
+
   return (
     <>
       <LocalTheme />
       <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
         <Header />
+
+        {banner.type && (
+          <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
+            <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
+          </div>
+        )}
+
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
@@ -326,10 +658,8 @@ export default function Standards() {
                 </div>
 
                 <div className="row justify-content-center">
-                  {/* ⬅️ Increased width: col-xl-11 (use col-xl-12 for max) */}
                   <div className="col-12 col-xl-11">
                     <div className="table-card" aria-busy={loading}>
-                      {/* Header */}
                       <div className="head-flat">
                         <div className="controls-inline">
                           <input
@@ -367,10 +697,41 @@ export default function Standards() {
                               </Dropdown>
 
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
+
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <button className="btn btn-success btn-sm" onClick={exportToExcel}>
                                   <i className="fas fa-file-excel ms-1" /> تصدير Excel
                                 </button>
+                              )}
+
+                              {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                <>
+                                  <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleExcelImport(e.target.files?.[0])}
+                                  />
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={importing}
+                                  >
+                                    {importing ? (
+                                      <>
+                                        <span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="fas fa-file-upload ms-1" /> استيراد Excel
+                                      </>
+                                    )}
+                                  </button>
+                                  <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
+                                    <i className="fas fa-download ms-1" /> تحميل القالب
+                                  </button>
+                                </>
                               )}
                             </>
                           )}
@@ -394,11 +755,45 @@ export default function Standards() {
                         </div>
                       </div>
 
-                      {/* Table */}
+                      {/* NEW: selection bar */}
+                      {(!isViewer && anySelected) && (
+                        <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                          <div className="d-flex align-items-center gap-2">
+                            <strong>{selectedIds.size.toLocaleString('ar-SA')}</strong>
+                            <span className="text-muted">عنصر/عناصر محددة</span>
+                            {pageAllSelected && selectedIds.size < sortedData.length && (
+                              <button className="btn btn-link p-0" onClick={selectAllResults}>
+                                تحديد كل النتائج ({sortedData.length.toLocaleString('ar-SA')})
+                              </button>
+                            )}
+                          </div>
+                          <div className="d-flex align-items-center gap-2">
+                            <button className="btn btn-danger btn-sm" onClick={openBulkDelete}>
+                              <i className="fas fa-trash-can ms-1" /> حذف المحدد
+                            </button>
+                            <button className="btn btn-outline-secondary btn-sm" onClick={clearSelection}>
+                              مسح التحديد
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="table-responsive">
                         <table className="table table-hover text-center align-middle">
                           <thead>
                             <tr>
+                              {!isViewer && (
+                                <th className="th-select">
+                                  <input
+                                    ref={headerCbRef}
+                                    type="checkbox"
+                                    className="form-check-input m-0"
+                                    checked={pageAllSelected}
+                                    onChange={(e) => togglePageAll(e.target.checked)}
+                                    title="تحديد/إلغاء تحديد عناصر الصفحة"
+                                  />
+                                </th>
+                              )}
                               <th className="th-num">
                                 <button type="button" className="th-sort" onClick={() => toggleSort('standard_number')}>
                                   رقم المعيار{sortIcon('standard_number')}
@@ -434,47 +829,59 @@ export default function Standards() {
                             {loading && useSkeleton ? (
                               Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
                             ) : hasPageData ? (
-                              paginatedData.map((item) => (
-                                <tr key={item.standard_id}>
-                                  <td>{item.standard_number}</td>
-                                  <td className="text-primary">{item.standard_name}</td>
-                                  <td>{item.department?.department_name}</td>
-                                  <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
-                                  <td>
-                                    <button className="btn btn-link p-0 text-primary" onClick={(e) => { e.preventDefault(); setModalId(item.standard_id); setShowModal(true); }}>
-                                      إظهار
-                                    </button>
-                                  </td>
-                                  <td>{new Date(item.created_at).toLocaleDateString('ar-SA')}</td>
-                                  {user?.role?.toLowerCase?.() !== 'user' && (
-                                    <>
+                              paginatedData.map((item, idx) => {
+                                const id = item.standard_id;
+                                const checked = selectedIds.has(id);
+                                return (
+                                  <tr key={id}>
+                                    {!isViewer && (
                                       <td>
-                                        <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/standards_edit/${item.standard_id}`)}>
-                                          <i className="fas fa-pen" />
-                                        </button>
+                                        <input
+                                          type="checkbox"
+                                          className="form-check-input m-0"
+                                          checked={checked}
+                                          onChange={(e) => toggleOne(id, idx, e)}
+                                        />
                                       </td>
-                                      <td>
-                                        <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(item.standard_id)}>
-                                          <i className="fas fa-times" />
-                                        </button>
-                                      </td>
-                                    </>
-                                  )}
-                                </tr>
-                              ))
+                                    )}
+                                    <td>{item.standard_number}</td>
+                                    <td className="text-primary">{item.standard_name}</td>
+                                    <td>{item.department?.department_name}</td>
+                                    <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
+                                    <td>
+                                      <button className="btn btn-link p-0 text-primary" onClick={(e) => { e.preventDefault(); setModalId(item.standard_id); setShowModal(true); }}>
+                                        إظهار
+                                      </button>
+                                    </td>
+                                    <td>{new Date(item.created_at).toLocaleDateString('ar-SA')}</td>
+                                    {user?.role?.toLowerCase?.() !== 'user' && (
+                                      <>
+                                        <td>
+                                          <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/standards_edit/${item.standard_id}`)}>
+                                            <i className="fas fa-pen" />
+                                          </button>
+                                        </td>
+                                        <td>
+                                          <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(item.standard_id)}>
+                                            <i className="fas fa-times" />
+                                          </button>
+                                        </td>
+                                      </>
+                                    )}
+                                  </tr>
+                                );
+                              })
                             ) : (
                               <tr className="table-empty-row">
                                 <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
                               </tr>
                             )}
 
-                            {/* Filler rows to keep consistent height */}
                             {!loading && renderFillerRows(fillerCount)}
                           </tbody>
                         </table>
                       </div>
 
-                      {/* Footer: page size + pagination */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start">
@@ -519,7 +926,24 @@ export default function Standards() {
       </div>
 
       <StandardModal show={showModal} onHide={() => setShowModal(false)} standardId={modalId} onUpdated={() => refreshData('soft')} />
-      <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
+
+      {/* Single delete (keeps your flow) */}
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onConfirm={confirmDelete}
+        subject="هذا المعيار"
+      />
+
+      {/* NEW: Bulk delete using the same DeleteModal with number confirmation */}
+      <DeleteModal
+        show={showBulkDelete}
+        onHide={closeBulkDelete}
+        onConfirm={performBulkDelete}
+        subject={`حذف ${selectedIds.size} معيارًا`}
+        // cascadeNote="سيتم حذف العناصر المحددة نهائيًا، ولا يمكن التراجع عن هذه العملية."
+        requireCount={selectedIds.size}  // ← user must type this exact number
+      />
     </>
   );
 }
