@@ -2,6 +2,7 @@ using System;
 using AutoMapper;
 using Commander.Data;
 using Commander.Models;
+using Commander.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,7 @@ namespace Commander
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
             services.AddScoped<IStandardRepo, SqlStandardRepo>();
             services.AddScoped<IAttachmentRepo, SqlAttachmentRepo>();
+            services.AddTransient<IEmailService, MailjetEmailService>();
 
             // 4) CORS policy
             services.AddCors(opts =>
