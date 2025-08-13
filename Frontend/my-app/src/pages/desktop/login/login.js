@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
+import ForgotPasswordModal from '../../../components/ForgotPasswordModal.jsx';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -10,74 +11,8 @@ export default function Login({ onLogin }) {
   const [isLoading, setIsLoading] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
-  const [fpUsername, setFpUsername] = useState('');
-  const [fpEmail, setFpEmail] = useState('');
-  const [fpCode, setFpCode] = useState('');
-  const [fpNewPassword, setFpNewPassword] = useState('');
-  const [fpStep, setFpStep] = useState(1);
-  const [fpMessage, setFpMessage] = useState('');
-  const [fpLoading, setFpLoading] = useState(false);
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
-
-  const closeForgotModal = () => {
-    setShowForgotModal(false);
-    setFpUsername('');
-    setFpEmail('');
-    setFpCode('');
-    setFpNewPassword('');
-    setFpStep(1);
-    setFpMessage('');
-  };
-
-  const sendResetCode = async () => {
-    setFpLoading(true);
-    setFpMessage('');
-    try {
-      const res = await fetch(`${API_BASE}/api/login/forgot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: fpUsername, email: fpEmail }),
-      });
-      if (!res.ok) {
-        setFpMessage('فشل إرسال الرمز');
-        setFpLoading(false);
-        return;
-      }
-      const data = await res.json();
-      setFpMessage(`تم إرسال الرمز ${data.code}`);
-      setFpStep(2);
-    } catch (err) {
-      setFpMessage('خطأ في الشبكة');
-    } finally {
-      setFpLoading(false);
-    }
-  };
-
-  const resetPassword = async () => {
-    setFpLoading(true);
-    setFpMessage('');
-    try {
-      const res = await fetch(`${API_BASE}/api/login/reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: fpUsername, email: fpEmail, code: fpCode, newPassword: fpNewPassword }),
-      });
-      if (!res.ok) {
-        setFpMessage('فشل إعادة التعيين');
-        setFpLoading(false);
-        return;
-      }
-      setFpMessage('تم تغيير كلمة المرور');
-      setTimeout(() => {
-        closeForgotModal();
-      }, 1000);
-    } catch (err) {
-      setFpMessage('خطأ في الشبكة');
-    } finally {
-      setFpLoading(false);
-    }
-  };
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -284,42 +219,6 @@ export default function Login({ onLogin }) {
           line-height: 1.6;
         }
 
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1050;
-        }
-
-        .modal-content {
-          background: var(--card-bg);
-          padding: 2rem;
-          border-radius: 12px;
-          width: 100%;
-          max-width: 400px;
-          text-align: right;
-          direction: rtl;
-        }
-
-        .modal-content input {
-          width: 100%;
-          margin-bottom: 1rem;
-          padding: 0.5rem;
-          border: 1px solid var(--input-border);
-          border-radius: 8px;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.5rem;
-        }
 
         @media (min-width: 1260px) {
           .login-wrapper {
@@ -468,67 +367,11 @@ export default function Login({ onLogin }) {
           </div>
         </div>
         <Footer />
-        {showForgotModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              {fpStep === 1 ? (
-                <>
-                  <h5 className="mb-3">إعادة تعيين كلمة المرور</h5>
-                  <input
-                    type="text"
-                    placeholder="اسم المستخدم"
-                    value={fpUsername}
-                    onChange={(e) => setFpUsername(e.target.value)}
-                    disabled={fpLoading}
-                  />
-                  <input
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    value={fpEmail}
-                    onChange={(e) => setFpEmail(e.target.value)}
-                    disabled={fpLoading}
-                  />
-                  {fpMessage && <div className="global-error-message">{fpMessage}</div>}
-                  <div className="modal-actions">
-                    <button className="btn btn-login" onClick={sendResetCode} disabled={fpLoading}>
-                      إرسال الرمز
-                    </button>
-                    <button className="btn btn-secondary" onClick={closeForgotModal}>
-                      إغلاق
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h5 className="mb-3">أدخل الرمز وكلمة المرور الجديدة</h5>
-                  <input
-                    type="text"
-                    placeholder="الرمز"
-                    value={fpCode}
-                    onChange={(e) => setFpCode(e.target.value)}
-                    disabled={fpLoading}
-                  />
-                  <input
-                    type="password"
-                    placeholder="كلمة المرور الجديدة"
-                    value={fpNewPassword}
-                    onChange={(e) => setFpNewPassword(e.target.value)}
-                    disabled={fpLoading}
-                  />
-                  {fpMessage && <div className="global-error-message">{fpMessage}</div>}
-                  <div className="modal-actions">
-                    <button className="btn btn-login" onClick={resetPassword} disabled={fpLoading}>
-                      تغيير كلمة المرور
-                    </button>
-                    <button className="btn btn-secondary" onClick={closeForgotModal}>
-                      إغلاق
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        <ForgotPasswordModal
+          show={showForgotModal}
+          onHide={() => setShowForgotModal(false)}
+          apiBase={API_BASE}
+        />
       </div>
     </>
   );
