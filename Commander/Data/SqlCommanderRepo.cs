@@ -62,7 +62,9 @@ namespace Commander.Data
 
         public User? GetUserByUsernameAndEmail(string username, string email)
         {
-            return _context.Users.FirstOrDefault(u => u.Username == username && u.Email == email);
+            return _context.Users.FirstOrDefault(u =>
+                u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) &&
+                u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

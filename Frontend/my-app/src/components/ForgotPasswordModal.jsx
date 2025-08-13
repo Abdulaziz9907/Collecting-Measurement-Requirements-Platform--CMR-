@@ -33,6 +33,8 @@ export default function ForgotPasswordModal({ show, onHide, apiBase }) {
       if (res.ok) {
         setMessage('تم إرسال الرمز إلى بريدك الإلكتروني');
         setStep(2);
+      } else if (res.status === 404) {
+        setMessage('المستخدم غير موجود أو البريد الإلكتروني غير صحيح');
       } else {
         setMessage('فشل إرسال الرمز');
       }
@@ -55,6 +57,10 @@ export default function ForgotPasswordModal({ show, onHide, apiBase }) {
       if (res.ok) {
         setMessage('تم تغيير كلمة المرور');
         setTimeout(close, 1000);
+      } else if (res.status === 400) {
+        setMessage('الرمز المدخل غير صحيح');
+      } else if (res.status === 404) {
+        setMessage('المستخدم غير موجود أو البريد الإلكتروني غير صحيح');
       } else {
         setMessage('فشل إعادة التعيين');
       }
