@@ -13,7 +13,7 @@ namespace Commander.Models
 
         public DateTime Uploaded_date { get; set; } = DateTime.UtcNow;
 
-        [MaxLength(100)]
+        [MaxLength(255)]
         public required string Proof_name { get; set; }
 
         [MaxLength(255)]

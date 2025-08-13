@@ -42,6 +42,7 @@ export default function Standards_create() {
 
   // Proof validation
   const [proofDupIdxs, setProofDupIdxs] = useState(new Set());
+  const [proofEmptyIdxs, setProofEmptyIdxs] = useState(new Set());
   const [proofMinError, setProofMinError] = useState(false);
 
   // One source of truth for the رقم المعيار error message
@@ -136,14 +137,18 @@ export default function Standards_create() {
     }
     form.standard_num.setCustomValidity('');
 
-    // 2) مستندات الإثبات — واحد على الأقل + لا تكرار عناوين
-    const nonEmptyProofs = proofRequired.map(p => p.trim()).filter(Boolean);
+    // 2) مستندات الإثبات — واحد على الأقل + لا تكرار عناوين + لا فراغات
+    const trimmed = proofRequired.map(p => p.trim());
+    const nonEmptyProofs = trimmed.filter(Boolean);
     const dupIdxs = new Set();
+    const emptyIdxs = new Set();
     const seen = new Map();
-    proofRequired.forEach((title, idx) => {
-      const t = title.trim();
-      if (!t) return;
-      const norm = normalizeProofTitle(t);
+    trimmed.forEach((title, idx) => {
+      if (!title) {
+        emptyIdxs.add(idx);
+        return;
+      }
+      const norm = normalizeProofTitle(title);
       if (seen.has(norm)) {
         dupIdxs.add(idx);
         dupIdxs.add(seen.get(norm));
@@ -152,13 +157,20 @@ export default function Standards_create() {
       }
     });
     const noProofs = nonEmptyProofs.length === 0;
-    if (noProofs || dupIdxs.size > 0) {
-      if (noProofs) setProofMinError(true);
+    if (noProofs || dupIdxs.size > 0 || emptyIdxs.size > 0) {
+      if (noProofs) {
+        setProofMinError(true);
+        setProofEmptyIdxs(new Set());
+      }
       if (dupIdxs.size > 0) setProofDupIdxs(dupIdxs);
+      if (!noProofs && emptyIdxs.size > 0) setProofEmptyIdxs(emptyIdxs);
       setShowError(true);
       setValidated(true);
       return;
     }
+    setProofDupIdxs(new Set());
+    setProofEmptyIdxs(new Set());
+    setProofMinError(false);
 
     // 3) منع تكرار رقم المعيار — واستبدال نص الخطأ بالعربية
     setIsSubmitting(true);
@@ -231,6 +243,11 @@ export default function Standards_create() {
       const nextDup = new Set(proofDupIdxs);
       nextDup.delete(idx);
       setProofDupIdxs(nextDup);
+    }
+    if (proofEmptyIdxs.size) {
+      const nextEmpty = new Set(proofEmptyIdxs);
+      if (text.trim()) nextEmpty.delete(idx); else nextEmpty.add(idx);
+      setProofEmptyIdxs(nextEmpty);
     }
     if (proofMinError && text.trim()) setProofMinError(false);
   };
@@ -324,8 +341,9 @@ export default function Standards_create() {
 
                         {proofRequired.map((text, idx) => {
                           const isDup = proofDupIdxs.has(idx);
+                          const isEmpty = proofEmptyIdxs.has(idx);
                           const isFirst = idx === 0;
-                          const inputClasses = `form-control ${isDup ? 'is-invalid' : ''} ${isFirst && proofMinError ? 'is-invalid' : ''}`;
+                          const inputClasses = `form-control ${(isDup || isEmpty) ? 'is-invalid' : ''} ${isFirst && proofMinError ? 'is-invalid' : ''}`;
                           return (
                             <div className="mb-4" key={idx}>
                               <label className="form-label">مستند إثبات {idx + 1}</label>
@@ -336,6 +354,7 @@ export default function Standards_create() {
                                     type="text"
                                     className={inputClasses}
                                     value={text}
+                                    maxLength={255}
                                     placeholder="أدخل وصف المستند"
                                     onChange={e => handleAttachmentChange(e, idx)}
                                   />
@@ -351,6 +370,12 @@ export default function Standards_create() {
                               )}
                               {isDup && (
                                 <div className="invalid-feedback d-block">عنوان مستند إثبات مكرر</div>
+                              )}
+                              {isEmpty && !isFirst && (
+                                <div className="invalid-feedback d-block">لا يمكن ترك عنوان مستند إثبات فارغاً</div>
+                              )}
+                              {isEmpty && isFirst && !proofMinError && (
+                                <div className="invalid-feedback d-block">لا يمكن ترك عنوان مستند إثبات فارغاً</div>
                               )}
                             </div>
                           );

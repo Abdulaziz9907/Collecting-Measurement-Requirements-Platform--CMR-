@@ -109,7 +109,7 @@ namespace Commander.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Standard_id = table.Column<int>(type: "int", nullable: false),
                     Uploaded_date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Proof_name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Proof_name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     FilePath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
