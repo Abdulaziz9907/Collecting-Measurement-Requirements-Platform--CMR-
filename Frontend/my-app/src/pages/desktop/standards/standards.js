@@ -305,8 +305,11 @@ export default function Standards() {
 
   const parseProofs = (raw = '') => {
     const txt = String(raw).replace(/،/g, ',');
-    return txt.split(',').map(s => s.trim()).filter(Boolean);
+    const parts = txt.match(/(?:\\.|[^,])+/g) || [];
+    return parts.map(s => s.replace(/\\,/g, ',').trim()).filter(Boolean);
   };
+
+  const escapeCommas = (str) => String(str).replace(/[,،]/g, '\\,');
 
   // Filtering
   const filteredData = useMemo(() => {
@@ -500,7 +503,7 @@ export default function Standards() {
           standard_goal: goal,
           standard_requirments: reqs,
           assigned_department_id: depId,
-          proof_required: proofsList.join(', '),
+          proof_required: proofsList.map(p => escapeCommas(p)).join(','),
           status: 'لم يبدأ'
         };
 

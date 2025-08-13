@@ -25,8 +25,11 @@ export default function StandardModal({
   const [showReasons, setShowReasons] = useState(false);
 
   // ---------- helpers ----------
-  const parseProofs = (raw = '') =>
-    String(raw).replace(/،/g, ',').split(',').map(s => s.trim()).filter(Boolean);
+  const parseProofs = (raw = '') => {
+    const text = String(raw).replace(/،/g, ',');
+    const parts = text.match(/(?:\\.|[^,])+/g) || [];
+    return parts.map(s => s.replace(/\\,/g, ',').trim()).filter(Boolean);
+  };
 
   const proofs = useMemo(
     () => parseProofs(standard?.proof_required ?? standard?.Proof_required ?? ''),
