@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Commander.Data;
 using Commander.Models;
 using Microsoft.AspNetCore.Http;
@@ -23,6 +24,47 @@ namespace Commander.Controllers
             _repository = repository;
             _standardRepo = standardRepo;
             _env = env;
+        }
+
+        private static string[] ParseProofs(string? raw)
+        {
+            if (string.IsNullOrEmpty(raw))
+                return System.Array.Empty<string>();
+
+            raw = raw.Replace('،', ',');
+            var list = new System.Collections.Generic.List<string>();
+            var sb = new StringBuilder();
+            bool escape = false;
+
+            foreach (var ch in raw)
+            {
+                if (escape)
+                {
+                    sb.Append(ch);
+                    escape = false;
+                }
+                else if (ch == '\\')
+                {
+                    escape = true;
+                }
+                else if (ch == ',')
+                {
+                    var item = sb.ToString().Trim();
+                    if (!string.IsNullOrWhiteSpace(item))
+                        list.Add(item);
+                    sb.Clear();
+                }
+                else
+                {
+                    sb.Append(ch);
+                }
+            }
+
+            var last = sb.ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(last))
+                list.Add(last);
+
+            return list.ToArray();
         }
 
         [HttpGet]
@@ -58,10 +100,7 @@ namespace Commander.Controllers
             _repository.SaveChanges();
 
             var attachments = _repository.GetAttachmentsByStandard(standardId);
-            var requiredProofs = (standard.Proof_required ?? "")
-                .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
-                .ToArray();
+            var requiredProofs = ParseProofs(standard.Proof_required);
 
             bool allProofsHaveFiles = requiredProofs.All(rp =>
                 attachments.Any(a => a.Proof_name == rp));
@@ -98,10 +137,7 @@ namespace Commander.Controllers
                 }
                 else
                 {
-                    var requiredProofs = (standard.Proof_required ?? "")
-                        .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-                        .Select(p => p.Trim())
-                        .ToArray();
+                    var requiredProofs = ParseProofs(standard.Proof_required);
 
                     bool allProofsHaveFiles = requiredProofs.All(rp =>
                         attachments.Any(a => a.Proof_name == rp));

@@ -14,7 +14,7 @@ function escapeInput(str) {
   });
 }
 function escapeCommas(str) {
-  return String(str).replace(/,/g, '\\,');
+  return String(str).replace(/[,،]/g, '\\,');
 }
 
 // ===== Helpers shared with "create" page =====
@@ -35,7 +35,8 @@ function normalizeProofTitle(s = '') {
 // Split a comma-separated list where commas may be escaped as "\,"
 function splitEscapedCommaList(str = '') {
   if (!str) return [''];
-  const parts = String(str).match(/(?:\\.|[^,])+/g) || [];
+  const normalized = String(str).replace(/،/g, ',');
+  const parts = normalized.match(/(?:\\.|[^,])+/g) || [];
   return parts.map(s => s.replace(/\\,/g, ',').trim());
 }
 

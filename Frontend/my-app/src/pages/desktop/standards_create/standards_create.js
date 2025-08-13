@@ -14,7 +14,7 @@ function escapeInput(str) {
   });
 }
 function escapeCommas(str) {
-  return String(str).replace(/,/g, '\\,');
+  return String(str).replace(/[,،]/g, '\\,');
 }
 // ✅ Normalize Arabic/ASCII digits & separators to ASCII ("." and 0-9)
 function normalizeStandardNumber(str = "") {

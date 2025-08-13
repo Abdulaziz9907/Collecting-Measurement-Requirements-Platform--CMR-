@@ -24,12 +24,48 @@ namespace Commander.Controllers
         }
 
         // ---------- Helpers ----------
-        private static string[] ParseProofs(string s) =>
-            (s ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .ToArray();
+        private static string[] ParseProofs(string? raw)
+        {
+            if (string.IsNullOrEmpty(raw))
+                return Array.Empty<string>();
+
+            // Treat Arabic commas like English ones and support escaping via "\,"
+            raw = raw.Replace('،', ',');
+
+            var list = new List<string>();
+            var sb = new StringBuilder();
+            bool escape = false;
+
+            foreach (var ch in raw)
+            {
+                if (escape)
+                {
+                    sb.Append(ch);
+                    escape = false;
+                }
+                else if (ch == '\\')
+                {
+                    escape = true;
+                }
+                else if (ch == ',')
+                {
+                    var item = sb.ToString().Trim();
+                    if (!string.IsNullOrWhiteSpace(item))
+                        list.Add(item);
+                    sb.Clear();
+                }
+                else
+                {
+                    sb.Append(ch);
+                }
+            }
+
+            var last = sb.ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(last))
+                list.Add(last);
+
+            return list.ToArray();
+        }
 
         private bool IsComplete(Standard standard)
         {
