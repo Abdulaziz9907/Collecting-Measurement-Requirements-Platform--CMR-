@@ -37,8 +37,8 @@ namespace Commander.Migrations
 
                     b.Property<string>("Proof_name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<int>("Standard_id")
                         .HasColumnType("int");
