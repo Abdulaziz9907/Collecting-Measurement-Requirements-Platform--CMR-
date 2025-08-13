@@ -62,9 +62,12 @@ namespace Commander.Data
 
         public User? GetUserByUsernameAndEmail(string username, string email)
         {
+            var normalizedUsername = username?.Trim();
+            var normalizedEmail = email?.Trim();
+
             return _context.Users.FirstOrDefault(u =>
-                u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) &&
-                u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+                string.Equals(u.Username, normalizedUsername, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(u.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
