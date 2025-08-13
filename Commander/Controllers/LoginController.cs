@@ -2,9 +2,11 @@ using AutoMapper;
 using Commander.Data;
 using Commander.Dtos;
 using Commander.Models;
+using Commander.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Commander.Controllers
 {
@@ -14,13 +16,15 @@ namespace Commander.Controllers
     {
         private readonly InterfaceRepo _repository;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
         private static readonly Dictionary<string, string> _resetCodes = new();
         private static readonly object _codeLock = new();
 
-        public LoginController(InterfaceRepo repository, IMapper mapper)
+        public LoginController(InterfaceRepo repository, IMapper mapper, IEmailService emailService)
         {
             _repository = repository;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         [HttpPost]
@@ -34,7 +38,7 @@ namespace Commander.Controllers
         }
 
         [HttpPost("forgot")]
-        public ActionResult SendResetCode(ForgotPasswordDto dto)
+        public async Task<ActionResult> SendResetCode(ForgotPasswordDto dto)
         {
             var user = _repository.GetUserByUsernameAndEmail(dto.Username, dto.Email);
             if (user == null)
@@ -47,7 +51,13 @@ namespace Commander.Controllers
             {
                 _resetCodes[dto.Username] = code;
             }
-            Console.WriteLine($"Reset code for {dto.Username}: {code}");
+
+            await _emailService.SendAsync(
+                dto.Email,
+                "My first Mailjet Email!",
+                $"Greetings from Mailjet! Your reset code is {code}",
+                $"<h3>Dear user, your reset code is {code}</h3>");
+
             return Ok(new { code });
         }
 
