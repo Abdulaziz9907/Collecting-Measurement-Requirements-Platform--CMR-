@@ -10,15 +10,26 @@ import { useParams, useNavigate } from 'react-router-dom';
 export default function Departments_edit() {
   const [validated, setValidated] = useState(false);
   const [department, setDepartment] = useState(null);
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Duplicate-check state
+  const [existingNames, setExistingNames] = useState(new Set()); // names of OTHER departments
+  const [nameIsDuplicate, setNameIsDuplicate] = useState(false);
+
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+
+  /* ===== Helpers ===== */
+  const normalizeName = (s = '') =>
+    s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
 
   /* ===== Minimal shell + skeleton to match other pages ===== */
   const LocalTheme = () => (
@@ -67,6 +78,8 @@ export default function Departments_edit() {
     `}</style>
   );
 
+  /* ===== Data fetching ===== */
+  // Load the department being edited
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -77,6 +90,29 @@ export default function Departments_edit() {
     return () => { isMounted = false; };
   }, [API_BASE, id]);
 
+  // Load all departments to build a set of names EXCLUDING this department (for duplicate checks)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/departments`, { method: 'GET' });
+        if (!res.ok) return;
+        const arr = await res.json();
+        const currentId = parseInt(id, 10);
+        const items = (Array.isArray(arr) ? arr : []).filter((x) => {
+          const depId = parseInt(x?.department_id ?? x?.id ?? x?.DepartmentId ?? -1, 10);
+          return depId !== currentId;
+        });
+        const names = items.map(x => x?.department_name ?? x?.name ?? x?.departmentName ?? '').filter(Boolean);
+        if (isMounted) setExistingNames(new Set(names.map(normalizeName)));
+      } catch {
+        // ignore; server will still protect
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [API_BASE, id]);
+
+  /* ===== UI behavior ===== */
   useEffect(() => {
     if (showError) {
       const timer = setTimeout(() => setShowError(false), 5000);
@@ -84,42 +120,79 @@ export default function Departments_edit() {
     }
   }, [showError]);
 
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    const dup = existingNames.has(normalizeName(value));
+    setNameIsDuplicate(dup);
+    if (dup) e.target.setCustomValidity('duplicate');
+    else e.target.setCustomValidity('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
     setShowSuccess(false);
     setShowError(false);
+    setErrorMessage('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
 
-    if (!form.checkValidity()) {
-      setShowError(true);
-      e.stopPropagation();
+    // Re-check duplicate before submit
+    const nameInput = form.department_name;
+    const rawName = nameInput?.value ?? '';
+    const isDupNow = existingNames.has(normalizeName(rawName));
+    setNameIsDuplicate(isDupNow);
+    if (isDupNow) {
+      nameInput.setCustomValidity('duplicate');
     } else {
-      setIsSubmitting(true);
-      const payload = {
-        department_id: parseInt(id, 10),
-        department_name: form.department_name.value.trim(),
-        building_number: parseInt(form.building_number.value, 10)
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/api/departments/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          setShowError(true);
-        } else {
-          setShowSuccess(true);
-          setTimeout(() => navigate('/departments'), 2000);
-        }
-      } catch {
-        setShowError(true);
-      }
-      setIsSubmitting(false);
+      nameInput.setCustomValidity('');
     }
 
-    setValidated(true);
+    if (!form.checkValidity()) {
+      if (isDupNow) {
+        setErrorMessage('اسم الجهة موجود مسبقاً، الرجاء اختيار اسم مختلف');
+        setShowError(true);
+      }
+      e.stopPropagation();
+      setValidated(true);
+      return;
+    }
+
+    setIsSubmitting(true);
+    const payload = {
+      department_id: parseInt(id, 10),
+      department_name: rawName.trim(),
+      building_number: parseInt(form.building_number.value, 10)
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/departments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          // Server says duplicate
+          setErrorMessage('اسم الجهة موجود مسبقاً، لا يمكن تحديث الجهة باسم مكرر');
+          setShowError(true);
+          setNameIsDuplicate(true);
+          nameInput.setCustomValidity('duplicate');
+          setValidated(true);
+        } else {
+          setShowError(true);
+        }
+      } else {
+        setShowSuccess(true);
+        // Update local set (if the name changed) to prevent immediate duplicates after edit
+        if (!existingNames.has(normalizeName(rawName))) {
+          setExistingNames(prev => new Set([...prev, normalizeName(rawName)]));
+        }
+        setTimeout(() => navigate('/departments'), 1500);
+      }
+    } catch {
+      setShowError(true);
+    }
+    setIsSubmitting(false);
   };
 
   return (
@@ -136,7 +209,7 @@ export default function Departments_edit() {
       {showError && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-danger mb-0" role="alert">
-            حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى
+            {errorMessage}
           </div>
         </div>
       )}
@@ -188,20 +261,36 @@ export default function Departments_edit() {
                         <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                           <div className="mb-3">
                             <label className="form-label">اسم الجهة</label>
-                            <input type="text" className="form-control" name="department_name" required defaultValue={department?.department_name || ''} />
-                            <div className="invalid-feedback">يرجى إدخال اسم الجهة</div>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="department_name"
+                              required
+                              defaultValue={department?.department_name || ''}
+                              onChange={handleNameChange}
+                            />
+                            <div className="invalid-feedback">
+                              {nameIsDuplicate ? 'اسم الجهة موجود مسبقاً' : 'يرجى إدخال اسم الجهة'}
+                            </div>
                           </div>
                           <div className="mb-3">
                             <label className="form-label">رقم المبنى</label>
-                            <input type="number" className="form-control" name="building_number" required defaultValue={department?.building_number || ''} />
+                            <input
+                              type="number"
+                              className="form-control"
+                              name="building_number"
+                              required
+                              defaultValue={department?.building_number || ''}
+                            />
                             <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
                           </div>
+
                           <div className="d-flex align-items-center gap-2 pb-4 pt-4">
                             <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
                             <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
                           </div>
 
-                          {/* Submit on one side, Cancel on the other (like Users_edit) */}
+                          {/* Submit on one side, Cancel on the other */}
                           <div className="d-flex justify-content-between align-items-center">
                             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                               {isSubmitting && (

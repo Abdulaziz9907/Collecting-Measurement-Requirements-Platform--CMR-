@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
@@ -16,13 +16,13 @@ export default function Departments() {
   const [buildingFilter, setBuildingFilter] = useState([]); // store building numbers as strings
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
+  const [useSkeleton, setUseSkeleton] = useState(true); // always show skeleton while loading
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Delete modal state
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [deleteName, setDeleteName] = useState(''); // ✅ name to type for confirmation
+  const [deleteName, setDeleteName] = useState(''); // name to type for confirmation
 
   // Import state + banner
   const [importing, setImporting] = useState(false);
@@ -41,7 +41,6 @@ export default function Departments() {
 
   // Anti-flicker + concurrency safety
   const LOAD_MIN_MS = 450;
-  const SPINNER_MIN_MS = 200;
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
@@ -98,6 +97,25 @@ export default function Departments() {
     `}</style>
   );
 
+  /* ===== Popover: تعليمات استخدام قالب الجهات ===== */
+  const popTemplateHelp = (
+    <Popover id="pop-dept-template" dir="rtl">
+      <Popover.Header as="h6">طريقة استخدام قالب الجهات</Popover.Header>
+      <Popover.Body>
+        <div className="small text-muted mb-2">
+          الأعمدة المطلوبة: <code>اسم الجهة، رقم المبنى</code>
+        </div>
+        <ul className="mb-0 ps-3">
+          <li>حمّل القالب وافتحه في Excel.</li>
+          <li>أدخل <code>اسم الجهة</code> بالاسم الرسمي المعتمد.</li>
+          <li>اكتب <code>رقم المبنى</code> كعدد صحيح فقط (مثال: <code>312</code>).</li>
+          <li>تجنّب التكرار — الصفوف المكررة تُتجاهل تلقائيًا أثناء الاستيراد.</li>
+          <li>احفظ الملف ثم استخدم زر «استيراد Excel» لرفعه.</li>
+        </ul>
+      </Popover.Body>
+    </Popover>
+  );
+
   // Auto-hide banner after 5s
   useEffect(() => {
     if (!banner.type) return;
@@ -105,9 +123,9 @@ export default function Departments() {
     return () => clearTimeout(t);
   }, [banner.type]);
 
-  const refreshData = async (mode = 'auto') => {
-    const wantSkeleton = mode === 'skeleton' || (mode === 'auto' && !hasLoadedOnce);
-    setUseSkeleton(wantSkeleton);
+  // === Always show skeleton during refresh ===
+  const refreshData = async () => {
+    setUseSkeleton(true);
     setLoading(true);
 
     if (abortRef.current) abortRef.current.abort();
@@ -131,19 +149,23 @@ export default function Departments() {
       }
     } finally {
       const elapsed = performance.now() - t0;
-      const minWait = wantSkeleton ? LOAD_MIN_MS : SPINNER_MIN_MS;
       const finish = () => {
         if (seq === loadSeqRef.current) {
           setHasLoadedOnce(true);
           setLoading(false);
         }
       };
-      if (elapsed < minWait) setTimeout(finish, minWait - elapsed);
+      if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed);
       else finish();
     }
   };
 
-  useEffect(() => { refreshData('skeleton'); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => {
+    refreshData();
+    return () => abortRef.current?.abort();
+    // eslint-disable-next-line
+  }, [API_BASE]);
+
   useEffect(() => { setCurrentPage(1); }, [searchTerm, buildingFilter, pageSize]);
 
   // Build unique buildings list as strings
@@ -166,8 +188,8 @@ export default function Departments() {
 
   // Normalize department name for duplicate checks
   const normalizeName = (name = '') => {
-    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g; // حركات عربية
-    const tatweel = /\u0640/g; // تطويل
+    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g; // Arabic diacritics
+    const tatweel = /\u0640/g; // Tatweel
     return String(name)
       .replace(diacritics, '')
       .replace(tatweel, '')
@@ -236,8 +258,14 @@ export default function Departments() {
     : filteredData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
 
   const hasPageData = paginatedData.length > 0;
-  const baseRowsCount = hasPageData ? paginatedData.length : 1;
-  const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
+
+  // Skeleton control: during loading, always show exactly pageSize rows (or 15 if "all")
+  const skeletonMode = loading && useSkeleton;
+  const skeletonCount = isAll ? 15 : Number(pageSize);
+
+  // Filler rows when NOT loading (to keep exact height = pageSize)
+  const baseRowsCount = hasPageData ? paginatedData.length : 1; // one for "no results"
+  const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
 
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
@@ -251,7 +279,6 @@ export default function Departments() {
       {!isViewer && <td><span className="skel skel-icon" /></td>}
     </tr>
   );
-  const skeletonCount = typeof pageSize === 'number' ? pageSize : Math.max(15, Math.min(25, filteredData.length || 15));
 
   // Render filler rows to keep table height consistent
   const renderFillerRows = (count) =>
@@ -274,7 +301,7 @@ export default function Departments() {
       setShowDelete(false);
       setDeleteId(null);
       setDeleteName('');
-      await refreshData('soft');
+      await refreshData(); // skeleton on refresh
     } catch {}
   };
 
@@ -378,7 +405,7 @@ export default function Departments() {
         type: 'success',
         text: `تمت المعالجة: ${ok} مضافة، ${dup} مكررة (تم تجاهلها)، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت.`
       });
-      await refreshData('soft');
+      await refreshData(); // skeleton on refresh
     } catch (e) {
       setBanner({ type: 'danger', text: 'تعذر قراءة الملف. تأكد من البيانات وأن الأعمدة مسماة بشكل صحيح. جرّب "تحميل القالب".' });
     } finally {
@@ -474,28 +501,33 @@ export default function Departments() {
                                 )}
                               </button>
 
-                              {/* Download template */}
-                              <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
-                                <i className="fas fa-download ms-1" /> تحميل القالب
-                              </button>
+                              {/* Download template + help popover */}
+                              <OverlayTrigger
+                                placement="bottom"
+                                delay={{ show: 200, hide: 100 }}
+                                overlay={popTemplateHelp}
+                                popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}
+                                trigger={['hover', 'focus']}
+                              >
+                                <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel} aria-label="تحميل القالب مع التعليمات">
+                                  <i className="fas fa-download ms-1" /> تحميل القالب
+                                </button>
+                              </OverlayTrigger>
                             </>
                           )}
                         </div>
 
                         <div className="d-flex align-items-center gap-2">
-                          {(!loading || !useSkeleton) && (
+                          {!skeletonMode && (
                             <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>
                           )}
                           <button
                             className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
-                            onClick={() => refreshData('soft')}
+                            onClick={refreshData}
                             title="تحديث"
                           >
                             <i className="fas fa-rotate-right" />
                             تحديث
-                            {loading && !useSkeleton && (
-                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-                            )}
                           </button>
                         </div>
                       </div>
@@ -512,7 +544,7 @@ export default function Departments() {
                             </tr>
                           </thead>
                           <tbody>
-                            {loading && useSkeleton ? (
+                            {skeletonMode ? (
                               Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
                             ) : hasPageData ? (
                               paginatedData.map((item) => (
@@ -522,7 +554,10 @@ export default function Departments() {
                                   {!isViewer && (
                                     <>
                                       <td>
-                                        <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/departments_edit/${item.department_id}`)}>
+                                        <button
+                                          className="btn btn-link p-0 text-success"
+                                          onClick={() => navigate(`/departments_edit/${item.department_id}`)}
+                                        >
                                           <i className="fas fa-pen" />
                                         </button>
                                       </td>
@@ -545,7 +580,8 @@ export default function Departments() {
                               </tr>
                             )}
 
-                            {!loading && renderFillerRows(fillerCount)}
+                            {/* keep height constant after load */}
+                            {!skeletonMode && renderFillerRows(fillerCount)}
                           </tbody>
                         </table>
                       </div>
@@ -576,8 +612,8 @@ export default function Departments() {
                           <div className="text-muted small">عرض {filteredData.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={skeletonMode || currentPage === totalPages}>التالي</button>
                             <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
                           </div>
                         )}
@@ -600,7 +636,7 @@ export default function Departments() {
         onConfirm={confirmDelete}
         subject={`«${deleteName || 'هذه الجهة'}»`}
         cascadeNote="قد يؤدي هذا إلى حذف أي مستخدمين أو معايير مرتبطة بهذه الجهة."
-        requireText={deleteName}   //  Require typing the department name to enable deletion
+        requireText={deleteName}
       />
     </>
   );

@@ -8,13 +8,13 @@ import Footer from '../../../components/Footer.jsx';
 import { useNavigate } from 'react-router-dom';
 
 function escapeInput(str) {
-  return str.replace(/[&<>'"]/g, (char) => {
+  return String(str).replace(/[&<>'"]/g, (char) => {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
     return map[char] || char;
   });
 }
 function escapeCommas(str) {
-  return str.replace(/,/g, '\\,');
+  return String(str).replace(/,/g, '\\,');
 }
 // ✅ Normalize Arabic/ASCII digits & separators to ASCII ("." and 0-9)
 function normalizeStandardNumber(str = "") {
@@ -22,10 +22,13 @@ function normalizeStandardNumber(str = "") {
     '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
     '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9',
   };
-  return str
-    .replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch)  // digits
-    .replace(/[٫۔]/g, '.')                      // separators → dot
-    .replace(/\s+/g, '');                       // remove spaces
+  return String(str)
+    .replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch)
+    .replace(/[٫۔]/g, '.')
+    .replace(/\s+/g, '');
+}
+function normalizeProofTitle(s = '') {
+  return String(s).replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 export default function Standards_create() {
@@ -37,10 +40,17 @@ export default function Standards_create() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
+  // Proof validation
+  const [proofDupIdxs, setProofDupIdxs] = useState(new Set());
+  const [proofMinError, setProofMinError] = useState(false);
+
+  // One source of truth for the رقم المعيار error message
+  // '' means no error; otherwise we render this text in the invalid-feedback
+  const [stdError, setStdError] = useState('');
+
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
   const navigate = useNavigate();
 
-  /* ===== Minimal theme (card + exact header height). Does NOT change font. ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -64,14 +74,10 @@ export default function Standards_create() {
         border-bottom:1px solid var(--stroke);
         display:flex; align-items:center; justify-content:space-between; gap:12px;
       }
-      /* ✅ exact same height as Standards/Reports */
-      .head-match {
-        height:56px;            /* fixed height */
-        padding-block:10px;     /* keep visual balance */
-      }
-      .head-match > * { margin:0; } /* avoid extra height from margins */
+      .head-match { height:56px; padding-block:10px; }
+      .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; } /* comfy gap before footer */
+      .page-spacer { height:140px; }
     `}</style>
   );
 
@@ -79,7 +85,7 @@ export default function Standards_create() {
     fetch(`${API_BASE}/api/departments`)
       .then(res => { if (!res.ok) throw new Error('Network response was not ok'); return res.json(); })
       .then(setDepartments)
-      .catch(err => { console.error('Failed to fetch departments:', err); setDepartments([]); });
+      .catch(() => setDepartments([]));
   }, [API_BASE]);
 
   useEffect(() => {
@@ -89,45 +95,106 @@ export default function Standards_create() {
     }
   }, [showError, showSuccess]);
 
+  // Check if a normalized standard number already exists (client-side best effort)
+  const standardNumberExists = async (normalized) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/standards`);
+      if (!res.ok) return false;
+      const list = await res.json();
+      return (Array.isArray(list) ? list : []).some(
+        s => normalizeStandardNumber(String(s?.standard_number ?? '')) === normalized
+      );
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
     setShowSuccess(false);
     setShowError(false);
+    setProofDupIdxs(new Set());
+    setProofMinError(false);
+    setStdError('');
 
+    // 1) رقم المعيار — صيغة صحيحة؟
     const standardNumRaw = (form.standard_num.value || '').trim();
     const standardNumNorm = normalizeStandardNumber(standardNumRaw);
-
-    // Accept Arabic/ASCII digits and Arabic/ASCII separators
     const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
     const isStandardNumValid = STD_RE.test(standardNumRaw);
 
     if (!form.checkValidity() || !isStandardNumValid) {
+      const msg = 'يرجى إدخال رقم بالصيغة الصحيحة مثل 88.863.2';
+      setStdError(msg);
+      form.standard_num.setCustomValidity(msg);
       setShowError(true);
-      form.standard_num.setCustomValidity("يرجى إدخال رقم بالصيغة الصحيحة مثل 5.20.3");
       e.stopPropagation();
+      setValidated(true);
+      form.reportValidity?.();
+      return;
+    }
+    form.standard_num.setCustomValidity('');
+
+    // 2) مستندات الإثبات — واحد على الأقل + لا تكرار عناوين
+    const nonEmptyProofs = proofRequired.map(p => p.trim()).filter(Boolean);
+    const dupIdxs = new Set();
+    const seen = new Map();
+    proofRequired.forEach((title, idx) => {
+      const t = title.trim();
+      if (!t) return;
+      const norm = normalizeProofTitle(t);
+      if (seen.has(norm)) {
+        dupIdxs.add(idx);
+        dupIdxs.add(seen.get(norm));
+      } else {
+        seen.set(norm, idx);
+      }
+    });
+    const noProofs = nonEmptyProofs.length === 0;
+    if (noProofs || dupIdxs.size > 0) {
+      if (noProofs) setProofMinError(true);
+      if (dupIdxs.size > 0) setProofDupIdxs(dupIdxs);
+      setShowError(true);
       setValidated(true);
       return;
     }
-    form.standard_num.setCustomValidity("");
-    setValidated(false);
-    setIsSubmitting(true);
 
-    const proofs = proofRequired
-      .filter(text => text.trim())
+    // 3) منع تكرار رقم المعيار — واستبدال نص الخطأ بالعربية
+    setIsSubmitting(true);
+    try {
+      const exists = await standardNumberExists(standardNumNorm);
+      if (exists) {
+        const msg = 'رقم المعيار مُستخدم بالفعل — لا يُسمح بتكرار رقم المعيار';
+        setStdError(msg);                               // <-- يظهر بدلاً من رسالة الصيغة
+        form.standard_num.setCustomValidity(msg);       // <-- يجعل الحقل غير صالح بنفس النص
+        setShowError(true);
+        setValidated(true);
+        form.reportValidity?.();
+        setIsSubmitting(false);
+        return;
+      }
+    } catch {
+      // تجاهل فشل التحقق هنا — الخادم يجب أن يفرض التفرّد أيضاً
+    } finally {
+      if (!stdError) form.standard_num.setCustomValidity('');
+    }
+
+    // 4) تجهيز الحمولة
+    const proofsJoined = nonEmptyProofs
       .map(text => escapeCommas(escapeInput(text)))
       .join(',');
 
     const payload = {
-      // ✅ normalized ASCII value (e.g., "88.863.2")
       standard_number: escapeInput(standardNumNorm),
       standard_name: escapeInput(form.goal.value),
       standard_goal: escapeInput(form.desc2.value),
       standard_requirments: escapeInput(form.desc3.value),
       assigned_department_id: parseInt(form.scope.value, 10),
-      proof_required: proofs,
+      proof_required: proofsJoined,
     };
 
+    // 5) إرسال
     try {
       const res = await fetch(`${API_BASE}/api/standards`, {
         method: 'POST',
@@ -139,6 +206,10 @@ export default function Standards_create() {
         setShowSuccess(true);
         form.reset();
         setProofRequired(['']);
+        setProofDupIdxs(new Set());
+        setProofMinError(false);
+        setStdError('');
+        setValidated(false);
       }
     } catch {
       setShowError(true);
@@ -147,9 +218,21 @@ export default function Standards_create() {
     }
   };
 
+  // Clear رقم المعيار error as user types
+  const onStdNumChange = (e) => {
+    if (stdError) setStdError('');
+    e.currentTarget.setCustomValidity('');
+  };
+
   const handleAttachmentChange = (e, idx) => {
     const text = e.target.value;
     setProofRequired(prev => { const next = [...prev]; next[idx] = text; return next; });
+    if (proofDupIdxs.size) {
+      const nextDup = new Set(proofDupIdxs);
+      nextDup.delete(idx);
+      setProofDupIdxs(nextDup);
+    }
+    if (proofMinError && text.trim()) setProofMinError(false);
   };
   const addAttachment = () => setProofRequired(prev => [...prev, '']);
   const removeAttachment = idx => setProofRequired(prev => prev.filter((_, i) => i !== idx));
@@ -176,38 +259,36 @@ export default function Standards_create() {
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
           <div id="content" className="flex-grow-1">
             <div className="container-fluid">
-              {/* Breadcrumbs row (same as Standards) */}
               <div className="row p-4">
                 <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
 
-              {/* Same grid as Standards: center + col-12 col-xl-10 */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
                   <div className="surface" aria-busy={isSubmitting}>
-                    {/* Header inside the card, exact height */}
                     <div className="head-flat head-match">
                       <h5 className="m-0">إنشاء بطاقة معيار</h5>
                     </div>
 
-                    {/* Body — unchanged fields/layout/buttons */}
                     <div className="body-flat">
                       <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
                         <div className="mb-3">
                           <label className="form-label">رقم المعيار</label>
                           <input
                             type="text"
-                            className="form-control"
+                            className={`form-control ${stdError ? 'is-invalid' : ''}`}
                             id="standard_num"
                             name="standard_num"
                             inputMode="numeric"
-                            // Accept Arabic/ASCII digits + Arabic/ASCII separators
+                            onChange={onStdNumChange}
                             pattern="[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+"
                             required
                           />
-                          <div className="invalid-feedback">يرجى إدخال رقم بالصيغة الصحيحة مثل 88.863.2</div>
+                          <div className="invalid-feedback">
+                            {stdError || 'يرجى إدخال رقم بالصيغة الصحيحة مثل 88.863.2'}
+                          </div>
                         </div>
 
                         <div className="mb-3">
@@ -241,35 +322,43 @@ export default function Standards_create() {
                           <div className="invalid-feedback">يرجى اختيار الجهة, اذا لم تظهر جهة يرجى اضافة الجهات من خانة الجهات</div>
                         </div>
 
-                        {proofRequired.map((text, idx) => (
-                          <div className="mb-4" key={idx}>
-                            <label className="form-label">مستند إثبات {idx + 1}</label>
-                            <div className="d-flex align-items-start">
-                              <div className="input-group flex-grow-1 has-validation">
-                                <span className="input-group-text"><i className="far fa-file-alt"></i></span>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  value={text}
-                                  placeholder="أدخل وصف المستند"
-                                  onChange={e => handleAttachmentChange(e, idx)}
-                                  required
-                                />
-                                <div className="invalid-feedback">يرجى إدخال وصف المستند</div>
+                        {proofRequired.map((text, idx) => {
+                          const isDup = proofDupIdxs.has(idx);
+                          const isFirst = idx === 0;
+                          const inputClasses = `form-control ${isDup ? 'is-invalid' : ''} ${isFirst && proofMinError ? 'is-invalid' : ''}`;
+                          return (
+                            <div className="mb-4" key={idx}>
+                              <label className="form-label">مستند إثبات {idx + 1}</label>
+                              <div className="d-flex align-items-start">
+                                <div className="input-group flex-grow-1">
+                                  <span className="input-group-text"><i className="far fa-file-alt"></i></span>
+                                  <input
+                                    type="text"
+                                    className={inputClasses}
+                                    value={text}
+                                    placeholder="أدخل وصف المستند"
+                                    onChange={e => handleAttachmentChange(e, idx)}
+                                  />
+                                </div>
+                                {idx > 0 && (
+                                  <button type="button" className="btn btn-outline-danger ms-2" onClick={() => removeAttachment(idx)}>
+                                    حذف
+                                  </button>
+                                )}
                               </div>
-                              {idx > 0 && (
-                                <button type="button" className="btn btn-outline-danger ms-2" onClick={() => removeAttachment(idx)}>
-                                  حذف
-                                </button>
+                              {isFirst && proofMinError && (
+                                <div className="invalid-feedback d-block">يجب إدخال مستند إثبات واحد على الأقل</div>
+                              )}
+                              {isDup && (
+                                <div className="invalid-feedback d-block">عنوان مستند إثبات مكرر</div>
                               )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         <button type="button" className="btn btn-light mb-3" onClick={addAttachment}>
                           إضافة مستند إثبات
                         </button>
 
-                        {/* Keep on one line: no wrap */}
                         <div className="d-flex align-items-center gap-2 pb-4 pt-4 flex-nowrap">
                           <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
                           <label className="form-check-label text-nowrap" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
@@ -295,7 +384,6 @@ export default function Standards_create() {
                 </div>
               </div>
 
-              {/* Same spacer as other pages */}
               <div className="page-spacer" />
             </div>
           </div>

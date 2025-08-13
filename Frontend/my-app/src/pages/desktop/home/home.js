@@ -366,7 +366,7 @@ export default function Standards_menu() {
                       {!loading && hasLoadedOnce && !error && summary.total === 0 && (
                         <div className="text-center py-5">
                           <div className="mb-2" style={{ fontSize: '1.15rem', fontWeight: 700 }}>لا توجد معايير حتى الآن</div>
-                          <div className="muted mb-3">أضف معايير جديدة أو غيّر عوامل التصفية للحساب الحالي.</div>
+                          <div className="muted mb-3">يرجى إضافة معايير جديدة للبدأ.</div>
                           <button className="btn btn-outline-primary" onClick={loadData}>تحديث</button>
                         </div>
                       )}
@@ -494,7 +494,7 @@ export default function Standards_menu() {
                             );
                           })
                         ) : (!error && hasLoadedOnce && !loading && recentItems.length === 0) ? (
-                          <div className="text-center py-4 muted">لا توجد تحديثات حديثة.</div>
+                          <div className="text-center py-4 muted">لا توجد تحديثات.</div>
                         ) : null}
                       </div>
                     </div>

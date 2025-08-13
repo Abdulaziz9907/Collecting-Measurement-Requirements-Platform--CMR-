@@ -6,25 +6,39 @@ export default function DeleteModal({
   onHide,
   onConfirm,
   subject = 'هذا العنصر',
-  cascadeNote,              // نص تحذير مخصّص (اختياري)
-  cascade = [],             // قائمة بالعناصر المرتبطة (اختياري)
-  requireText,              // ✅ الاسم المطلوب كتابته للتأكيد (مثلاً اسم الجهة)
+  cascadeNote,
+  cascade = [],
+  requireText,     // (اختياري) نص يجب كتابته حرفيًا للتأكيد
+  requireCount,    // (اختياري) رقم (عدد العناصر) يجب كتابته للتأكيد – يدعم 123 و١٢٣
 }) {
   const hasCascade = (cascadeNote && cascadeNote.trim()) || (cascade && cascade.length > 0);
 
-  // تأكد من التطابق مع إزالة مسافات خفية فقط
   const clean = (s = '') =>
     String(s)
-      .replace(/\u200f|\u200e|\ufeff/g, '') // remove hidden marks
+      .replace(/\u200f|\u200e|\ufeff/g, '')
       .trim();
+
+  // تحويل أرقام عربية/فارسيّة إلى لاتينية
+  const normalizeDigits = (str = '') => {
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
+  };
 
   const [typed, setTyped] = useState('');
   useEffect(() => {
-    if (show) setTyped(''); // reset when opening
-  }, [show, requireText]);
+    if (show) setTyped('');
+  }, [show, requireText, requireCount]);
 
-  const needsTyping = typeof requireText === 'string' && requireText.trim().length > 0;
-  const canConfirm = !needsTyping || clean(typed) === clean(requireText);
+  const needsCount = Number.isFinite(requireCount) && requireCount > 0;
+  const needsText  = typeof requireText === 'string' && requireText.trim().length > 0;
+
+  let canConfirm = true;
+  if (needsCount) {
+    const asNumber = Number(normalizeDigits(clean(typed)));
+    canConfirm = asNumber === Number(requireCount);
+  } else if (needsText) {
+    canConfirm = clean(typed) === clean(requireText);
+  }
 
   return (
     <Modal show={show} onHide={onHide} centered dir="rtl">
@@ -59,17 +73,21 @@ export default function DeleteModal({
           </div>
         )}
 
-        {needsTyping && (
+        {(needsCount || needsText) && (
           <div className="mt-3">
             <div className="small text-muted mb-1">
-              للتأكيد، اكتب اسم الجهة تمامًا كما يظهر:
+              {needsCount
+                ? <>للتأكيد، اكتب <strong>عدد العناصر</strong> المراد حذفها: <strong>{requireCount}</strong></>
+                : <>للتأكيد، اكتب النص التالي تمامًا كما يظهر:</>
+              }
             </div>
             <input
               className="form-control"
-              placeholder={`اكتب: ${requireText}`}
+              placeholder={needsCount ? `اكتب: ${requireCount}` : (requireText ? `اكتب: ${requireText}` : 'اكتب للتأكيد')}
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               autoFocus
+              inputMode={needsCount ? 'numeric' : 'text'}
             />
           </div>
         )}
@@ -83,8 +101,8 @@ export default function DeleteModal({
           variant="danger"
           id="confirmDelete"
           onClick={onConfirm}
-          disabled={!canConfirm}
-          title={needsTyping && !canConfirm ? 'اكتب اسم الجهة لتفعيل الحذف' : 'حذف'}
+          disabled={!(canConfirm)}
+          title={needsCount ? 'اكتب العدد الصحيح لتفعيل الحذف' : (needsText ? 'اكتب النص لتفعيل الحذف' : 'حذف')}
         >
           حذف
         </Button>

@@ -18,7 +18,7 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // skeleton only on first load
+  const [useSkeleton, setUseSkeleton] = useState(true); // نظهر السكيلتون أثناء كل تحميل
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -28,18 +28,18 @@ export default function Users() {
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
 
-  // Same paging UX as Standards
+  // نفس تجربة التصفح في الصفحات الأخرى
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Anti-flicker + concurrency safety (same constants/approach as Standards)
+  // حماية من الوميض + أمان التزامن
   const LOAD_MIN_MS = 450;
-  const SPINNER_MIN_MS = 200;
+  const SPINNER_MIN_MS = 200; // موجود للتماثل فقط
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
-  /* ===== Shared local theme (matches Standards) ===== */
+  /* ===== المظهر المحلي ===== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -63,7 +63,7 @@ export default function Users() {
       }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* Column width hints (to match skeleton + keep layout steady) */
+      /* عرض الأعمدة ثابت لثبات السكيلتون */
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-eid   { min-width: 120px; }
       .th-uname { min-width: 180px; }
@@ -76,11 +76,10 @@ export default function Users() {
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height: 140px; }
 
-      /* Remove bottom gap between table and footer bar */
       .table-card .table { margin: 0 !important; }
       .table-card .table-responsive { margin: 0; }
 
-      /* Skeleton blocks */
+      /* سكيلتون */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -91,19 +90,18 @@ export default function Users() {
       .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
 
-      /* Filler rows for fixed height */
+      /* صفوف الحشو */
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      /* Dropdown polish */
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
     `}</style>
   );
 
-  const refreshData = async (mode = 'auto') => {
-    const wantSkeleton = mode === 'skeleton' || (mode === 'auto' && !hasLoadedOnce);
-    setUseSkeleton(wantSkeleton);
+  // === نظهر السكيلتون أثناء كل refresh ===
+  const refreshData = async () => {
+    setUseSkeleton(true);
     setLoading(true);
 
     if (abortRef.current) abortRef.current.abort();
@@ -134,19 +132,18 @@ export default function Users() {
       }
     } finally {
       const elapsed = performance.now() - t0;
-      const minWait = wantSkeleton ? LOAD_MIN_MS : SPINNER_MIN_MS;
       const finish = () => {
         if (seq === loadSeqRef.current) {
           setHasLoadedOnce(true);
           setLoading(false);
         }
       };
-      if (elapsed < minWait) setTimeout(finish, minWait - elapsed);
+      if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed);
       else finish();
     }
   };
 
-  useEffect(() => { refreshData('skeleton'); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, departmentFilter, pageSize]);
 
   const uniqueRoles = [...new Set(users.map(u => u?.role).filter(Boolean))];
@@ -156,7 +153,7 @@ export default function Users() {
     setFunc(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
   };
 
-  // Filtering (case-insensitive, Arabic/English safe-ish)
+  // تصفية
   const filteredUsers = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
     return (users || []).filter(u => {
@@ -171,7 +168,7 @@ export default function Users() {
 
   const colCount = isViewer ? 6 : 8;
 
-  // Pagination (same as Standards)
+  // ترقيم الصفحات
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (filteredUsers.length || 0) : Number(pageSize);
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(filteredUsers.length / numericPageSize));
@@ -180,21 +177,19 @@ export default function Users() {
     : filteredUsers.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
 
   const hasPageData = paginatedUsers.length > 0;
-  const baseRowsCount = hasPageData ? paginatedUsers.length : 1;
-  const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
+
+  // وضع السكيلتون + العدّ
+  const skeletonMode = loading && useSkeleton;
+  const skeletonCount = isAll ? 15 : Number(pageSize);
+
+  // صفوف الحشو عند عدم التحميل (للمحافظة على الارتفاع الثابت)
+  const baseRowsCount = hasPageData ? paginatedUsers.length : 1; // صف "لا توجد نتائج" إن كانت فارغة
+  const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
 
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  // Filler rows to keep steady height
-  const renderFillerRows = (count) =>
-    Array.from({ length: count }).map((_, r) => (
-      <tr key={`filler-${r}`} className="table-empty-row">
-        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
-      </tr>
-    ));
-
-  // Skeleton row matching columns
+  // صف سكيلتون مطابق للأعمدة
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
       <td><span className="skel skel-line" style={{ width: '60%' }} /></td>  {/* رقم الموظف */}
@@ -208,15 +203,19 @@ export default function Users() {
     </tr>
   );
 
-  const skeletonCount = typeof pageSize === 'number'
-    ? pageSize
-    : Math.max(15, Math.min(25, filteredUsers.length || 15));
+  // صفوف الحشو
+  const renderFillerRows = (count) =>
+    Array.from({ length: count }).map((_, r) => (
+      <tr key={`filler-${r}`} className="table-empty-row">
+        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
+      </tr>
+    ));
 
   const confirmDelete = async () => {
     try {
       await fetch(`${API_BASE}/api/users/${deleteId}`, { method: 'DELETE' });
       setShowDelete(false);
-      await refreshData('soft');
+      await refreshData(); // سكيلتون بعد الحذف
     } catch {}
   };
 
@@ -327,19 +326,16 @@ export default function Users() {
                         </div>
 
                         <div className="d-flex align-items-center gap-2">
-                          {(!loading || !useSkeleton) && (
+                          {!skeletonMode && (
                             <small className="text-muted">النتائج: {filteredUsers.length.toLocaleString('ar-SA')}</small>
                           )}
                           <button
                             className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
-                            onClick={() => refreshData('soft')}
+                            onClick={refreshData}
                             title="تحديث"
                           >
                             <i className="fas fa-rotate-right" />
                             تحديث
-                            {loading && !useSkeleton && (
-                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-                            )}
                           </button>
                         </div>
                       </div>
@@ -361,7 +357,7 @@ export default function Users() {
                           </thead>
 
                           <tbody>
-                            {loading && useSkeleton ? (
+                            {skeletonMode ? (
                               Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
                             ) : hasPageData ? (
                               paginatedUsers.map(u => {
@@ -382,9 +378,9 @@ export default function Users() {
                                           </button>
                                         </td>
                                         <td>
-                                        <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(u?.employee_id)}>
-                                          <i className="fas fa-times" />
-                                        </button>
+                                          <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(u?.employee_id)}>
+                                            <i className="fas fa-times" />
+                                          </button>
                                         </td>
                                       </>
                                     )}
@@ -397,8 +393,8 @@ export default function Users() {
                               </tr>
                             )}
 
-                            {/* Filler rows to keep height steady */}
-                            {!loading && renderFillerRows(fillerCount)}
+                            {/* صفوف الحشو لإبقاء الارتفاع ثابتًا بعد التحميل */}
+                            {!skeletonMode && renderFillerRows(fillerCount)}
                           </tbody>
                         </table>
                       </div>
@@ -429,8 +425,8 @@ export default function Users() {
                           <div className="text-muted small">عرض {filteredUsers.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={currentPage === 1}>السابق</button>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={currentPage === totalPages}>التالي</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={skeletonMode || currentPage === totalPages}>التالي</button>
                             <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
                           </div>
                         )}
