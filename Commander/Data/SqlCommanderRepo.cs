@@ -59,5 +59,10 @@ namespace Commander.Data
         {
             return _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
         }
+
+        public User? GetUserByUsernameAndEmail(string username, string email)
+        {
+            return _context.Users.FirstOrDefault(u => u.Username == username && u.Email == email);
+        }
     }
 }
