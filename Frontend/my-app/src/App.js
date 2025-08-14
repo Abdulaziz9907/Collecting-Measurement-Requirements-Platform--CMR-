@@ -15,6 +15,7 @@ import Users_create from './pages/desktop/users_create/users_create';
 import Users_edit from './pages/desktop/users_edit/users_edit';
 import Report from './pages/desktop/reports/report';
 import Home from './pages/desktop/home/home'
+import Profile from './pages/desktop/profile/profile';
 
 function App() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
@@ -41,6 +42,7 @@ function App() {
       <Route path="/users_create" element={user && allow(['admin','administrator']) ? <Users_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/users_edit/:id" element={user && allow(['admin','administrator']) ? <Users_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/reports" element={user && allow(['admin','administrator','management']) ? <Report /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/profile" element={user ? <Profile /> : <Navigate to="/" replace />} />
     </Routes>
   );
 }

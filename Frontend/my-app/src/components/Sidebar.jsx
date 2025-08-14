@@ -7,7 +7,8 @@ import {
   faUsers,
   faSitemap,
   faArrowRightFromBracket,
-  faHome
+  faHome,
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
@@ -25,18 +26,21 @@ export default function Sidebar() {
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
       { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
+      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   } else if (role === 'user') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
+      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   } else if (role === 'management') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
+      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
       { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   }
