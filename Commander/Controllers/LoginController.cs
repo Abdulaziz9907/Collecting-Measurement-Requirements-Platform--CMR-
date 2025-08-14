@@ -49,9 +49,22 @@ namespace Commander.Controllers
         }
 
         // ---------- helpers ----------
+        private static string NormalizeDigits(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            var sb = new StringBuilder(input.Length);
+            foreach (var ch in input)
+            {
+                if (ch >= '\u0660' && ch <= '\u0669') sb.Append((char)('0' + (ch - '\u0660')));
+                else if (ch >= '\u06F0' && ch <= '\u06F9') sb.Append((char)('0' + (ch - '\u06F0')));
+                else sb.Append(ch);
+            }
+            return sb.ToString();
+        }
+
         private static string KeyFor(string username, string email)
         {
-            var u = (username ?? "").Trim().ToLowerInvariant();
+            var u = NormalizeDigits(username ?? "").Trim().ToLowerInvariant();
             var e = (email ?? "").Trim().ToLowerInvariant();
             return $"{u}::{e}";
         }
@@ -81,7 +94,8 @@ namespace Commander.Controllers
         public ActionResult<UserReadDto> Login([FromBody] UserLoginDto loginDto)
         {
             if (loginDto == null) return BadRequest("Invalid payload.");
-            var user = _repository.AuthenticateUser(loginDto.Username, loginDto.Password);
+            var login = NormalizeDigits(loginDto.Username);
+            var user = _repository.AuthenticateUser(login, loginDto.Password);
             if (user == null) return Unauthorized();
             return Ok(_mapper.Map<UserReadDto>(user));
         }
@@ -93,10 +107,10 @@ namespace Commander.Controllers
             if (string.IsNullOrWhiteSpace(dto?.Username) || string.IsNullOrWhiteSpace(dto?.Email))
                 return BadRequest("Username and email are required.");
 
-            var username = dto.Username.Trim();
+            var username = NormalizeDigits(dto.Username.Trim());
             var email = dto.Email.Trim();
 
-            var user = _repository.GetUserByUsernameAndEmail(username, email);
+            var user = _repository.GetUserByLoginAndEmail(username, email);
             if (user == null)
             {
                 _logger.LogInformation("Forgot: user not found for {User}/{Email}", username, email);
@@ -178,7 +192,8 @@ namespace Commander.Controllers
             if (dto.NewPassword.Length < 8)
                 return BadRequest(new { message = "Password must be at least 8 characters." });
 
-            var key = KeyFor(dto.Username, dto.Email);
+            var username = NormalizeDigits(dto.Username);
+            var key = KeyFor(username, dto.Email);
             if (!_resetStore.TryGetValue(key, out var entry))
                 return NotFound(new { message = "No reset request found for the specified user." });
 
@@ -192,7 +207,7 @@ namespace Commander.Controllers
             if (!string.Equals(entry.Code, provided, StringComparison.Ordinal))
                 return BadRequest(new { message = "يرجى التأكد من صحة كود التحقق." });
 
-            var user = _repository.GetUserByUsernameAndEmail(dto.Username, dto.Email);
+            var user = _repository.GetUserByLoginAndEmail(username, dto.Email);
             if (user == null)
                 return NotFound(new { message = "User could not be located." });
 

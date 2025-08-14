@@ -21,11 +21,25 @@ namespace Commander.Controllers
             _mapper = mapper;
         }
 
+        private static string NormalizeDigits(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            var sb = new System.Text.StringBuilder(input.Length);
+            foreach (var ch in input)
+            {
+                if (ch >= '\u0660' && ch <= '\u0669') sb.Append((char)('0' + (ch - '\u0660')));
+                else if (ch >= '\u06F0' && ch <= '\u06F9') sb.Append((char)('0' + (ch - '\u06F0')));
+                else sb.Append(ch);
+            }
+            return sb.ToString();
+        }
+
         // POST api/users/login
         [HttpPost("login")]
         public ActionResult<UserReadDto> Login(UserLoginDto loginDto)
         {
-            var user = _repository.AuthenticateUser(loginDto.Username, loginDto.Password);
+            var login = NormalizeDigits(loginDto.Username);
+            var user = _repository.AuthenticateUser(login, loginDto.Password);
             if (user == null)
                 return Unauthorized();
 
