@@ -68,8 +68,7 @@ namespace Commander.Controllers
             if (user == null)
             {
                 _logger.LogInformation("Forgot: user not found for {User}/{Email}", username, email);
-                // Respond OK to avoid user enumeration
-                return Ok(new { sent = true });
+                return NotFound("User with provided username and email was not found.");
             }
 
             // 6-digit cryptographically secure code
@@ -123,23 +122,26 @@ namespace Commander.Controllers
             var key = dto.Username.Trim().ToLowerInvariant();
 
             if (!_resetStore.TryGetValue(key, out var entry))
-                return BadRequest("Code not found or expired.");
+                return NotFound("No reset request found for the specified user.");
 
             if (DateTimeOffset.UtcNow > entry.ExpiresAt)
             {
                 _resetStore.TryRemove(key, out _);
-                return BadRequest("Code expired.");
+                return BadRequest("The verification code has expired.");
             }
 
-            if (!entry.Email.Equals(dto.Email.Trim(), StringComparison.OrdinalIgnoreCase) ||
-                !entry.Code.Equals(dto.Code.Trim(), StringComparison.Ordinal))
-            {
-                return BadRequest("Invalid code or email.");
-            }
+            var providedEmail = dto.Email.Trim();
+            var providedCode = dto.Code.Trim();
+
+            if (!entry.Email.Equals(providedEmail, StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Email does not match the reset request.");
+
+            if (!entry.Code.Equals(providedCode, StringComparison.Ordinal))
+                return BadRequest("Incorrect verification code.");
 
             var user = _repository.GetUserByUsernameAndEmail(dto.Username, dto.Email);
             if (user == null)
-                return BadRequest("Invalid request.");
+                return NotFound("User could not be located.");
 
             // TODO: hash your password!
             user.Password = dto.NewPassword;
