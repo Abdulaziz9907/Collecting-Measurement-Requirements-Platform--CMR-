@@ -1,10 +1,6 @@
-using System.Threading.Tasks;
-
-namespace Commander.Services
+public interface IEmailService
 {
-    public interface IEmailService
-    {
-        Task SendAsync(string toEmail, string subject, string textPart, string htmlPart);
-        Task SendTemplateAsync(string toEmail, string toName, long templateId, object variables);
-    }
+    Task SendAsync(string toEmail, string subject, string textPart, string htmlPart);
+    Task SendTemplateAsync(string toEmail, string toName, long templateId, object variables);
+    Task SendPasswordResetAsync(string toEmail, string toName, string code, string username, string resetUrl);
 }
