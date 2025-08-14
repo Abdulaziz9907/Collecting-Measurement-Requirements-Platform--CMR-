@@ -211,7 +211,7 @@ export default function Standards() {
       }
     } finally {
       const elapsed = performance.now() - t0;
-      const minWait = LOAD_MIN_MS; // سكيلتون دومًا
+      const minWait = LOAD_MIN_MS; 
       const finish = () => {
         if (seq === loadSeqRef.current) {
           setHasLoadedOnce(true);

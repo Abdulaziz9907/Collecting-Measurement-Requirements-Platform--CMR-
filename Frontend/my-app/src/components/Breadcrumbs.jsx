@@ -11,7 +11,9 @@ const map = {
   reports: { label: 'تقارير الإحصائيات' },
   users: { label: 'إدارة المستخدمين' },
   users_create: { label: 'إضافة مستخدم جديد', parent: 'users' },
-  users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' }
+  users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' },
+  profile: { label: 'الملف الشخصي ' }
+
 };
 
 export default function Breadcrumbs() {
