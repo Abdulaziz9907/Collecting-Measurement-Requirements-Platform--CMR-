@@ -68,10 +68,10 @@ export default function ForgotPasswordModal({ show, onHide, apiBase }) {
 
   // API
   const sendResetCode = async () => {
-    const uname = username.trim();
+    const uname = normalizeDigits(username.trim());
     const mail  = email.trim();
     if (!uname || !validateEmail(mail)) {
-      showAlert('danger', 'الرجاء إدخال اسم المستخدم والبريد الإلكتروني بشكل صحيح');
+      showAlert('danger', 'الرجاء إدخال اسم المستخدم أو رقم الموظف والبريد الإلكتروني بشكل صحيح');
       return;
     }
     setLoading(true); setAlert({ show: false, variant: '', message: '' });
@@ -111,7 +111,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
       const res = await fetch(`${apiBase}/api/login/verify`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.trim(),
+          username: normalizeDigits(username.trim()),
           email: email.trim(),
           code: c
         })
@@ -154,7 +154,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
       const res = await fetch(`${apiBase}/api/login/reset`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.trim(),
+          username: normalizeDigits(username.trim()),
           email: email.trim(),
           code: c,
           newPassword: pass
@@ -228,12 +228,12 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
         {step === 1 && (
           <>
             <Form.Group className="mb-3">
-              <Form.Label className="fw-medium">اسم المستخدم</Form.Label>
+              <Form.Label className="fw-medium">اسم المستخدم أو رقم الموظف</Form.Label>
               <Form.Control
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم"
+                placeholder="أدخل اسم المستخدم أو رقم الموظف"
                 disabled={loading}
                 autoFocus
                 size="lg"
