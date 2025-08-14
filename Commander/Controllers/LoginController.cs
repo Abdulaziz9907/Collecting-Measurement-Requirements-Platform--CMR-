@@ -4,8 +4,11 @@ using Commander.Dtos;
 using Commander.Models;
 using Commander.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Commander.Controllers
@@ -17,80 +20,134 @@ namespace Commander.Controllers
         private readonly InterfaceRepo _repository;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        private static readonly Dictionary<string, string> _resetCodes = new();
-        private static readonly object _codeLock = new();
+        private readonly IHostEnvironment _env;
+        private readonly ILogger<LoginController> _logger;
 
-        public LoginController(InterfaceRepo repository, IMapper mapper, IEmailService emailService)
+        private sealed class ResetEntry
+        {
+            public string Email { get; init; }
+            public string Code { get; init; }
+            public DateTimeOffset ExpiresAt { get; init; }
+        }
+
+        private static readonly ConcurrentDictionary<string, ResetEntry> _resetStore = new();
+
+        public LoginController(
+            InterfaceRepo repository,
+            IMapper mapper,
+            IEmailService emailService,
+            IHostEnvironment env,
+            ILogger<LoginController> logger)
         {
             _repository = repository;
             _mapper = mapper;
             _emailService = emailService;
+            _env = env;
+            _logger = logger;
         }
 
         [HttpPost]
-        public ActionResult<UserReadDto> Login(UserLoginDto loginDto)
+        public ActionResult<UserReadDto> Login([FromBody] UserLoginDto loginDto)
         {
             var user = _repository.AuthenticateUser(loginDto.Username, loginDto.Password);
-            if (user == null)
-                return Unauthorized();
-
+            if (user == null) return Unauthorized();
             return Ok(_mapper.Map<UserReadDto>(user));
         }
 
         [HttpPost("forgot")]
-        public async Task<ActionResult> SendResetCode(ForgotPasswordDto dto)
+        public async Task<ActionResult> SendResetCode([FromBody] ForgotPasswordDto dto)
         {
-            var user = _repository.GetUserByUsernameAndEmail(dto.Username, dto.Email);
+            if (string.IsNullOrWhiteSpace(dto?.Username) || string.IsNullOrWhiteSpace(dto?.Email))
+                return BadRequest("Username and email are required.");
+
+            var username = dto.Username.Trim();
+            var email = dto.Email.Trim();
+
+            // Case-insensitive lookup recommended in your repo
+            var user = _repository.GetUserByUsernameAndEmail(username, email);
             if (user == null)
             {
-                return NotFound();
+                _logger.LogInformation("Forgot: user not found for {User}/{Email}", username, email);
+                // Respond OK to avoid user enumeration
+                return Ok(new { sent = true });
             }
 
-            var code = new Random().Next(100000, 999999).ToString();
-            lock (_codeLock)
+            // 6-digit cryptographically secure code
+            var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+
+            _resetStore[username.ToLowerInvariant()] = new ResetEntry
             {
-                _resetCodes[dto.Username] = code;
+                Email = email,
+                Code = code,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10)
+            };
+
+            var subject = "إعادة تعيين كلمة المرور";
+            var textPart = $"رمز التحقق: {code} (صالح 10 دقائق)";
+            var htmlPart = $"<p>رمز التحقق لإعادة تعيين كلمة المرور:</p>" +
+                           $"<p style='font-size:20px;font-weight:bold'>{code}</p>" +
+                           $"<p>صالح لمدة 10 دقائق.</p>";
+
+            try
+            {
+                await _emailService.SendAsync(email, subject, textPart, htmlPart);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send reset email to {Email}", email);
+
+                if (_env.IsDevelopment())
+                    return Ok(new { sent = false, code, error = ex.Message });
+
+                return StatusCode(500, "Failed to send reset email. Please try again later.");
             }
 
-            await _emailService.SendAsync(
-                dto.Email,
-                "My first Mailjet Email!",
-                $"Greetings from Mailjet! Your reset code is {code}",
-                $"<h3>Dear user, your reset code is {code}</h3>");
+            // Return code in Dev to speed testing
+            if (_env.IsDevelopment())
+                return Ok(new { sent = true, code });
 
-            return Ok(new { code });
+            return Ok(new { sent = true });
         }
 
         [HttpPost("reset")]
-        public ActionResult ResetPassword(ResetPasswordDto dto)
+        public ActionResult ResetPassword([FromBody] ResetPasswordDto dto)
         {
-            string storedCode;
-            lock (_codeLock)
+            if (string.IsNullOrWhiteSpace(dto?.Username) ||
+                string.IsNullOrWhiteSpace(dto?.Email) ||
+                string.IsNullOrWhiteSpace(dto?.Code) ||
+                string.IsNullOrWhiteSpace(dto?.NewPassword))
             {
-                _resetCodes.TryGetValue(dto.Username, out storedCode);
+                return BadRequest("All fields are required.");
             }
 
-            if (storedCode == null || storedCode != dto.Code)
+            var key = dto.Username.Trim().ToLowerInvariant();
+
+            if (!_resetStore.TryGetValue(key, out var entry))
+                return BadRequest("Code not found or expired.");
+
+            if (DateTimeOffset.UtcNow > entry.ExpiresAt)
             {
-                return BadRequest();
+                _resetStore.TryRemove(key, out _);
+                return BadRequest("Code expired.");
+            }
+
+            if (!entry.Email.Equals(dto.Email.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                !entry.Code.Equals(dto.Code.Trim(), StringComparison.Ordinal))
+            {
+                return BadRequest("Invalid code or email.");
             }
 
             var user = _repository.GetUserByUsernameAndEmail(dto.Username, dto.Email);
             if (user == null)
-            {
-                return NotFound();
-            }
+                return BadRequest("Invalid request.");
 
+            // TODO: hash your password!
             user.Password = dto.NewPassword;
             _repository.UpdateUser(user);
             _repository.SaveChanges();
 
-            lock (_codeLock)
-            {
-                _resetCodes.Remove(dto.Username);
-            }
-
-            return Ok();
+            _resetStore.TryRemove(key, out _);
+            return Ok(new { reset = true });
         }
     }
 }

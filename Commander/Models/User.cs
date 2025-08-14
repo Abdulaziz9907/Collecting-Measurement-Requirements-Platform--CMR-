@@ -25,7 +25,7 @@ namespace Commander.Models
         [MaxLength(16)]
         public required string Last_name { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(254)]
         public string? Email { get; set; }
 
 

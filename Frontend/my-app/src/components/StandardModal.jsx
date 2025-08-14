@@ -24,11 +24,23 @@ export default function StandardModal({
   // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
 
+  // ===================== تطبيع الاسم (مطابق للباك-إند) =====================
+  const normalizeProof = (s = '') =>
+    String(s)
+      .replace(/\u060C/g, ',')   // الفاصلة العربية -> إنجليزية
+      .normalize('NFC')          // توحيد شكل المحارف
+      .replace(/\s+/g, ' ')      // طيّ المسافات المتتالية
+      .trim();
+
   // ---------- helpers ----------
+  // تقسيم يدعم الفاصلة المهروبة \, + التطبيع
   const parseProofs = (raw = '') => {
     const text = String(raw).replace(/،/g, ',');
     const parts = text.match(/(?:\\.|[^,])+/g) || [];
-    return parts.map(s => s.replace(/\\,/g, ',').trim()).filter(Boolean);
+    return parts
+      .map(s => s.replace(/\\,/g, ',')) // فكّ الفواصل المهروبة
+      .map(normalizeProof)              // ✅ تطبيع
+      .filter(Boolean);
   };
 
   const proofs = useMemo(
@@ -36,13 +48,23 @@ export default function StandardModal({
     [standard]
   );
 
-  const getAttachments = name =>
-    attachments.filter(a => (a.proof_name ?? a.Proof_name) === name);
+  // اجلب مرفقات عنوان معيّن بعد التطبيع على الجانبين
+  const getAttachments = (name) => {
+    const target = normalizeProof(name);
+    return attachments.filter(a => normalizeProof(a.proof_name ?? a.Proof_name) === target);
+  };
+
+  // مجموعات مطبّعة لحساب الاكتمال بثبات
+  const normalizedProofs = useMemo(() => proofs.map(normalizeProof), [proofs]);
+  const normalizedUploaded = useMemo(
+    () => new Set(attachments.map(a => normalizeProof(a.proof_name ?? a.Proof_name))),
+    [attachments]
+  );
 
   const hasAllProofs = useMemo(() => {
-    if (!proofs.length) return false; // "مكتمل" requires at least one proof
-    return proofs.every(p => attachments.some(a => (a.proof_name ?? a.Proof_name) === p));
-  }, [proofs, attachments]);
+    if (!normalizedProofs.length) return false; // "مكتمل" يتطلب على الأقل عنصرًا واحدًا
+    return normalizedProofs.every(p => normalizedUploaded.has(p));
+  }, [normalizedProofs, normalizedUploaded]);
 
   const apiStatus = standard?.status ?? standard?.Status ?? 'لم يبدأ';
   const effectiveStatus = (apiStatus === 'معتمد' && !hasAllProofs) ? 'تحت العمل' : apiStatus;
@@ -168,10 +190,19 @@ export default function StandardModal({
     if (!canManageFiles) return;
     const form = new FormData();
     form.append('file', file);
-    form.append('proofName', proof);
-    await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { method: 'POST', body: form });
-    await loadData();
-    onUpdated && onUpdated();
+    form.append('proofName', normalizeProof(proof)); // ✅ إرسال مطبّع
+    try {
+      const res = await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const msg = (await res.text().catch(()=>'')).trim();
+        setNotice(msg || `تعذّر رفع الملف (${res.status}).`);
+        return;
+      }
+      await loadData();
+      onUpdated && onUpdated();
+    } catch {
+      setNotice('تعذّر الاتصال بالخادم أثناء الرفع.');
+    }
   };
 
   const handleFileSelect = (proof) => {
@@ -382,7 +413,7 @@ export default function StandardModal({
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
                   >
-                    <h6 className="fw-bold mb-3 text-primary">
+                    <h6 className="fw-bold mb-3 text-primary proof-title">
                       <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
                     </h6>
 
@@ -521,6 +552,10 @@ export default function StandardModal({
         .modal-backdrop.reject-backdrop.show {
           opacity: 0.85 !important;
           background-color: #000 !important;
+        }
+        .proof-title {
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
       `}</style>
     </>
