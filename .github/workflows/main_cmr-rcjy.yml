@@ -1,3 +1,4 @@
+# .github/workflows/azure-webapp.yml
 name: Build and deploy API + React (Windows App Services)
 
 on:
@@ -6,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  FRONTEND_DIR: Frontend
+  FRONTEND_DIR: Frontend/my-app
   API_URL: https://cmr-rcjy.azurewebsites.net
 
 jobs:
@@ -18,12 +19,12 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.x" #
+          dotnet-version: "9.x"
 
       - name: Restore & Publish API
         run: |
-          dotnet restore
-          dotnet publish -c Release -o "${{ runner.temp }}\api_publish"
+          dotnet restore Commander/Commander.csproj
+          dotnet publish Commander/Commander.csproj -c Release -o "${{ runner.temp }}\api_publish"
 
       - name: Upload API artifact
         uses: actions/upload-artifact@v4
@@ -36,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node 20 LTS
+      - name: Use Node
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
@@ -49,7 +50,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Add SPA web.config (Windows)
+      - name: Add SPA web.config
         working-directory: ${{ env.FRONTEND_DIR }}/build
         shell: pwsh
         run: |
@@ -98,13 +99,13 @@ jobs:
         with:
           name: api
 
-      - name: Deploy API to Azure Web App (Windows)
+      - name: Deploy API to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "cmr-rcjy"
           slot-name: "Production"
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A78A4FA3B0C14340A8758C19313A6FFB }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_API }}
 
   deploy_web:
     runs-on: windows-latest
@@ -115,7 +116,7 @@ jobs:
         with:
           name: web
 
-      - name: Deploy Web (React) to Azure Web App (Windows)
+      - name: Deploy Web to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "cmr-rcjy"
