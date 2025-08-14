@@ -14,13 +14,19 @@ export default function Login({ onLogin }) {
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
 
+  const normalizeDigits = (s) => {
+    const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+                '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    return (s || '').split('').map(ch => m[ch] ?? ch).join('');
+  };
+
   const handleLogin = async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: normalizeDigits(username.trim()), password }),
       });
       if (!res.ok) {
         setMessage('فشل تسجيل الدخول');
@@ -300,14 +306,14 @@ export default function Login({ onLogin }) {
                       >
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
                           <div className="floating-label">
-                            <input
-                              type="text"
-                              placeholder="اسم المستخدم"
-                              value={username}
-                              onChange={(e) => setUsername(e.target.value)}
-                              required
-                              disabled={isLoading}
-                            />
+                              <input
+                                type="text"
+                                placeholder="اسم المستخدم أو رقم الموظف"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                                disabled={isLoading}
+                              />
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-user'}`}></i>
                           </div>
                         </div>

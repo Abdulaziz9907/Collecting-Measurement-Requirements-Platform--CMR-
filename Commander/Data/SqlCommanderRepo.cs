@@ -45,28 +45,43 @@ namespace Commander.Data
         // Option A (works regardless of DB collation): compare LOWER() of both sides.
         // Note: calling ToLower() on columns can reduce index usage. If your SQL Server
         // collation is already case-insensitive, prefer Option B (see below).
-        public User? AuthenticateUser(string username, string password)
+        public User? AuthenticateUser(string login, string password)
         {
-            if (string.IsNullOrWhiteSpace(username) || password == null)
+            if (string.IsNullOrWhiteSpace(login) || password == null)
                 return null;
 
-            var u = username.Trim().ToLower();
             var p = password; // TODO: store hashed passwords in production
+            var trimmed = login.Trim();
 
+            if (int.TryParse(trimmed, out var empId))
+            {
+                return _context.Users.FirstOrDefault(x =>
+                    x.Employee_id == empId && x.Password == p);
+            }
+
+            var u = trimmed.ToLower();
             return _context.Users.FirstOrDefault(x =>
-                (x.Username ?? "").ToLower() == u &&
-                x.Password == p);
+                (x.Username ?? "").ToLower() == u && x.Password == p);
         }
 
-        public User? GetUserByUsernameAndEmail(string username, string email)
+        public User? GetUserByLoginAndEmail(string login, string email)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(email))
                 return null;
 
-            var u = username.Trim().ToLower();
+            var trimmed = login.Trim();
             var e = email.Trim().ToLower();
+            var query = _context.Users.AsNoTracking();
 
-            return _context.Users.AsNoTracking().FirstOrDefault(x =>
+            if (int.TryParse(trimmed, out var empId))
+            {
+                return query.FirstOrDefault(x =>
+                    x.Employee_id == empId &&
+                    (x.Email ?? "").ToLower() == e);
+            }
+
+            var u = trimmed.ToLower();
+            return query.FirstOrDefault(x =>
                 (x.Username ?? "").ToLower() == u &&
                 (x.Email ?? "").ToLower() == e);
         }
