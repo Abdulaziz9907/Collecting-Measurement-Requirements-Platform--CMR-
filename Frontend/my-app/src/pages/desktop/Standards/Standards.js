@@ -39,7 +39,7 @@ export default function Standards() {
   const [banner, setBanner] = useState({ type: null, text: '' });
   const fileInputRef = useRef(null);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const navigate = useNavigate();
 

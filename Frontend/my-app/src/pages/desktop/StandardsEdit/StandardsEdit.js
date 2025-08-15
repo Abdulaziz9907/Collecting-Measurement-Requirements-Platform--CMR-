@@ -59,7 +59,7 @@ export default function StandardsEdit() {
 
   const { id } = useParams();
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
   /* ===== Theme to match Standards/Reports look (with skeleton) ===== */
   const LocalTheme = () => (

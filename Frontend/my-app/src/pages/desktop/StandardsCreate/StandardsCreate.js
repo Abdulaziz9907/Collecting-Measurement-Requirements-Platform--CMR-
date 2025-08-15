@@ -49,7 +49,7 @@ export default function StandardsCreate() {
   // '' means no error; otherwise we render this text in the invalid-feedback
   const [stdError, setStdError] = useState('');
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const navigate = useNavigate();
 
   const LocalTheme = () => (

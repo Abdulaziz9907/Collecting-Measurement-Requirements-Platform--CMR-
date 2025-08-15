@@ -64,7 +64,7 @@ export default function Report() {
   const [sortKey, setSortKey] = useState('progressRate');
   const [sortDir, setSortDir] = useState('desc');
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const USERS_ENDPOINT = `${API_BASE}/api/users`;
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const abortRef = useRef(null);

@@ -19,7 +19,7 @@ export default function DepartmentsCreate() {
   const [existingNames, setExistingNames] = useState(new Set());
   const [nameIsDuplicate, setNameIsDuplicate] = useState(false);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const navigate = useNavigate();
 
   /* ===== Minimal shell to match other pages (card + exact header height) ===== */
