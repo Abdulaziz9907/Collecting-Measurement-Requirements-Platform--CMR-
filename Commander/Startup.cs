@@ -19,9 +19,13 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // 1) EF Core → SQL Server
-            services.AddDbContext<InterfaceContext>(opt =>
-                opt.UseSqlServer(Configuration.GetConnectionString("DBConnection")));
+            var conn =
+     Environment.GetEnvironmentVariable("DBConnection") ??
+     Configuration.GetConnectionString("DBConnection") ??
+     Configuration.GetConnectionString("DefaultConnection");
+
+            services.AddDbContextPool<InterfaceContext>(opt =>
+                opt.UseSqlServer(conn, sql => sql.EnableRetryOnFailure()));
 
             // 2) Controllers + Newtonsoft JSON (camel-case)
             services.AddControllers()

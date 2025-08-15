@@ -42,7 +42,7 @@ export default function Login({ onLogin }) {
       navigate('/home', { replace: true });
     } catch (err) {
       console.error(err);
-      setMessage('خطأ في الشبكة');
+      setMessage('حدث خطأ في الإتصال');
     } finally {
       setIsLoading(false);
     }
