@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
+using System.IO;
 
 namespace Commander
 {
@@ -75,9 +77,30 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            // Serve SPA/static assets built by React
-            app.UseDefaultFiles();
+            // Serve SPA/static assets built by React if the build folder exists
             app.UseStaticFiles();
+
+            var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
+            var buildExists = Directory.Exists(buildPath);
+            IFileProvider? buildProvider = null;
+
+            if (buildExists)
+            {
+                buildProvider = new PhysicalFileProvider(buildPath);
+
+                // Expose React build files from the root URL space
+                app.UseDefaultFiles(new DefaultFilesOptions
+                {
+                    FileProvider = buildProvider,
+                    RequestPath = string.Empty
+                });
+
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = buildProvider,
+                    RequestPath = string.Empty
+                });
+            }
 
             app.UseRouting();
             app.UseCors("AllowAll");
@@ -86,8 +109,13 @@ namespace Commander
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-
-
+                if (buildExists && buildProvider != null)
+                {
+                    endpoints.MapFallbackToFile("index.html", new StaticFileOptions
+                    {
+                        FileProvider = buildProvider
+                    });
+                }
             });
         }
     }
