@@ -22,7 +22,7 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Resolve connection string from multiple possible sources (App Settings, Connection Strings blade, env vars).
+            // Resolve connection string from multiple possible sources.
             string conn =
                 Configuration["ConnectionStrings:DBConnection"] ??
                 Configuration.GetConnectionString("DBConnection") ??
@@ -55,7 +55,6 @@ namespace Commander
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
             services.AddScoped<IStandardRepo, SqlStandardRepo>();
             services.AddScoped<IAttachmentRepo, SqlAttachmentRepo>();
-
             services.AddTransient<IEmailService, MailjetEmailService>();
 
             services.AddCors(opts =>
@@ -69,7 +68,7 @@ namespace Commander
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
-            // Apply pending EF migrations on startup (okay for your setup).
+            // Apply pending EF Core migrations on startup.
             context.Database.Migrate();
 
             if (env.IsDevelopment())
@@ -79,12 +78,13 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            // Serve static files from wwwroot
+            // Serve static files from wwwroot (e.g., uploads, images).
             app.UseStaticFiles();
 
-            // Serve the React build from wwwroot/build at the root URL ("/")
+            // Serve the React build from wwwroot/build at the root URL ("/") if present.
             var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
             var buildExists = Directory.Exists(buildPath);
+
             if (buildExists)
             {
                 var buildProvider = new PhysicalFileProvider(buildPath);
@@ -111,11 +111,16 @@ namespace Commander
                 // API routes
                 endpoints.MapControllers();
 
-                // SPA fallback to React index.html inside wwwroot/build
+                // SPA fallback to React index.html inside wwwroot/build (if it exists).
                 if (buildExists)
                 {
-                    // filePath is relative to the WebRoot (wwwroot), so include "build/"
+                    // Path is relative to WebRoot (wwwroot)
                     endpoints.MapFallbackToFile("build/index.html");
+                }
+                else
+                {
+                    // Fallback to any index at wwwroot if build not present (optional).
+                    endpoints.MapFallbackToFile("index.html");
                 }
             });
         }
