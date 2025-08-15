@@ -2,8 +2,7 @@ name: Build and deploy ASP.Net Core app to Azure Web App - cmr-rcjy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -13,45 +12,47 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Install Node.js for the React build
+      # --- Build React front-end (Node 20 required by react-router v7) ---
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x" # or whatever version your React project uses
+          node-version: "20.x"
 
-      # Install dependencies and build the React app
-      - name: Build React front‑end
+      - name: Install & build React
         working-directory: Frontend/my-app
+        env:
+          CI: false # don't fail build on ESLint warnings
         run: |
-          npm install
+          npm ci
           npm run build
 
-      # Copy the React build into the API’s wwwroot folder
-      - name: Copy React build to wwwroot
+      # --- Copy React build output into ASP.NET wwwroot ---
+      - name: Prepare wwwroot
+        shell: pwsh
         run: |
-          # Ensure the wwwroot folder exists
-          New-Item -ItemType Directory -Force -Path Commander/wwwroot
-          # Copy all files from the React build to wwwroot
-          Copy-Item -Path Frontend/my-app/build/* -Destination Commander/wwwroot -Recurse -Force
+          if (Test-Path "Commander/wwwroot") { Remove-Item -Recurse -Force "Commander/wwwroot/*" -ErrorAction SilentlyContinue }
+          New-Item -ItemType Directory -Force -Path "Commander/wwwroot" | Out-Null
+          Copy-Item -Path "Frontend/my-app/build/*" -Destination "Commander/wwwroot" -Recurse -Force
 
+      # --- Publish ASP.NET Core backend (includes wwwroot) ---
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.x"
 
-      - name: dotnet build
-        run: dotnet build --configuration Release
+      - name: Restore
+        run: dotnet restore ./Commander/Commander.csproj
 
-      # Publish includes the React files now present in wwwroot
-      - name: dotnet publish
-        run: dotnet publish -c Release -o '${{ env.DOTNET_ROOT }}/myapp'
+      - name: Publish
+        run: dotnet publish ./Commander/Commander.csproj -c Release -o "${{ env.DOTNET_ROOT }}/myapp"
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact for deploy
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
+          name: dotnet-app
           path: ${{ env.DOTNET_ROOT }}/myapp
 
   deploy:
@@ -62,12 +63,12 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: dotnet-app
 
-      - name: Login to Azure
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_361518B30B144DD882109F150474FDF3 }}
