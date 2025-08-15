@@ -1,125 +1,65 @@
-# .github/workflows/azure-webapp.yml
-name: Build and deploy API + React (Windows App Services)
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy ASP.Net Core app to Azure Web App - cmr-rcjy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
-env:
-  FRONTEND_DIR: Frontend/my-app
-  API_URL: https://cmr-rcjy.azurewebsites.net
-
 jobs:
-  build_api:
+  build:
     runs-on: windows-latest
+    permissions:
+      contents: read #This is required for actions/checkout
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET
+      - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.x"
+          dotnet-version: '9.x'
 
-      - name: Restore & Publish API
-        run: |
-          dotnet restore Commander/Commander.csproj
-          dotnet publish Commander/Commander.csproj -c Release -o "${{ runner.temp }}\api_publish"
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
 
-      - name: Upload API artifact
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: api
-          path: ${{ runner.temp }}\api_publish
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
 
-  build_web:
+  deploy:
     runs-on: windows-latest
+    needs: build
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-
-      - name: Install & Build React (inject API URL)
-        working-directory: ${{ env.FRONTEND_DIR }}
-        env:
-          REACT_APP_API_BASE: ${{ env.API_URL }}
-        run: |
-          npm ci
-          npm run build
-
-      - name: Add SPA web.config
-        working-directory: ${{ env.FRONTEND_DIR }}/build
-        shell: pwsh
-        run: |
-          @"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <system.webServer>
-              <rewrite>
-                <rules>
-                  <rule name="StaticFiles" stopProcessing="true">
-                    <match url=".*" />
-                    <conditions logicalGrouping="MatchAny">
-                      <add input="{REQUEST_FILENAME}" matchType="IsFile" />
-                      <add input="{REQUEST_FILENAME}" matchType="IsDirectory" />
-                    </conditions>
-                    <action type="None" />
-                  </rule>
-                  <rule name="SpaFallback" stopProcessing="true">
-                    <match url=".*" />
-                    <action type="Rewrite" url="/index.html" />
-                  </rule>
-                </rules>
-              </rewrite>
-              <staticContent>
-                <remove fileExtension=".json" />
-                <mimeMap fileExtension=".json" mimeType="application/json" />
-                <mimeMap fileExtension=".webmanifest" mimeType="application/manifest+json" />
-                <mimeMap fileExtension=".wasm" mimeType="application/wasm" />
-              </staticContent>
-            </system.webServer>
-          </configuration>
-          "@ | Out-File -Encoding utf8 web.config
-
-      - name: Upload Web artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: web
-          path: ${{ env.FRONTEND_DIR }}/build
-
-  deploy_api:
-    runs-on: windows-latest
-    needs: build_api
-    steps:
-      - name: Download API artifact
+      - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: api
+          name: .net-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_361518B30B144DD882109F150474FDF3 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FC669A969D4148928C885A6A2DF20645 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6FC707AB03C945F0A236F697A614DABD }}
 
-      - name: Deploy API to Azure Web App
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "cmr-rcjy"
-          slot-name: "Production"
+          app-name: 'cmr-rcjy'
+          slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_API }}
-
-  deploy_web:
-    runs-on: windows-latest
-    needs: build_web
-    steps:
-      - name: Download Web artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web
-
-      - name: Deploy Web to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: "cmr-rcjy"
-          slot-name: "Production"
-          package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_WEB }}
+          
