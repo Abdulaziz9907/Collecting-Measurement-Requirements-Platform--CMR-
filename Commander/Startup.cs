@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using AutoMapper;
 using Commander.Data;
 using Commander.Services;
@@ -11,7 +12,6 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
-using System.IO;
 
 namespace Commander
 {
@@ -22,12 +22,7 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Bullet-proof resolver:
-            // 1) App Settings key "ConnectionStrings:DBConnection" (recommended to add in App Service)
-            // 2) Standard GetConnectionString("DBConnection") (App Service "Connection strings" blade)
-            // 3) App Service env-var prefixes (Windows plans)
-            // 4) Plain env var "DBConnection" (if someone added it under App Settings)
-            // 5) Local dev fallback "DefaultConnection"
+            // Resolve connection string from multiple possible sources.
             string conn =
                 Configuration["ConnectionStrings:DBConnection"] ??
                 Configuration.GetConnectionString("DBConnection") ??
@@ -39,7 +34,6 @@ namespace Commander
 
             if (string.IsNullOrWhiteSpace(conn))
             {
-                // Optional: log if nothing resolved (remove later if noisy)
                 using var sp = services.BuildServiceProvider();
                 var logger = sp.GetService<ILogger<Startup>>();
                 logger?.LogWarning("No database connection string could be resolved.");
@@ -56,6 +50,7 @@ namespace Commander
                     });
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
             services.AddScoped<IStandardRepo, SqlStandardRepo>();
@@ -64,42 +59,47 @@ namespace Commander
 
             services.AddCors(opts =>
             {
-                opts.AddPolicy("AllowAll", b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                opts.AddPolicy("AllowAll", b => b
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
             });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
-            // Apply pending migrations on startup (okay for your setup)
+            // Apply pending EF Core migrations on startup.
             context.Database.Migrate();
 
-            if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
             app.UseHttpsRedirection();
 
+            // Serve static files from wwwroot (e.g., uploads, images).
+            app.UseStaticFiles();
+
+            // Serve the React build from wwwroot/build at the root URL ("/") if present.
             var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
-            var webRootProvider = env.WebRootFileProvider;
-            IFileProvider spaProvider = Directory.Exists(buildPath)
-                ? new PhysicalFileProvider(buildPath)
-                : webRootProvider;
+            var buildExists = Directory.Exists(buildPath);
 
-            // Serve SPA files from either the React build folder or wwwroot
-            app.UseDefaultFiles(new DefaultFilesOptions
+            if (buildExists)
             {
-                FileProvider = spaProvider,
-                RequestPath = string.Empty
-            });
+                var buildProvider = new PhysicalFileProvider(buildPath);
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = spaProvider,
-                RequestPath = string.Empty
-            });
+                app.UseDefaultFiles(new DefaultFilesOptions
+                {
+                    FileProvider = buildProvider,
+                    RequestPath = string.Empty
+                });
 
-            // Also serve other static files (e.g., uploads) from wwwroot when using a separate build folder
-            if (!ReferenceEquals(spaProvider, webRootProvider))
-            {
-                app.UseStaticFiles();
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = buildProvider,
+                    RequestPath = string.Empty
+                });
             }
 
             app.UseRouting();
@@ -108,11 +108,20 @@ namespace Commander
 
             app.UseEndpoints(endpoints =>
             {
+                // API routes
                 endpoints.MapControllers();
-                endpoints.MapFallbackToFile("index.html", new StaticFileOptions
+
+                // SPA fallback to React index.html inside wwwroot/build (if it exists).
+                if (buildExists)
                 {
-                    FileProvider = spaProvider
-                });
+                    // Path is relative to WebRoot (wwwroot)
+                    endpoints.MapFallbackToFile("build/index.html");
+                }
+                else
+                {
+                    // Fallback to any index at wwwroot if build not present (optional).
+                    endpoints.MapFallbackToFile("index.html");
+                }
             });
         }
     }
