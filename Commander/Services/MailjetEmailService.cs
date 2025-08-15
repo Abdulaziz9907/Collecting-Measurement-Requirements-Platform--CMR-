@@ -33,15 +33,15 @@ namespace Commander.Services
                 ?? config["Mailjet:ApiKeyPrivate"];
 
             _fromEmail =
-                Environment.GetEnvironmentVariable("SENDER_EMAIL")
-                ?? config["SENDER_EMAIL"]
+                Environment.GetEnvironmentVariable("MAILJET_SENDER_EMAIL")
+                ?? config["MAILJET_SENDER_EMAIL"]
                 ?? config["Mailjet:SenderEmail"]
                 ?? string.Empty;
 
             // Default sender/brand → منصة التحول الرقمي
             _fromName =
-                Environment.GetEnvironmentVariable("SENDER_NAME")
-                ?? config["SENDER_NAME"]
+                Environment.GetEnvironmentVariable("MAILJET_SENDER_NAME")
+                ?? config["MAILJET_SENDER_NAME"]
                 ?? config["Mailjet:SenderName"]
                 ?? "منصة التحول الرقمي";
 
