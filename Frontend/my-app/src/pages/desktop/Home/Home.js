@@ -24,7 +24,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [standardsRaw, setStandardsRaw] = useState([]);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
 
   const statusMap = useMemo(() => ({

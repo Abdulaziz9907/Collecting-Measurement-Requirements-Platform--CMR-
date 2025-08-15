@@ -8,7 +8,7 @@ export default function StandardModal({
   onUpdated,
   onLocalStatusChange,   // optional: update the row in the table immediately
 }) {
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const role = (user?.role || '').toLowerCase();
 

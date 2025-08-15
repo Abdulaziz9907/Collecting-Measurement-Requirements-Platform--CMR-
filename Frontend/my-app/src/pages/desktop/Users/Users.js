@@ -23,7 +23,7 @@ export default function Users() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();

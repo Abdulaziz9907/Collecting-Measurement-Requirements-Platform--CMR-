@@ -8,7 +8,7 @@ export default function Profile() {
   const stored = useMemo(() => JSON.parse(localStorage.getItem('user') || '{}'), []);
   const [user, setUser] = useState(stored);
 
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
   // ---------- THEME ----------
   const LocalTheme = () => (

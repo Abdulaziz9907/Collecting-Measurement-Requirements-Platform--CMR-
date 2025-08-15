@@ -12,7 +12,7 @@ export default function Login({ onLogin }) {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5186';
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
   const normalizeDigits = (s) => {
     const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
