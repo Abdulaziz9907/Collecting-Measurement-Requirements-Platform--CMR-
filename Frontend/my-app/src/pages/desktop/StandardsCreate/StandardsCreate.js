@@ -31,7 +31,7 @@ function normalizeProofTitle(s = '') {
   return String(s).replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-export default function Standards_create() {
+export default function StandardsCreate() {
   const [validated, setValidated] = useState(false);
   const [proofRequired, setProofRequired] = useState(['']);
   const [departments, setDepartments] = useState([]);

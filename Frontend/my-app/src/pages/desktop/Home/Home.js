@@ -8,7 +8,7 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 
-export default function Standards_menu() {
+export default function Home() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [summary, setSummary] = useState({
     total: 0,

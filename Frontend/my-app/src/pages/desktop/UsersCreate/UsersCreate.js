@@ -7,7 +7,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useNavigate } from 'react-router-dom';
 
-export default function Users_create() {
+export default function UsersCreate() {
   const [validated, setValidated] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]); // ✅ for username uniqueness check

@@ -7,7 +7,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 
-export default function Users_edit() {
+export default function UsersEdit() {
   const [validated, setValidated] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [user, setUser] = useState(null);
