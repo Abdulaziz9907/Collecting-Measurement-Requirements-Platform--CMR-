@@ -7,7 +7,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useNavigate } from 'react-router-dom';
 
-export default function Departments_create() {
+export default function DepartmentsCreate() {
   const [validated, setValidated] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);

@@ -3,19 +3,19 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 
 // Pages
-import Login from './pages/desktop/login/login';
-import Standards_create from './pages/desktop/standards_create/standards_create';
-import Standards from './pages/desktop/standards/standards';
-import Standards_edit from './pages/desktop/standards_edit/standards_edit';
-import Departments from './pages/desktop/departments/departments';
-import Departments_edit from './pages/desktop/departments_edit/departments_edit';
-import Departments_create from './pages/desktop/departments_create/departments_create';
-import Users from './pages/desktop/users/users';
-import Users_create from './pages/desktop/users_create/users_create';
-import Users_edit from './pages/desktop/users_edit/users_edit';
-import Report from './pages/desktop/reports/report';
-import Home from './pages/desktop/home/home'
-import Profile from './pages/desktop/profile/profile';
+import Login from './pages/desktop/Login/Login';
+import StandardsCreate from './pages/desktop/StandardsCreate/StandardsCreate';
+import Standards from './pages/desktop/Standards/Standards';
+import StandardsEdit from './pages/desktop/StandardsEdit/StandardsEdit';
+import Departments from './pages/desktop/Departments/Departments';
+import DepartmentsEdit from './pages/desktop/DepartmentsEdit/DepartmentsEdit';
+import DepartmentsCreate from './pages/desktop/DepartmentsCreate/DepartmentsCreate';
+import Users from './pages/desktop/Users/Users';
+import UsersCreate from './pages/desktop/UsersCreate/UsersCreate';
+import UsersEdit from './pages/desktop/UsersEdit/UsersEdit';
+import Report from './pages/desktop/Reports/Report';
+import Home from './pages/desktop/Home/Home';
+import Profile from './pages/desktop/Profile/Profile';
 
 function App() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
@@ -32,15 +32,15 @@ function App() {
     <Routes>
       <Route path="/" element={<Login onLogin={setUser} />} />
       <Route path="/home" element={user ? <Home /> : <Navigate to="/" replace />} />
-      <Route path="/standards_create" element={user && allow(['admin','administrator']) ? <Standards_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/standards_create" element={user && allow(['admin','administrator']) ? <StandardsCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/standards" element={user && allow(['admin','administrator','user']) ? <Standards /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/standards_edit/:id" element={user && allow(['admin','administrator']) ? <Standards_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/standards_edit/:id" element={user && allow(['admin','administrator']) ? <StandardsEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/departments" element={user && allow(['admin','administrator']) ? <Departments /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/departments_edit/:id" element={user && allow(['admin','administrator']) ? <Departments_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/departments_create" element={user && allow(['admin','administrator']) ? <Departments_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/departments_edit/:id" element={user && allow(['admin','administrator']) ? <DepartmentsEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/departments_create" element={user && allow(['admin','administrator']) ? <DepartmentsCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/users" element={user && allow(['admin','administrator']) ? <Users /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/users_create" element={user && allow(['admin','administrator']) ? <Users_create /> : <Navigate to={user ? '/home' : '/'} replace />} />
-      <Route path="/users_edit/:id" element={user && allow(['admin','administrator']) ? <Users_edit /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/users_create" element={user && allow(['admin','administrator']) ? <UsersCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
+      <Route path="/users_edit/:id" element={user && allow(['admin','administrator']) ? <UsersEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/reports" element={user && allow(['admin','administrator','management']) ? <Report /> : <Navigate to={user ? '/home' : '/'} replace />} />
       <Route path="/profile" element={user ? <Profile /> : <Navigate to="/" replace />} />
     </Routes>

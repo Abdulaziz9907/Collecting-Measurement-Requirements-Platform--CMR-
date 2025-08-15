@@ -6,7 +6,7 @@ jest.mock('react-router-dom', () => ({
   MemoryRouter: ({ children }) => <div>{children}</div>
 }), { virtual: true });
 
-import Login from './pages/desktop/login/login';
+import Login from './pages/desktop/Login/Login';
 import { MemoryRouter } from 'react-router-dom';
 
 test('renders login button', () => {

@@ -40,7 +40,7 @@ function splitEscapedCommaList(str = '') {
   return parts.map(s => s.replace(/\\,/g, ',').trim());
 }
 
-export default function Standards_edit() {
+export default function StandardsEdit() {
   const [validated, setValidated] = useState(false);
   const [proofRequired, setProofRequired] = useState(['']);
   const [departments, setDepartments] = useState([]);
