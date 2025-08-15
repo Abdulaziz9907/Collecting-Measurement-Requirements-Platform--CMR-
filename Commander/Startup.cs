@@ -20,64 +20,62 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var conn =
-                Environment.GetEnvironmentVariable("DBConnection") ??
+            // Bullet-proof resolver:
+            // 1) App Settings key "ConnectionStrings:DBConnection" (recommended to add in App Service)
+            // 2) Standard GetConnectionString("DBConnection") (App Service "Connection strings" blade)
+            // 3) App Service env-var prefixes (Windows plans)
+            // 4) Plain env var "DBConnection" (if someone added it under App Settings)
+            // 5) Local dev fallback "DefaultConnection"
+            string conn =
+                Configuration["ConnectionStrings:DBConnection"] ??
+                Configuration.GetConnectionString("DBConnection") ??
                 Environment.GetEnvironmentVariable("SQLAZURECONNSTR_DBConnection") ??
                 Environment.GetEnvironmentVariable("SQLCONNSTR_DBConnection") ??
-                Configuration.GetConnectionString("DBConnection") ??
+                Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DBConnection") ??
+                Environment.GetEnvironmentVariable("DBConnection") ??
                 Configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrWhiteSpace(conn))
             {
-                using var serviceProvider = services.BuildServiceProvider();
-                var logger = serviceProvider.GetService<ILogger<Startup>>();
+                // Optional: log if nothing resolved (remove later if noisy)
+                using var sp = services.BuildServiceProvider();
+                var logger = sp.GetService<ILogger<Startup>>();
                 logger?.LogWarning("No database connection string could be resolved.");
             }
 
             services.AddDbContextPool<InterfaceContext>(opt =>
                 opt.UseSqlServer(conn, sql => sql.EnableRetryOnFailure()));
 
-            // 2) Controllers + Newtonsoft JSON (camel-case)
             services.AddControllers()
                     .AddNewtonsoftJson(opts =>
                     {
-                        opts.SerializerSettings.ContractResolver =
-                            new CamelCasePropertyNamesContractResolver();
-                        opts.SerializerSettings.ReferenceLoopHandling =
-                            Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                        opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                        opts.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                     });
 
-            // 3) AutoMapper + Repos
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddScoped<InterfaceRepo, SqlCommanderRepo>();
             services.AddScoped<IDepartmentRepo, SqlDepartmentRepo>();
             services.AddScoped<IStandardRepo, SqlStandardRepo>();
             services.AddScoped<IAttachmentRepo, SqlAttachmentRepo>();
-
-            // Mailjet email service (Transient or Singleton both OK; Transient matches your setup)
             services.AddTransient<IEmailService, MailjetEmailService>();
 
-            // 4) CORS policy
             services.AddCors(opts =>
             {
-                opts.AddPolicy("AllowAll", builder =>
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader());
+                opts.AddPolicy("AllowAll", b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
-            // Apply any pending migrations automatically on startup
+            // Apply pending migrations on startup (okay for your setup)
             context.Database.Migrate();
 
-            if (env.IsDevelopment())
-                app.UseDeveloperExceptionPage();
+            if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
             app.UseHttpsRedirection();
 
-            // Serve SPA/static assets
+            // Serve SPA/static assets built by React
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
@@ -85,7 +83,12 @@ namespace Commander
             app.UseCors("AllowAll");
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+
+
+            });
         }
     }
 }
