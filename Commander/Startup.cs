@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Serialization;
-using Microsoft.Extensions.Logging;
 
 namespace Commander
 {
@@ -54,17 +53,10 @@ namespace Commander
             });
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
             // Apply any pending migrations automatically on startup
-            try
-            {
-                context.Database.Migrate();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred while applying database migrations.");
-            }
+            context.Database.Migrate();
 
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
