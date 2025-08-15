@@ -41,10 +41,7 @@ namespace Commander.Data
             _context.Users.Remove(user);
         }
 
-        // ---------------- EF-translatable, case-insensitive matching ----------------
-        // Option A (works regardless of DB collation): compare LOWER() of both sides.
-        // Note: calling ToLower() on columns can reduce index usage. If your SQL Server
-        // collation is already case-insensitive, prefer Option B (see below).
+
         public User? AuthenticateUser(string login, string password)
         {
             if (string.IsNullOrWhiteSpace(login) || password == null)
@@ -86,18 +83,6 @@ namespace Commander.Data
                 (x.Email ?? "").ToLower() == e);
         }
 
-        /*
-        // ---------------- Alternatives ----------------
-        // Option B (better performance if DB collation is case-insensitive):
-        // return _context.Users.AsNoTracking()
-        //     .FirstOrDefault(x => x.Username == username && x.Email == email);
 
-        // Option C (force a specific CI collation on SQL Server):
-        // using Microsoft.EntityFrameworkCore;
-        // return _context.Users.AsNoTracking()
-        //     .FirstOrDefault(x =>
-        //         EF.Functions.Collate(x.Username, "SQL_Latin1_General_CP1_CI_AS") == username &&
-        //         EF.Functions.Collate(x.Email,    "SQL_Latin1_General_CP1_CI_AS") == email);
-        */
     }
 }
