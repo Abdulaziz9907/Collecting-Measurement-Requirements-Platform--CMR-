@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
+using System.IO;
 
 namespace Commander
 {
@@ -75,9 +77,30 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            // Serve SPA/static assets built by React
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
+            var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
+            var webRootProvider = env.WebRootFileProvider;
+            IFileProvider spaProvider = Directory.Exists(buildPath)
+                ? new PhysicalFileProvider(buildPath)
+                : webRootProvider;
+
+            // Serve SPA files from either the React build folder or wwwroot
+            app.UseDefaultFiles(new DefaultFilesOptions
+            {
+                FileProvider = spaProvider,
+                RequestPath = string.Empty
+            });
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = spaProvider,
+                RequestPath = string.Empty
+            });
+
+            // Also serve other static files (e.g., uploads) from wwwroot when using a separate build folder
+            if (!ReferenceEquals(spaProvider, webRootProvider))
+            {
+                app.UseStaticFiles();
+            }
 
             app.UseRouting();
             app.UseCors("AllowAll");
@@ -86,8 +109,10 @@ namespace Commander
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-
-
+                endpoints.MapFallbackToFile("index.html", new StaticFileOptions
+                {
+                    FileProvider = spaProvider
+                });
             });
         }
     }
