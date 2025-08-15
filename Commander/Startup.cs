@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 
 namespace Commander
@@ -20,9 +21,18 @@ namespace Commander
         public void ConfigureServices(IServiceCollection services)
         {
             var conn =
-     Environment.GetEnvironmentVariable("DBConnection") ??
-     Configuration.GetConnectionString("DBConnection") ??
-     Configuration.GetConnectionString("DefaultConnection");
+                Environment.GetEnvironmentVariable("DBConnection") ??
+                Environment.GetEnvironmentVariable("SQLAZURECONNSTR_DBConnection") ??
+                Environment.GetEnvironmentVariable("SQLCONNSTR_DBConnection") ??
+                Configuration.GetConnectionString("DBConnection") ??
+                Configuration.GetConnectionString("DefaultConnection");
+
+            if (string.IsNullOrWhiteSpace(conn))
+            {
+                using var serviceProvider = services.BuildServiceProvider();
+                var logger = serviceProvider.GetService<ILogger<Startup>>();
+                logger?.LogWarning("No database connection string could be resolved.");
+            }
 
             services.AddDbContextPool<InterfaceContext>(opt =>
                 opt.UseSqlServer(conn, sql => sql.EnableRetryOnFailure()));
