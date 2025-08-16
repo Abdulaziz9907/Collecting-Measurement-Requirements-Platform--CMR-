@@ -66,10 +66,11 @@ namespace Commander
             });
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // Apply pending EF Core migrations on startup.
-            context.Database.Migrate();
+            // The database schema is managed outside of this application.
+            // No automatic EF Core migrations are executed on startup to
+            // avoid altering an already provisioned database.
 
             if (env.IsDevelopment())
             {
