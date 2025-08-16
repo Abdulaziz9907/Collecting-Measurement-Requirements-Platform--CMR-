@@ -36,9 +36,6 @@ export default function StandardModal({
   const [showReasons, setShowReasons] = useState(false);
   const { language } = useLanguage();
 
-  // هل لدينا مودال مكدّس (أعلى المودال الحالي)؟
-  const isStacked = showReject || showReasons;
-
   // ===================== تطبيع الاسم =====================
   const normalizeProof = (s = '') =>
     String(s).replace(/\u060C/g, ',').normalize('NFC').replace(/\s+/g, ' ').trim();
@@ -179,7 +176,7 @@ export default function StandardModal({
     try {
       const res = await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { method: 'POST', body: form });
       if (!res.ok) {
-        const msg = (await res.text().catch(()=>'' )).trim();
+        const msg = (await res.text().catch(()=>'')).trim();
         setNotice(msg || `تعذّر رفع الملف (${res.status}).`);
         return;
       }
@@ -300,6 +297,7 @@ export default function StandardModal({
   // ✅ تشغيل الأنيميشن فور انتهاء التحميل بوجود بيانات
   useEffect(() => {
     if (prevLoadingRef.current && !loading && standard) {
+      // انتقلنا من loading=true إلى false وبيدنا بيانات -> شغّل الأنيميشن
       setAnimTick(t => t + 1);
     }
     prevLoadingRef.current = loading;
@@ -335,6 +333,7 @@ export default function StandardModal({
 
   return (
     <>
+<<<<<<< HEAD
       {/* المحتوى الخلفي يُعتم تلقائياً عند فتح مودال علوي */}
         <Modal
           show={show}
@@ -344,6 +343,9 @@ export default function StandardModal({
           dir={language === 'ar' ? 'rtl' : 'ltr'}
           contentClassName={isStacked ? 'underlay-dim-content' : undefined}
         >
+=======
+      <Modal show={show} onHide={onHide} size="lg" centered dir="rtl">
+>>>>>>> parent of 4d8be48 (UI improments)
         <Modal.Header>
           <Modal.Title>تفاصيل المعيار</Modal.Title>
         </Modal.Header>
@@ -534,6 +536,7 @@ export default function StandardModal({
         </Modal.Footer>
       </Modal>
 
+<<<<<<< HEAD
       {/* Reject reason modal — topmost, darker backdrop */}
         <Modal
           show={showReject}
@@ -542,6 +545,16 @@ export default function StandardModal({
           dir={language === 'ar' ? 'rtl' : 'ltr'}
           backdropClassName="reject-backdrop stacked-backdrop"
         >
+=======
+      {/* Reject reason modal — darker backdrop */}
+      <Modal
+        show={showReject}
+        onHide={() => setShowReject(false)}
+        centered
+        dir="rtl"
+        backdropClassName="reject-backdrop"
+      >
+>>>>>>> parent of 4d8be48 (UI improments)
         <Modal.Header closeButton>
           <Modal.Title>سبب الرفض</Modal.Title>
         </Modal.Header>
@@ -562,14 +575,8 @@ export default function StandardModal({
         </Modal.Footer>
       </Modal>
 
-      {/* Previous rejection reasons modal — topmost, darker backdrop */}
-      <Modal
-        show={showReasons}
-        onHide={() => setShowReasons(false)}
-        centered
-        dir="rtl"
-        backdropClassName="stacked-backdrop"
-      >
+      {/* Previous rejection reasons modal */}
+      <Modal show={showReasons} onHide={() => setShowReasons(false)} centered dir="rtl">
         <Modal.Header closeButton>
           <Modal.Title>أسباب الرفض السابقة</Modal.Title>
         </Modal.Header>
@@ -600,27 +607,10 @@ export default function StandardModal({
       <style>{`
         .drag-over { background-color: #f0f8ff; border: 2px dashed #007bff; }
 
-        /* Darker backdrop only for the TOP modal(s) */
-        .modal-backdrop.reject-backdrop.show,
-        .modal-backdrop.stacked-backdrop.show {
+        /* Darker backdrop only for the reject modal */
+        .modal-backdrop.reject-backdrop.show {
           opacity: 0.85 !important;
           background-color: #000 !important;
-          backdrop-filter: blur(2px);
-        }
-
-        /* عندما يكون هناك مودال علوي، اعتم المودال السفلي قليلاً */
-        .underlay-dim-content {
-          position: relative; /* anchor for ::after */
-          filter: brightness(.72) saturate(.92) blur(.6px);
-          transition: filter .18s ease;
-        }
-        .underlay-dim-content::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,.15);
-          border-radius: inherit;
-          pointer-events: none;
         }
 
         .proof-title {
@@ -646,9 +636,9 @@ export default function StandardModal({
           }
         }
         @media (prefers-reduced-motion: reduce) {
-          .modal-content-animated { animation: none !important; }
-          .underlay-dim-content { filter: none !important; }
-          .modal-backdrop.stacked-backdrop.show { backdrop-filter: none !important; }
+          .modal-content-animated {
+            animation: none !important;
+          }
         }
       `}</style>
     </>

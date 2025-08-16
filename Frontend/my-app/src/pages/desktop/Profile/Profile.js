@@ -15,32 +15,21 @@ export default function Profile() {
   const LocalTheme = () => (
     <style>{`
       :root {
-        --radius: 14px;
-        --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+        --radius: 14px; --shadow: 0 10px 24px rgba(16,24,40,.08);
         --surface:#fff; --surface-muted:#fbfdff; --stroke:#eef2f7; --text:#0b2440;
 
         --skeleton-bg: #e9edf3; --skeleton-sheen: rgba(255,255,255,.6);
         --skeleton-speed: 1.2s;
       }
       .page-bg { background:#f6f8fb; min-height:100vh; }
-
-      /* NEW: wrapper holds the shadow so it isn't masked */
-      .surface-wrap{
-        border-radius: var(--radius);
-        overflow: visible;
-        background: transparent;
-        box-shadow: var(--shadow);
-      }
-
       .surface {
         background: var(--surface);
         border: 1px solid var(--stroke);
         border-radius: var(--radius);
+        box-shadow: var(--shadow);
         overflow: hidden;
-        /* keep the Safari anti-alias hack on the INNER card only */
         -webkit-mask-image: -webkit-radial-gradient(white, black);
       }
-
       .head-flat{padding:12px 16px;background:var(--surface-muted);border-bottom:1px solid var(--stroke);color:var(--text);font-weight:700;}
       .stepper{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
       .step-dot{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -421,89 +410,87 @@ export default function Profile() {
               {/* ===== تحديث البيانات — FULL WIDTH ===== */}
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
-                  <div className="surface-wrap">
-                    <div className="surface">
-                      <div className="head-flat d-flex align-items-center justify-content-between">
-                        <span>تحديث البيانات</span>
-                        <button
-                          type="button"
-                          className="btn btn-outline-primary btn-sm btn-update"
-                          onClick={refreshUser}
-                          disabled={loadingProfile}
-                        >
-                          {loadingProfile ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
-                          تحديث
-                        </button>
-                      </div>
-
-                      {/* Form or Skeleton */}
-                      <form onSubmit={updateProfile} className="p-4">
-                        {useSkeleton ? (
-                          <>
-                            <div className="row g-3">
-                              <div className="col-12 col-md-6">
-                                <div className="skel skel-label mb-2" />
-                                <div className="skel skel-input" />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <div className="skel skel-label mb-2" />
-                                <div className="skel skel-input" />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <div className="skel skel-label mb-2" />
-                                <div className="skel skel-input" />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <div className="skel skel-label mb-2" />
-                                <div className="skel skel-input" />
-                              </div>
-                            </div>
-                            <div className="mt-3">
-                              <div className="skel skel-btn" />
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="row g-3">
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">اسم المستخدم</label>
-                                <input
-                                  type="text"
-                                  className={`form-control ${usernameError ? 'is-invalid' : ''}`}
-                                  name="username"
-                                  value={form.username}
-                                  onChange={handleChange}
-                                />
-                                {usernameError && (
-                                  <div className="invalid-feedback d-block">{usernameError}</div>
-                                )}
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">البريد الإلكتروني</label>
-                                <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">الاسم الأول</label>
-                                <input type="text" className="form-control" name="first_name" value={form.first_name} onChange={handleChange} />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">اسم العائلة</label>
-                                <input type="text" className="form-control" name="last_name" value={form.last_name} onChange={handleChange} />
-                              </div>
-                            </div>
-                            <div className="mt-3 d-flex gap-2">
-                              <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={!!usernameError}
-                              >
-                                حفظ
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </form>
+                  <div className="surface">
+                    <div className="head-flat d-flex align-items-center justify-content-between">
+                      <span>تحديث البيانات</span>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm btn-update"
+                        onClick={refreshUser}
+                        disabled={loadingProfile}
+                      >
+                        {loadingProfile ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                        تحديث
+                      </button>
                     </div>
+
+                    {/* Form or Skeleton */}
+                    <form onSubmit={updateProfile} className="p-4">
+                      {useSkeleton ? (
+                        <>
+                          <div className="row g-3">
+                            <div className="col-12 col-md-6">
+                              <div className="skel skel-label mb-2" />
+                              <div className="skel skel-input" />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <div className="skel skel-label mb-2" />
+                              <div className="skel skel-input" />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <div className="skel skel-label mb-2" />
+                              <div className="skel skel-input" />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <div className="skel skel-label mb-2" />
+                              <div className="skel skel-input" />
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <div className="skel skel-btn" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="row g-3">
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">اسم المستخدم</label>
+                              <input
+                                type="text"
+                                className={`form-control ${usernameError ? 'is-invalid' : ''}`}
+                                name="username"
+                                value={form.username}
+                                onChange={handleChange}
+                              />
+                              {usernameError && (
+                                <div className="invalid-feedback d-block">{usernameError}</div>
+                              )}
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">البريد الإلكتروني</label>
+                              <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">الاسم الأول</label>
+                              <input type="text" className="form-control" name="first_name" value={form.first_name} onChange={handleChange} />
+                            </div>
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">اسم العائلة</label>
+                              <input type="text" className="form-control" name="last_name" value={form.last_name} onChange={handleChange} />
+                            </div>
+                          </div>
+                          <div className="mt-3 d-flex gap-2">
+                            <button
+                              type="submit"
+                              className="btn btn-primary"
+                              disabled={!!usernameError}
+                            >
+                              حفظ
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </form>
                   </div>
                 </div>
               </div>
@@ -511,144 +498,142 @@ export default function Profile() {
               {/* ===== تغيير كلمة المرور — UNDER it, full width ===== */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-11">
-                  <div className="surface-wrap">
-                    <div className="surface">
-                      <div className="head-flat">تغيير كلمة المرور</div>
+                  <div className="surface">
+                    <div className="head-flat">تغيير كلمة المرور</div>
 
-                      {/* Stepper */}
-                      <div className="px-4 pt-3">
-                        <div className="stepper">
-                          <div className={`step-dot ${pwStep >= 1 ? 'active' : 'inactive'}`}>1</div>
-                          <div className={`step-line ${pwStep >= 2 ? 'active' : ''}`} />
-                          <div className={`step-dot ${pwStep >= 2 ? 'active' : 'inactive'}`}>2</div>
-                          <div className={`step-line ${pwStep >= 3 ? 'active' : ''}`} />
-                          <div className={`step-dot ${pwStep >= 3 ? 'active' : 'inactive'}`}>3</div>
-                        </div>
-
-                        {/* Password-section banners (persistent) */}
-                        {lastMinute && (
-                          <div className="alert alert-warning py-2 text-center rounded-soft mb-2">
-                            آخر دقيقة لاستخدام الرمز
-                          </div>
-                        )}
-                        {pwBanner.type && (
-                          <div className={`alert alert-${pwBanner.type} d-flex align-items-center justify-content-between py-2 rounded-soft mb-0`} role="alert">
-                            <span>{pwBanner.text}</span>
-                            <button type="button" className="btn-close" aria-label="Close" onClick={() => setPwBanner({ type: null, text: '' })} />
-                          </div>
-                        )}
+                    {/* Stepper */}
+                    <div className="px-4 pt-3">
+                      <div className="stepper">
+                        <div className={`step-dot ${pwStep >= 1 ? 'active' : 'inactive'}`}>1</div>
+                        <div className={`step-line ${pwStep >= 2 ? 'active' : ''}`} />
+                        <div className={`step-dot ${pwStep >= 2 ? 'active' : 'inactive'}`}>2</div>
+                        <div className={`step-line ${pwStep >= 3 ? 'active' : ''}`} />
+                        <div className={`step-dot ${pwStep >= 3 ? 'active' : 'inactive'}`}>3</div>
                       </div>
 
-                      <div className="p-4">
-                        {pwStep === 1 && (
-                          <>
-                            <div className="mb-2 text-muted">
-                              سيتم إرسال رمز تحقق إلى بريدك: <span className="fw-semibold">{(form.email)}</span>
-                            </div>
-                            <div className="d-flex gap-2">
-                              <button type="button" className="btn btn-primary" onClick={sendCode} disabled={loading}>
-                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
-                                إرسال رمز التحقق
-                              </button>
-                            </div>
-                          </>
-                        )}
+                      {/* Password-section banners (persistent) */}
+                      {lastMinute && (
+                        <div className="alert alert-warning py-2 text-center rounded-soft mb-2">
+                          آخر دقيقة لاستخدام الرمز
+                        </div>
+                      )}
+                      {pwBanner.type && (
+                        <div className={`alert alert-${pwBanner.type} d-flex align-items-center justify-content-between py-2 rounded-soft mb-0`} role="alert">
+                          <span>{pwBanner.text}</span>
+                          <button type="button" className="btn-close" aria-label="Close" onClick={() => setPwBanner({ type: null, text: '' })} />
+                        </div>
+                      )}
+                    </div>
 
-                        {pwStep === 2 && (
-                          <>
-                            <div className="mb-3">
-                              <label className="form-label">رمز التحقق</label>
+                    <div className="p-4">
+                      {pwStep === 1 && (
+                        <>
+                          <div className="mb-2 text-muted">
+                            سيتم إرسال رمز تحقق إلى بريدك: <span className="fw-semibold">{(form.email)}</span>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button type="button" className="btn btn-primary" onClick={sendCode} disabled={loading}>
+                              {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
+                              إرسال رمز التحقق
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {pwStep === 2 && (
+                        <>
+                          <div className="mb-3">
+                            <label className="form-label">رمز التحقق</label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              className="form-control text-center fw-bold"
+                              style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
+                              value={code}
+                              onChange={(e) => {
+                                const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
+                                setCode(norm);
+                              }}
+                              placeholder="••••••"
+                              autoFocus
+                              disabled={loading}
+                            />
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <button type="button" className="btn btn-outline-secondary btn-sm rounded" onClick={() => setPwStep(1)} disabled={loading}>
+                              الرجوع
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-link p-0"
+                              onClick={resendCode}
+                              disabled={loading || cooldown > 0}
+                              title={cooldown > 0 ? `يمكن إعادة الإرسال بعد ${cooldown}ث` : 'إعادة إرسال الرمز'}
+                            >
+                              {cooldown > 0 ? `إعادة الإرسال (${cooldown})` : 'إعادة إرسال الرمز'}
+                            </button>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button type="button" className="btn btn-primary" onClick={verifyCode} disabled={loading || code.length !== 6}>
+                              التحقق من الرمز
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {pwStep === 3 && (
+                        <>
+                          <div className="row g-3">
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">كلمة المرور الجديدة</label>
                               <input
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={6}
-                                className="form-control text-center fw-bold"
-                                style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
-                                value={code}
-                                onChange={(e) => {
-                                  const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
-                                  setCode(norm);
-                                }}
-                                placeholder="••••••"
+                                type="password"
+                                className="form-control"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="٨ أحرف على الأقل"
+                                style={{ textTransform: 'none' }}
+                                autoCapitalize="off"
+                                autoComplete="new-password"
                                 autoFocus
                                 disabled={loading}
                               />
                             </div>
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                              <button type="button" className="btn btn-outline-secondary btn-sm rounded" onClick={() => setPwStep(1)} disabled={loading}>
-                                الرجوع
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-link p-0"
-                                onClick={resendCode}
-                                disabled={loading || cooldown > 0}
-                                title={cooldown > 0 ? `يمكن إعادة الإرسال بعد ${cooldown}ث` : 'إعادة إرسال الرمز'}
-                              >
-                                {cooldown > 0 ? `إعادة الإرسال (${cooldown})` : 'إعادة إرسال الرمز'}
-                              </button>
+                            <div className="col-12 col-md-6">
+                              <label className="form-label">تأكيد كلمة المرور</label>
+                              <input
+                                type="password"
+                                className="form-control"
+                                value={confirm}
+                                onChange={(e) => setConfirm(e.target.value)}
+                                placeholder="أعد كتابة كلمة المرور"
+                                style={{ textTransform: 'none' }}
+                                autoCapitalize="off"
+                                autoComplete="new-password"
+                                disabled={loading}
+                              />
+                              {(newPassword || confirm) && (newPassword !== confirm || newPassword.length < 8) && (
+                                <div className="text-danger small mt-1">كلمتا المرور غير متطابقتين أو قصيرة جدًا.</div>
+                              )}
                             </div>
-                            <div className="d-flex gap-2">
-                              <button type="button" className="btn btn-primary" onClick={verifyCode} disabled={loading || code.length !== 6}>
-                                التحقق من الرمز
-                              </button>
-                            </div>
-                          </>
-                        )}
-
-                        {pwStep === 3 && (
-                          <>
-                            <div className="row g-3">
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">كلمة المرور الجديدة</label>
-                                <input
-                                  type="password"
-                                  className="form-control"
-                                  value={newPassword}
-                                  onChange={(e) => setNewPassword(e.target.value)}
-                                  placeholder="٨ أحرف على الأقل"
-                                  style={{ textTransform: 'none' }}
-                                  autoCapitalize="off"
-                                  autoComplete="new-password"
-                                  autoFocus
-                                  disabled={loading}
-                                />
-                              </div>
-                              <div className="col-12 col-md-6">
-                                <label className="form-label">تأكيد كلمة المرور</label>
-                                <input
-                                  type="password"
-                                  className="form-control"
-                                  value={confirm}
-                                  onChange={(e) => setConfirm(e.target.value)}
-                                  placeholder="أعد كتابة كلمة المرور"
-                                  style={{ textTransform: 'none' }}
-                                  autoCapitalize="off"
-                                  autoComplete="new-password"
-                                  disabled={loading}
-                                />
-                                {(newPassword || confirm) && (newPassword !== confirm || newPassword.length < 8) && (
-                                  <div className="text-danger small mt-1">كلمتا المرور غير متطابقتين أو قصيرة جدًا.</div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="d-flex justify-content-between align-items-center mt-3">
-                              <button type="button" className="btn btn-outline-secondary btn-sm rounded" onClick={() => setPwStep(2)} disabled={loading}>
-                                الرجوع للتحقق
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={changePassword}
-                                disabled={loading || !(newPassword.length >= 8 && newPassword === confirm)}
-                              >
-                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
-                                تغيير كلمة المرور
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center mt-3">
+                            <button type="button" className="btn btn-outline-secondary btn-sm rounded" onClick={() => setPwStep(2)} disabled={loading}>
+                              الرجوع للتحقق
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={changePassword}
+                              disabled={loading || !(newPassword.length >= 8 && newPassword === confirm)}
+                            >
+                              {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
+                              تغيير كلمة المرور
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
