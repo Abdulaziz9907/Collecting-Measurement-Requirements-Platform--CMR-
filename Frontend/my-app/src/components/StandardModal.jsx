@@ -461,13 +461,13 @@ export default function StandardModal({
 
                     {atts.map(a => {
                       const id = a.attachment_id ?? a.Attachment_id;
-                      const path = a.filePath ?? a.FilePath ?? '';
-                      const filename = path.split('/').pop();
+                      const filename = a.fileName ?? a.FileName ?? '';
+                      const url = `${API_BASE}/api/standards/${standardId}/attachments/${id}`;
                       return (
                         <div className="d-flex align-items-start mb-2" key={id}>
                           <div className="input-group flex-grow-1">
                             <input className="form-control" type="text" value={filename} readOnly />
-                            <a className="btn btn-outline-secondary" href={`${API_BASE}/${path}`} target="_blank" rel="noreferrer">
+                            <a className="btn btn-outline-secondary" href={url} target="_blank" rel="noreferrer">
                               عرض
                             </a>
                             {canManageFiles && (
