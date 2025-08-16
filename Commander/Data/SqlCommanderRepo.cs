@@ -49,15 +49,17 @@ namespace Commander.Data
 
             var p = password; // TODO: store hashed passwords in production
             var trimmed = login.Trim();
+            var users = _context.Users.AsNoTracking();
 
+            // Queries use LINQ-to-Entities which parameterizes inputs and mitigates SQL injection
             if (int.TryParse(trimmed, out var empId))
             {
-                return _context.Users.FirstOrDefault(x =>
+                return users.FirstOrDefault(x =>
                     x.Employee_id == empId && x.Password == p);
             }
 
             var u = trimmed.ToLower();
-            return _context.Users.FirstOrDefault(x =>
+            return users.FirstOrDefault(x =>
                 (x.Username ?? "").ToLower() == u && x.Password == p);
         }
 
