@@ -34,7 +34,10 @@ export default function StandardModal({
 
   // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
+<<<<<<< HEAD
   const { language } = useLanguage();
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
 
   // ===================== تطبيع الاسم =====================
   const normalizeProof = (s = '') =>
@@ -334,6 +337,7 @@ export default function StandardModal({
   return (
     <>
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* المحتوى الخلفي يُعتم تلقائياً عند فتح مودال علوي */}
         <Modal
           show={show}
@@ -343,6 +347,9 @@ export default function StandardModal({
           dir={language === 'ar' ? 'rtl' : 'ltr'}
           contentClassName={isStacked ? 'underlay-dim-content' : undefined}
         >
+=======
+      <Modal show={show} onHide={onHide} size="lg" centered dir="rtl">
+>>>>>>> parent of 4d8be48 (UI improments)
 =======
       <Modal show={show} onHide={onHide} size="lg" centered dir="rtl">
 >>>>>>> parent of 4d8be48 (UI improments)
@@ -537,6 +544,7 @@ export default function StandardModal({
       </Modal>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Reject reason modal — topmost, darker backdrop */}
         <Modal
           show={showReject}
@@ -546,6 +554,8 @@ export default function StandardModal({
           backdropClassName="reject-backdrop stacked-backdrop"
         >
 =======
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
       {/* Reject reason modal — darker backdrop */}
       <Modal
         show={showReject}

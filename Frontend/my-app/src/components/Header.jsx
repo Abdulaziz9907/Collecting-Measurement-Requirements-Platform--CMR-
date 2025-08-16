@@ -11,6 +11,7 @@ const Header = () => {
   return (
     <nav
 <<<<<<< HEAD
+<<<<<<< HEAD
       className="navbar py-3 ps-2 ps-md-4 pe-3"
       style={{ backgroundColor: 'var(--header-bg)' }}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
@@ -19,6 +20,8 @@ const Header = () => {
         <div className="d-flex w-100 align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-2 gap-md-3 text-start">
 =======
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
       className="navbar py-3 px-3 px-md-4"
       style={{ backgroundColor: '#F5F5F5' }}
       dir="rtl"

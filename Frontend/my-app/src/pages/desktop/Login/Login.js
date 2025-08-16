@@ -17,6 +17,7 @@ export default function Login({ onLogin }) {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showCapsWarning, setShowCapsWarning] = useState(false);
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
 
@@ -26,6 +27,8 @@ export default function Login({ onLogin }) {
   const t = useTranslation();
   const { language } = useLanguage();
 
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
 =======
 >>>>>>> parent of 4d8be48 (UI improments)
   const navigate = useNavigate();
@@ -329,6 +332,7 @@ export default function Login({ onLogin }) {
               >
                 {/* LEFT TEXT COLUMN — hidden on md and below */}
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <div className={`col-lg-7 d-none d-lg-block justify-content-center p-4 rounded anim-text ${mounted ? 'in' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
                   <h1 className="mb-3 text-lg-end" style={{ color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
                   <p className="fw-light mt-4" style={{ fontSize: 25, color: 'rgba(209, 209, 209, 1)', textAlign: 'justify', lineHeight: 1.8 }}>
@@ -336,6 +340,8 @@ export default function Login({ onLogin }) {
                     تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة، وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات.
                     كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في المملكة.
 =======
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
                 <div
                   className={`col-lg-7 d-none d-lg-block justify-content-center bg-opacity-50 p-4 rounded anim-text ${mounted ? 'in' : ''}`}
                   dir="rtl" lang="ar"
@@ -359,6 +365,9 @@ export default function Login({ onLogin }) {
                     وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات. كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر
                     للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في
                     المملكة.
+<<<<<<< HEAD
+>>>>>>> parent of 4d8be48 (UI improments)
+=======
 >>>>>>> parent of 4d8be48 (UI improments)
                   </p>
                 </div>
@@ -396,10 +405,13 @@ export default function Login({ onLogin }) {
                           <div className="floating-label">
                             <input
 <<<<<<< HEAD
+<<<<<<< HEAD
                               ref={passwordRef}
                               type={showPassword ? 'text' : 'password'}
                               placeholder={t('loginPassword')}
 =======
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
                               type="password"
                               placeholder="كلمة المرور"
 >>>>>>> parent of 4d8be48 (UI improments)
@@ -415,6 +427,7 @@ export default function Login({ onLogin }) {
                               required
                               disabled={isLoading}
                             />
+<<<<<<< HEAD
 <<<<<<< HEAD
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'} field-icon`}></i>
 
@@ -438,12 +451,19 @@ export default function Login({ onLogin }) {
 =======
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'}`}></i>
 >>>>>>> parent of 4d8be48 (UI improments)
+=======
+                            <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'}`}></i>
+>>>>>>> parent of 4d8be48 (UI improments)
                           </div>
                           {showCapsWarning && (
                             <div className="caps-warning">
                               <i className="fas fa-exclamation-triangle"></i>
 <<<<<<< HEAD
+<<<<<<< HEAD
                               <span>{t('capsWarning')}</span>
+=======
+                              <span>تحذير: مفتاح Caps Lock مُفعّل</span>
+>>>>>>> parent of 4d8be48 (UI improments)
 =======
                               <span>تحذير: مفتاح Caps Lock مُفعّل</span>
 >>>>>>> parent of 4d8be48 (UI improments)
@@ -474,9 +494,12 @@ export default function Login({ onLogin }) {
                           ) : (
                             <>
 <<<<<<< HEAD
+<<<<<<< HEAD
                               <i className="fas fa-sign-in-alt" aria-hidden="true"></i>
                               <span>{t('loginButton')}</span>
 =======
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
                               <i className="fas fa-sign-in-alt"></i>
                               <span>دخول</span>
 >>>>>>> parent of 4d8be48 (UI improments)

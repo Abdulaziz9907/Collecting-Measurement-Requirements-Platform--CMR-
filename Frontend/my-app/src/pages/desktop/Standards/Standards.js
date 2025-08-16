@@ -20,8 +20,12 @@ export default function Standards() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 <<<<<<< HEAD
+<<<<<<< HEAD
   const { language } = useLanguage();
   const [useSkeleton, setUseSkeleton] = useState(true); // ← نبقيه true في كل refresh
+=======
+  const [useSkeleton, setUseSkeleton] = useState(true); // ← سنبقيه true في كل refresh
+>>>>>>> parent of 4d8be48 (UI improments)
 =======
   const [useSkeleton, setUseSkeleton] = useState(true); // ← سنبقيه true في كل refresh
 >>>>>>> parent of 4d8be48 (UI improments)

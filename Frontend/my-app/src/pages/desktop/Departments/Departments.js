@@ -18,7 +18,10 @@ export default function Departments() {
   const [loading, setLoading] = useState(true);
   const [useSkeleton, setUseSkeleton] = useState(true); // always show skeleton while loading
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+<<<<<<< HEAD
   const { language } = useLanguage();
+=======
+>>>>>>> parent of 4d8be48 (UI improments)
 
   // Delete modal state
   const [showDelete, setShowDelete] = useState(false);
