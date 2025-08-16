@@ -13,7 +13,6 @@ const map = {
   users_create: { label: 'إضافة مستخدم جديد', parent: 'users' },
   users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' },
   profile: { label: 'الملف الشخصي ' }
-
 };
 
 export default function Breadcrumbs() {
@@ -35,8 +34,34 @@ export default function Breadcrumbs() {
   }
 
   return (
-    <nav aria-label="breadcrumb" dir="rtl" className="h5">
-      <ol className="breadcrumb custom-breadcrumb px-0 py-1 small text-muted m-0">
+    <nav aria-label="breadcrumb" dir="rtl" className="breadcrumbs-nav">
+      {/* تصغير الحجم على الموبايل فقط */}
+      <style>{`
+        /* ديسكتوب (تقريبًا مثل h5) */
+        @media (min-width: 992px) {
+          .breadcrumbs-nav { font-size: 1.25rem; }
+        }
+        /* تابلت */
+        @media (min-width: 576px) and (max-width: 991.98px) {
+          .breadcrumbs-nav { font-size: 1rem; }
+        }
+        /* موبايل */
+        @media (max-width: 575.98px) {
+          .breadcrumbs-nav { font-size: 0.99rem; }
+          .breadcrumbs-nav .breadcrumb { padding-top: .125rem !important; padding-bottom: .125rem !important; }
+          .breadcrumbs-nav .breadcrumb .sep { margin: 0 .25rem !important; }
+          .breadcrumbs-nav .crumb-label {
+            display: inline-block;
+            max-width: 42vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+          }
+        }
+      `}</style>
+
+      <ol className="breadcrumb custom-breadcrumb px-0 py-1 text-muted m-0">
         {breadcrumbs.map((crumb, idx) => {
           const isLast = idx === breadcrumbs.length - 1;
           return (
@@ -46,13 +71,13 @@ export default function Breadcrumbs() {
               aria-current={isLast ? 'page' : undefined}
             >
               {!isLast ? (
-                <Link to={crumb.path} className="text-decoration-none text-muted">
+                <Link to={crumb.path} className="text-decoration-none text-muted crumb-label">
                   {crumb.label}
                 </Link>
               ) : (
-                <span>{crumb.label}</span>
+                <span className="crumb-label">{crumb.label}</span>
               )}
-              {!isLast && <span className="mx-2 text-muted">/</span>}
+              {!isLast && <span className="mx-2 text-muted sep">/</span>}
             </li>
           );
         })}

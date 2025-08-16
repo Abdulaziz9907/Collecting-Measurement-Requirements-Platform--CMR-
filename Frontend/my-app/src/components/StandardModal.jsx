@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Spinner } from 'react-bootstrap';
 
 export default function StandardModal({
   show,
   onHide,
   standardId,
   onUpdated,
-  onLocalStatusChange,   // optional: update the row in the table immediately
+  onLocalStatusChange,
 }) {
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -21,26 +21,28 @@ export default function StandardModal({
   const prevEffectiveRef = useRef(null);
   const autoDowngradedOnceRef = useRef(false);
 
+  // تحميل/خطأ + منع السباقات
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const reqIdRef = useRef(0);
+  const abortRef = useRef(null);
+
+  // مفاتيح الأنيميشن
+  const [animTick, setAnimTick] = useState(0);
+  const prevLoadingRef = useRef(false);
+
   // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
 
-  // ===================== تطبيع الاسم (مطابق للباك-إند) =====================
+  // ===================== تطبيع الاسم =====================
   const normalizeProof = (s = '') =>
-    String(s)
-      .replace(/\u060C/g, ',')   // الفاصلة العربية -> إنجليزية
-      .normalize('NFC')          // توحيد شكل المحارف
-      .replace(/\s+/g, ' ')      // طيّ المسافات المتتالية
-      .trim();
+    String(s).replace(/\u060C/g, ',').normalize('NFC').replace(/\s+/g, ' ').trim();
 
   // ---------- helpers ----------
-  // تقسيم يدعم الفاصلة المهروبة \, + التطبيع
   const parseProofs = (raw = '') => {
     const text = String(raw).replace(/،/g, ',');
     const parts = text.match(/(?:\\.|[^,])+/g) || [];
-    return parts
-      .map(s => s.replace(/\\,/g, ',')) // فكّ الفواصل المهروبة
-      .map(normalizeProof)              // ✅ تطبيع
-      .filter(Boolean);
+    return parts.map(s => s.replace(/\\,/g, ',')).map(normalizeProof).filter(Boolean);
   };
 
   const proofs = useMemo(
@@ -48,13 +50,11 @@ export default function StandardModal({
     [standard]
   );
 
-  // اجلب مرفقات عنوان معيّن بعد التطبيع على الجانبين
   const getAttachments = (name) => {
     const target = normalizeProof(name);
     return attachments.filter(a => normalizeProof(a.proof_name ?? a.Proof_name) === target);
   };
 
-  // مجموعات مطبّعة لحساب الاكتمال بثبات
   const normalizedProofs = useMemo(() => proofs.map(normalizeProof), [proofs]);
   const normalizedUploaded = useMemo(
     () => new Set(attachments.map(a => normalizeProof(a.proof_name ?? a.Proof_name))),
@@ -62,7 +62,7 @@ export default function StandardModal({
   );
 
   const hasAllProofs = useMemo(() => {
-    if (!normalizedProofs.length) return false; // "مكتمل" يتطلب على الأقل عنصرًا واحدًا
+    if (!normalizedProofs.length) return false;
     return normalizedProofs.every(p => normalizedUploaded.has(p));
   }, [normalizedProofs, normalizedUploaded]);
 
@@ -85,8 +85,6 @@ export default function StandardModal({
   };
 
   // ---------- Rejection log parsing ----------
-  // [CURRENT] latest
-  // [H]ISO_DATE|older
   const parsedReject = useMemo(() => {
     const raw = standard?.rejection_reason ?? standard?.Rejection_reason ?? '';
     if (!raw) return { current: '', history: [] };
@@ -112,23 +110,6 @@ export default function StandardModal({
   }, [standard]);
 
   // ---------- API ----------
-  const loadData = async () => {
-    if (!standardId) return;
-    try {
-      const [stdRes, attRes] = await Promise.all([
-        fetch(`${API_BASE}/api/standards/${standardId}`),
-        fetch(`${API_BASE}/api/standards/${standardId}/attachments`)
-      ]);
-      const s = stdRes.ok ? await stdRes.json() : null;
-      const atts = attRes.ok ? await attRes.json() : [];
-      setStandard(s);
-      setAttachments(atts);
-    } catch {
-      setStandard(null);
-      setAttachments([]);
-    }
-  };
-
   const buildUpdatePayload = (overrides = {}) => {
     const cur = standard || {};
     return {
@@ -160,7 +141,6 @@ export default function StandardModal({
     if (!hasAllProofs) return;
     await fetch(`${API_BASE}/api/standards/${standardId}/approve`, { method: 'POST' });
 
-    // نحذف السجل محليًا فقط عند الاعتماد (معتمد)
     setStandard(s => s ? {
       ...s,
       status: 'معتمد',
@@ -190,7 +170,7 @@ export default function StandardModal({
     if (!canManageFiles) return;
     const form = new FormData();
     form.append('file', file);
-    form.append('proofName', normalizeProof(proof)); // ✅ إرسال مطبّع
+    form.append('proofName', normalizeProof(proof));
     try {
       const res = await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { method: 'POST', body: form });
       if (!res.ok) {
@@ -224,16 +204,67 @@ export default function StandardModal({
     onUpdated && onUpdated();
   };
 
+  // ---------- load with race protection ----------
+  const loadData = async () => {
+    if (!standardId) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // تفريغ + تفعيل التحميل
+    setLoading(true);
+    setLoadError('');
+    setStandard(null);
+    setAttachments([]);
+
+    const myReqId = ++reqIdRef.current;
+    try {
+      const [stdRes, attRes] = await Promise.all([
+        fetch(`${API_BASE}/api/standards/${standardId}`, { signal: controller.signal }),
+        fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { signal: controller.signal })
+      ]);
+
+      if (myReqId !== reqIdRef.current) return;
+
+      if (!stdRes.ok) throw new Error('failed standard');
+      const s = await stdRes.json();
+
+      if (myReqId !== reqIdRef.current) return;
+
+      const atts = attRes.ok ? await attRes.json() : [];
+
+      if (myReqId !== reqIdRef.current) return;
+
+      setStandard(s);
+      setAttachments(atts);
+    } catch (e) {
+      if (e?.name === 'AbortError') return;
+      if (myReqId === reqIdRef.current) {
+        setStandard(null);
+        setAttachments([]);
+        setLoadError('تعذّر تحميل البيانات.');
+      }
+    } finally {
+      if (myReqId === reqIdRef.current) setLoading(false);
+    }
+  };
+
   // ---------- effects ----------
   useEffect(() => {
-    if (show) {
+    if (show && standardId) {
       setReason('');
       setShowReject(false);
       setNotice('');
       prevEffectiveRef.current = null;
       autoDowngradedOnceRef.current = false;
       loadData();
+    } else {
+      abortRef.current?.abort();
     }
+    return () => {
+      abortRef.current?.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, standardId]);
 
@@ -260,6 +291,15 @@ export default function StandardModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [standard, hasAllProofs, apiStatus, effectiveStatus]);
+
+  // ✅ تشغيل الأنيميشن فور انتهاء التحميل بوجود بيانات
+  useEffect(() => {
+    if (prevLoadingRef.current && !loading && standard) {
+      // انتقلنا من loading=true إلى false وبيدنا بيانات -> شغّل الأنيميشن
+      setAnimTick(t => t + 1);
+    }
+    prevLoadingRef.current = loading;
+  }, [loading, standard]);
 
   // ---------- Banner ----------
   const renderStatusBanner = () => {
@@ -297,8 +337,20 @@ export default function StandardModal({
         </Modal.Header>
 
         <Modal.Body>
-          {standard ? (
-            <div style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
+          {loading ? (
+            <div className="d-flex flex-column align-items-center justify-content-center py-5">
+              <Spinner animation="border" role="status" />
+              <div className="mt-3 text-muted">جاري التحميل...</div>
+            </div>
+          ) : loadError ? (
+            <div className="alert alert-danger mb-0">{loadError}</div>
+          ) : standard ? (
+            // ✅ المفتاح يعيد تركيب الحاوية لتشغيل الأنيميشن في كل مرة ينتهي فيها التحميل
+            <div
+              key={`content-${animTick}`}
+              className="modal-content-animated"
+              style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}
+            >
               {notice && <div className="alert alert-info py-2 mb-2">{notice}</div>}
               {renderStatusBanner()}
 
@@ -312,7 +364,6 @@ export default function StandardModal({
                 <Form.Control type="text" value={standard.standard_name ?? standard.Standard_name ?? ''} readOnly />
               </Form.Group>
 
-              {/* === الهدف كـ textarea كبيرة === */}
               <Form.Group className="mb-3">
                 <Form.Label>الهدف</Form.Label>
                 <Form.Control
@@ -325,7 +376,6 @@ export default function StandardModal({
                 />
               </Form.Group>
 
-              {/* === متطلبات التطبيق كـ textarea أكبر === */}
               <Form.Group className="mb-3">
                 <Form.Label>متطلبات التطبيق</Form.Label>
                 <Form.Control
@@ -345,16 +395,11 @@ export default function StandardModal({
                 </div>
               </Form.Group>
 
-              {/* ✅ اعرض سبب الرفض فقط عندما الحالة "غير معتمد" */}
               {effectiveStatus === 'غير معتمد' && Boolean(parsedReject.current) && (
                 <Form.Group className="mb-3">
                   <Form.Label className="text-danger d-flex justify-content-between align-items-center">
                     <span>سبب الرفض</span>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => setShowReasons(true)}
-                    >
+                    <Button variant="outline-danger" size="sm" onClick={() => setShowReasons(true)}>
                       أسباب الرفض السابقة
                     </Button>
                   </Form.Label>
@@ -370,14 +415,9 @@ export default function StandardModal({
                 </Form.Group>
               )}
 
-              {/* ✅ زر عرض السجل فقط عندما الحالة "غير معتمد" */}
               {!parsedReject.current && parsedReject.history.length > 0 && effectiveStatus === 'غير معتمد' && (
                 <div className="mb-3">
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => setShowReasons(true)}
-                  >
+                  <Button variant="outline-danger" size="sm" onClick={() => setShowReasons(true)}>
                     أسباب الرفض السابقة
                   </Button>
                 </div>
@@ -417,9 +457,7 @@ export default function StandardModal({
                       <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
                     </h6>
 
-                    {atts.length === 0 && (
-                      <div className="text-muted mb-2">لا يوجد ملفات مرفوعة لهذا المستند.</div>
-                    )}
+                    {atts.length === 0 && <div className="text-muted mb-2">لا يوجد ملفات مرفوعة لهذا المستند.</div>}
 
                     {atts.map(a => {
                       const id = a.attachment_id ?? a.Attachment_id;
@@ -433,12 +471,7 @@ export default function StandardModal({
                               عرض
                             </a>
                             {canManageFiles && (
-                              <Button
-                                variant="outline-danger"
-                                className="ms-2"
-                                size="sm"
-                                onClick={() => deleteFile(id)}
-                              >
+                              <Button variant="outline-danger" className="ms-2" size="sm" onClick={() => deleteFile(id)}>
                                 حذف
                               </Button>
                             )}
@@ -468,7 +501,7 @@ export default function StandardModal({
               })}
             </div>
           ) : (
-            <div className="text-center py-5">جاري التحميل...</div>
+            <div className="text-center py-5">لا توجد بيانات.</div>
           )}
         </Modal.Body>
 
@@ -476,15 +509,15 @@ export default function StandardModal({
           <div className="d-flex justify-content-between w-100">
             {showActionButtons && (
               <div className="d-flex">
-                <Button variant="success" onClick={approve} disabled={!hasAllProofs}>
+                <Button variant="success" onClick={approve} disabled={loading || !hasAllProofs}>
                   معتمد
                 </Button>
-                <Button variant="danger" className="ms-2" onClick={() => setShowReject(true)}>
+                <Button variant="danger" className="ms-2" onClick={() => setShowReject(true)} disabled={loading}>
                   غير معتمد
                 </Button>
               </div>
             )}
-            <Button variant="secondary" onClick={onHide}>إغلاق</Button>
+            <Button variant="secondary" onClick={onHide} disabled={loading}>إغلاق</Button>
           </div>
         </Modal.Footer>
       </Modal>
@@ -513,7 +546,7 @@ export default function StandardModal({
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="danger" onClick={reject}>إرسال</Button>
+          <Button variant="danger" onClick={reject} disabled={loading}>إرسال</Button>
         </Modal.Footer>
       </Modal>
 
@@ -548,14 +581,39 @@ export default function StandardModal({
 
       <style>{`
         .drag-over { background-color: #f0f8ff; border: 2px dashed #007bff; }
+
         /* Darker backdrop only for the reject modal */
         .modal-backdrop.reject-backdrop.show {
           opacity: 0.85 !important;
           background-color: #000 !important;
         }
+
         .proof-title {
           overflow-wrap: anywhere;
           word-break: break-word;
+        }
+
+        /* ======= فتح أنيق وسريع بعد التحميل ======= */
+        .modal-content-animated {
+          animation: modalPop .22s cubic-bezier(.22,.61,.36,1) both;
+          will-change: transform, opacity, filter;
+        }
+        @keyframes modalPop {
+          from {
+            transform: translateY(8px) scale(.985);
+            opacity: 0;
+            filter: blur(1.2px);
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            filter: none;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .modal-content-animated {
+            animation: none !important;
+          }
         }
       `}</style>
     </>
