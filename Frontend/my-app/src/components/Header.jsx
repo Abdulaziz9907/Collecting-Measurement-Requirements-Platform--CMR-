@@ -5,15 +5,15 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 const Header = () => {
   return (
     <nav
-      className="navbar py-3 px-3 px-md-4"
+      className="navbar py-3 ps-2 ps-md-4 pe-3"  // start=right in RTL
       style={{ backgroundColor: '#F5F5F5' }}
       dir="rtl"
     >
-      <div className="container-fluid">
-        {/* Flex row: center on mobile, start on md+ */}
-        <div className="d-flex w-100 align-items-center justify-content-center justify-content-md-start">
+      <div className="container-fluid ps-0 pe-0 pe-md-3">
+        {/* Mobile: RIGHT (start in RTL), md+: start */}
+        <div className="d-flex w-100 align-items-center justify-content-start">
           {/* Brand group */}
-          <div className="d-flex align-items-center gap-2 gap-md-3 mx-auto mx-md-0 text-center text-md-start">
+          <div className="d-flex align-items-center gap-2 gap-md-3 text-start">
             {/* Mobile (xs–sm): logo-only */}
             <img
               src="/assets/img/logo-only.png"

@@ -19,6 +19,20 @@ export default function Departments() {
   const [useSkeleton, setUseSkeleton] = useState(true); // always show skeleton while loading
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
+  // NEW: detect mobile to adjust dropdown behavior like Standards page
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 576px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', update);
+      else mq.removeListener(update);
+    };
+  }, []);
+
   // Delete modal state
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -94,6 +108,12 @@ export default function Departments() {
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
+
+      /* --- Mobile-friendly dropdown sizing like Standards --- */
+      .dropdown-menu { max-height: 50vh; overflow:auto; min-width: 220px; }
+      @media (max-width: 576px) {
+        .dropdown-menu { max-width: calc(100vw - 2rem); min-width: auto; }
+      }
     `}</style>
   );
 
@@ -115,6 +135,16 @@ export default function Departments() {
       </Popover.Body>
     </Popover>
   );
+
+  // Popper config shared with Standards (prevents overflow + allows flip)
+  const dropdownPopper = useMemo(() => ({
+    strategy: 'fixed',
+    modifiers: [
+      { name: 'offset', options: { offset: [0, 8] } },
+      { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
+      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
+    ],
+  }), []);
 
   // Auto-hide banner after 5s
   useEffect(() => {
@@ -288,8 +318,32 @@ export default function Departments() {
       </tr>
     ));
 
+  // --- Check if department has Admin users linked (prevents delete) ---
+  const hasAdminInDepartment = async (departmentId) => {
+    try {
+      let res = await fetch(`${API_BASE}/api/users?departmentId=${departmentId}&role=admin`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/users?departmentId=${departmentId}`);
+      if (!res.ok) return false;
+
+      const users = await res.json();
+      if (!Array.isArray(users)) return false;
+
+      return users.some(u => String(u?.role || '').toLowerCase() === 'admin' || String(u?.role || '').toLowerCase() === 'administrator');
+    } catch {
+      return false;
+    }
+  };
+
   // Delete handlers
-  const handleDeleteClick = (id, name) => {
+  const handleDeleteClick = async (id, name) => {
+    const blocked = await hasAdminInDepartment(id);
+    if (blocked) {
+      setBanner({
+        type: 'danger',
+        text: 'لا يمكن حذف الجهة لأنها مرتبطة بمستخدم لديه دور "Admin". يرجى  نقل المستخدم أولاً.'
+      });
+      return;
+    }
     setDeleteId(id);
     setDeleteName(name || '');
     setShowDelete(true);
@@ -297,15 +351,31 @@ export default function Departments() {
 
   const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE}/api/departments/${deleteId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/departments/${deleteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setShowDelete(false);
+        setDeleteId(null);
+        setDeleteName('');
+        await refreshData(); // skeleton on refresh
+      } else {
+        if (res.status === 409 || res.status === 400 || res.status === 422) {
+          setShowDelete(false);
+          setBanner({
+            type: 'danger',
+            text: 'تعذّر الحذف: الجهة مرتبطة بمستخدم لديه دور "Admin".'
+          });
+        } else {
+          setShowDelete(false);
+          setBanner({ type: 'danger', text: 'تعذّر الحذف حالياً. حاول لاحقاً.' });
+        }
+      }
+    } catch {
       setShowDelete(false);
-      setDeleteId(null);
-      setDeleteName('');
-      await refreshData(); // skeleton on refresh
-    } catch {}
+      setBanner({ type: 'danger', text: 'حدث خطأ أثناء عملية الحذف.' });
+    }
   };
 
-  // Export to Excel (admins)
+  // Export to Excel (admins) — disabled while loading/not ready/no rows
   const exportToExcel = () => {
     const exportData = filteredData.map(item => ({
       'اسم الجهة': item?.department_name || '',
@@ -344,7 +414,6 @@ export default function Departments() {
         return;
       }
 
-      // Flexible headers
       const headerMap = buildHeaderMap(rows[0]);
       const missing = ['اسم الجهة','رقم المبنى'].filter(k => !headerMap.get(k));
       if (missing.length) {
@@ -355,7 +424,6 @@ export default function Departments() {
         return;
       }
 
-      // existing normalized names from DB
       const existingNames = new Set((data || []).map(d => normalizeName(d?.department_name)));
       const batchSeen = new Set();
 
@@ -368,7 +436,6 @@ export default function Departments() {
         const department_name = String(nameRaw).trim();
         const building_number = normalizeInt(bnumRaw);
 
-        // Incomplete/invalid rows
         if (!department_name || !Number.isFinite(building_number)) {
           skipped++;
           continue;
@@ -377,7 +444,6 @@ export default function Departments() {
         const norm = normalizeName(department_name);
         if (!norm) { skipped++; continue; }
 
-        // Duplicate checks (existing or within-file)
         if (existingNames.has(norm) || batchSeen.has(norm)) {
           dup++;
           continue;
@@ -413,6 +479,8 @@ export default function Departments() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || !filteredData.length;
 
   return (
     <>
@@ -452,11 +520,30 @@ export default function Departments() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                           />
 
-                          <Dropdown autoClose="outside" align="end" flip={false}>
-                            <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
-                            <Dropdown.Menu renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
+                          {/* Building filter dropdown — now mobile-friendly like Standards */}
+                          <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
+                            <Dropdown.Toggle
+                              size="sm"
+                              variant="outline-secondary"
+                              data-bs-display="static"
+                            >
+                              المبنى
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu
+                              renderOnMount
+                              popperConfig={dropdownPopper}
+                              style={{
+                                maxHeight: isMobile ? '60vh' : 320,
+                                overflowY: 'auto',
+                                maxWidth: 'calc(100vw - 2rem)'
+                              }}
+                            >
                               {uniqueBuildings.map((num, idx) => (
-                                <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                <label
+                                  key={idx}
+                                  className="dropdown-item d-flex align-items-center gap-2 m-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <input
                                     type="checkbox"
                                     className="form-check-input m-0"
@@ -466,6 +553,9 @@ export default function Departments() {
                                   <span className="form-check-label">{num}</span>
                                 </label>
                               ))}
+                              {!uniqueBuildings.length && (
+                                <div className="dropdown-item text-muted small">لا توجد أرقام مبانٍ</div>
+                              )}
                             </Dropdown.Menu>
                           </Dropdown>
 
@@ -473,7 +563,14 @@ export default function Departments() {
 
                           {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                             <>
-                              <button className="btn btn-success btn-sm" onClick={exportToExcel}>
+                              {/* Export Excel (disabled until fully loaded) */}
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={exportToExcel}
+                                disabled={exportDisabled}
+                                aria-disabled={exportDisabled}
+                                title={exportDisabled ? 'انتظر اكتمال التحميل أو لا توجد بيانات' : 'تصدير Excel'}
+                              >
                                 <i className="fas fa-file-excel ms-1" /> تصدير Excel
                               </button>
 
@@ -501,13 +598,14 @@ export default function Departments() {
                                 )}
                               </button>
 
-                              {/* Download template + help popover */}
+                              {/* Download template + help popover — click on mobile, hover/focus on desktop */}
                               <OverlayTrigger
                                 placement="bottom"
                                 delay={{ show: 200, hide: 100 }}
                                 overlay={popTemplateHelp}
-                                popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}
-                                trigger={['hover', 'focus']}
+                                popperConfig={dropdownPopper}
+                                trigger={isMobile ? ['click'] : ['hover', 'focus']}
+                                rootClose
                               >
                                 <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel} aria-label="تحميل القالب مع التعليمات">
                                   <i className="fas fa-download ms-1" /> تحميل القالب
@@ -595,11 +693,16 @@ export default function Departments() {
                       {/* Footer: page size + pagination */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
-                          <Dropdown align="start">
-                            <Dropdown.Toggle size="sm" variant="outline-secondary">
+                          {/* Page size dropdown — now mobile-friendly like Standards */}
+                          <Dropdown align="start" flip={isMobile}>
+                            <Dropdown.Toggle size="sm" variant="outline-secondary" data-bs-display="static">
                               عدد الصفوف: {isAll ? 'الكل' : pageSize}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu>
+                            <Dropdown.Menu
+                              renderOnMount
+                              popperConfig={dropdownPopper}
+                              style={{ maxWidth: 'calc(100vw - 2rem)' }}
+                            >
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item
                                   key={opt}
@@ -641,7 +744,7 @@ export default function Departments() {
         onHide={() => setShowDelete(false)}
         onConfirm={confirmDelete}
         subject={`«${deleteName || 'هذه الجهة'}»`}
-        cascadeNote="قد يؤدي هذا إلى حذف أي مستخدمين أو معايير مرتبطة بهذه الجهة."
+        cascadeNote="ملاحظة: لا يمكن حذف الجهة إذا كانت مرتبطة بمستخدم بدور Admin."
         requireText={deleteName}
       />
     </>
