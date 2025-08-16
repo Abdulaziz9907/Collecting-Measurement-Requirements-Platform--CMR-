@@ -111,10 +111,13 @@ namespace Commander
                 endpoints.MapControllers();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 // SPA fallback only if you actually copied the React build into wwwroot/build
                 if (buildExists)
                     endpoints.MapFallbackToFile("build/index.html");
 =======
+=======
+>>>>>>> parent of 8980f75 (local)
                 // SPA fallback to React index.html inside wwwroot/build (if it exists).
                 if (buildExists)
                 {
