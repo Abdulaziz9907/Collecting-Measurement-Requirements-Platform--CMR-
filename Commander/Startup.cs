@@ -22,7 +22,7 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Resolve connection string from multiple possible sources.
+            // --------- DB Connection ----------
             string conn =
                 Configuration["ConnectionStrings:DBConnection"] ??
                 Configuration.GetConnectionString("DBConnection") ??
@@ -57,68 +57,62 @@ namespace Commander
             services.AddScoped<IAttachmentRepo, SqlAttachmentRepo>();
             services.AddTransient<IEmailService, MailjetEmailService>();
 
-            services.AddCors(opts =>
+            // --------- CORS for React dev on :3000 ----------
+            services.AddCors(options =>
             {
-                opts.AddPolicy("AllowAll", b => b
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader());
+                options.AddPolicy("ReactDev", builder =>
+                    builder
+                        .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                // .AllowCredentials() // enable only if you're using cookies-based auth
+                );
             });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, InterfaceContext context)
         {
-            // Apply pending EF Core migrations on startup.
+            // Apply pending EF Core migrations on startup (optional: wrap in try/catch)
             context.Database.Migrate();
 
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                // IMPORTANT: do NOT force HTTPS in Development (preflight OPTIONS cannot follow redirects)
+                // So we intentionally skip app.UseHttpsRedirection() here.
+            }
+            else
+            {
+                app.UseHttpsRedirection();
             }
 
-            app.UseHttpsRedirection();
-
-            // Serve static files from wwwroot (e.g., uploads, images).
+            // Serve any static files you may have in wwwroot (uploads/images)
             app.UseStaticFiles();
 
-            // Serve the React build from wwwroot/build at the root URL ("/") if present.
+            // If you also keep a built React app in wwwroot/build, you can serve it too (optional)
             var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
             var buildExists = Directory.Exists(buildPath);
-
             if (buildExists)
             {
                 var buildProvider = new PhysicalFileProvider(buildPath);
-
-                app.UseDefaultFiles(new DefaultFilesOptions
-                {
-                    FileProvider = buildProvider,
-                    RequestPath = string.Empty
-                });
-
-                app.UseStaticFiles(new StaticFileOptions
-                {
-                    FileProvider = buildProvider,
-                    RequestPath = string.Empty
-                });
+                app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = buildProvider });
+                app.UseStaticFiles(new StaticFileOptions { FileProvider = buildProvider });
             }
 
             app.UseRouting();
-            app.UseCors("AllowAll");
+
+            // CORS must be after UseRouting and before endpoints
+            app.UseCors("ReactDev");
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
-                // API routes
                 endpoints.MapControllers();
 
+                // SPA fallback only if you actually copied the React build into wwwroot/build
                 if (buildExists)
-                {
                     endpoints.MapFallbackToFile("build/index.html");
-                }
-                else
-                {
-                    endpoints.MapFallbackToFile("index.html");
-                }
             });
         }
     }
