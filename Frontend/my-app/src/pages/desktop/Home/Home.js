@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Spinner } from 'react-bootstrap';
+import "./assets/bootstrap/css/bootstrap.min.css";
 import "./assets/fonts/fontawesome-all.min.css";
 import "./assets/css/bss-overrides.css";
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
-import { useLanguage } from '../../../context/LanguageContext';
 
 export default function Home() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -174,11 +174,9 @@ export default function Home() {
     { key: 'rejected',   label: 'غير معتمد', value: summary.rejected,   color: summaryCardColors.rejected,   pct: pct(summary.rejected,  summary.total) },
   ]), [summary, summaryCardColors]);
 
-  const { language } = useLanguage();
-
   return (
     <div
-      dir={language === 'ar' ? 'rtl' : 'ltr'}
+      dir="rtl"
       style={{
         fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
         display: 'flex',

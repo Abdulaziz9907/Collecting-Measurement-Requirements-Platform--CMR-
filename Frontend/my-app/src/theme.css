@@ -10,8 +10,7 @@
   box-shadow: var(--panel-shadow);
   border-radius: 14px;
   overflow: hidden;
-  background: var(--panel-bg);
-  color: var(--text-color);
+  background: #fff;
 }
 
 .panel-header {

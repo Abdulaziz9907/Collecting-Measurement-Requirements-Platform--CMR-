@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
-import useTranslation from '../hooks/useTranslation';
-import { useLanguage } from '../context/LanguageContext';
 
 export default function DeleteModal({
   show,
@@ -33,8 +31,6 @@ export default function DeleteModal({
 
   const needsCount = Number.isFinite(requireCount) && requireCount > 0;
   const needsText  = typeof requireText === 'string' && requireText.trim().length > 0;
-  const t = useTranslation();
-  const { language } = useLanguage();
 
   let canConfirm = true;
   if (needsCount) {
@@ -45,14 +41,14 @@ export default function DeleteModal({
   }
 
   return (
-    <Modal show={show} onHide={onHide} centered dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <Modal show={show} onHide={onHide} centered dir="rtl">
       <Modal.Header className="bg-danger text-white">
-        <Modal.Title>{t('deleteConfirmTitle')}</Modal.Title>
+        <Modal.Title>تأكيد الحذف</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
         <p className="mb-2">
-          {t('deleteConfirmMsg1')} <strong>{subject}</strong>{t('deleteConfirmMsg2')}
+          هل أنت متأكد أنك تريد حذف <strong>{subject}</strong>؟ هذا الإجراء لا يمكن التراجع عنه.
         </p>
 
         {hasCascade && (
@@ -99,16 +95,16 @@ export default function DeleteModal({
 
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
-          {t('cancel')}
+          إلغاء
         </Button>
         <Button
           variant="danger"
           id="confirmDelete"
           onClick={onConfirm}
           disabled={!(canConfirm)}
-          title={needsCount ? t('deleteConfirmMsg1') : needsText ? t('deleteConfirmMsg1') : t('delete')}
+          title={needsCount ? 'اكتب العدد الصحيح لتفعيل الحذف' : (needsText ? 'اكتب النص لتفعيل الحذف' : 'حذف')}
         >
-          {t('delete')}
+          حذف
         </Button>
       </Modal.Footer>
     </Modal>
