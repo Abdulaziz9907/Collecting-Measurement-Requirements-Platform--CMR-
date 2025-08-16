@@ -350,6 +350,9 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="8 أحرف على الأقل"
+                  style={{ textTransform: 'none' }}
+                  autoCapitalize="off"
+                  autoComplete="new-password"
                   disabled={loading}
                   autoFocus
                   className="rounded-3"
@@ -366,6 +369,9 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="أعد إدخال كلمة المرور"
+                  style={{ textTransform: 'none' }}
+                  autoCapitalize="off"
+                  autoComplete="new-password"
                   disabled={loading}
                   className="rounded-3"
                 />

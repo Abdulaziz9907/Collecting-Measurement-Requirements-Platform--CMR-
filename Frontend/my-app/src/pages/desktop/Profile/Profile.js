@@ -589,6 +589,9 @@ export default function Profile() {
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="٨ أحرف على الأقل"
+                                style={{ textTransform: 'none' }}
+                                autoCapitalize="off"
+                                autoComplete="new-password"
                                 autoFocus
                                 disabled={loading}
                               />
@@ -601,6 +604,9 @@ export default function Profile() {
                                 value={confirm}
                                 onChange={(e) => setConfirm(e.target.value)}
                                 placeholder="أعد كتابة كلمة المرور"
+                                style={{ textTransform: 'none' }}
+                                autoCapitalize="off"
+                                autoComplete="new-password"
                                 disabled={loading}
                               />
                               {(newPassword || confirm) && (newPassword !== confirm || newPassword.length < 8) && (

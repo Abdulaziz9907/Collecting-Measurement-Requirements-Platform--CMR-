@@ -296,6 +296,9 @@ export default function Login({ onLogin }) {
                               placeholder="كلمة المرور"
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
+                              style={{ textTransform: 'none' }}
+                              autoCapitalize="off"
+                              autoComplete="current-password"
                               required
                               disabled={isLoading}
                             />

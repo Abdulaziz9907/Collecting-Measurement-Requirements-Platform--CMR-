@@ -376,6 +376,9 @@ export default function UsersEdit() {
                               type="password"
                               className="form-control"
                               name="password"
+                              style={{ textTransform: 'none' }}
+                              autoCapitalize="off"
+                              autoComplete="new-password"
                               required
                               defaultValue={user?.password || ''}
                             />

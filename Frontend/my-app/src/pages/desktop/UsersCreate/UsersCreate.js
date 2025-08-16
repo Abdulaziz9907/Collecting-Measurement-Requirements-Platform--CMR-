@@ -225,7 +225,7 @@ export default function UsersCreate() {
 
                         <div className="mb-3">
                           <label className="form-label">كلمة المرور</label>
-                          <input type="password" className="form-control" name="password" required />
+                          <input type="password" className="form-control" name="password" style={{ textTransform: 'none' }} autoCapitalize="off" autoComplete="new-password" required />
                           <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
                         </div>
 
