@@ -11,3 +11,15 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Ensure password inputs preserve the user's casing */
+input[type="password"] {
+  text-transform: none !important;
+}
+
+/* Consistent styling for all update/refresh buttons */
+.btn-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem; /* matches Bootstrap gap-2 */
+}

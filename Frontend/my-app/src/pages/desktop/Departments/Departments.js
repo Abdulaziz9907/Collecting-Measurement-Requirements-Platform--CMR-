@@ -522,7 +522,7 @@ export default function Departments() {
                             <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>
                           )}
                           <button
-                            className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+                            className="btn btn-outline-primary btn-sm btn-update"
                             onClick={refreshData}
                             title="تحديث"
                           >

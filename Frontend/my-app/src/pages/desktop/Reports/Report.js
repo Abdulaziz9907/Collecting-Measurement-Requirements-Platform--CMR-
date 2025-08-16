@@ -741,7 +741,11 @@ export default function Report() {
                               <i className="fas fa-file-excel ms-1" /> تصدير Excel
                             </button>
                           )}
-                          <button className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2" onClick={loadData} title="تحديث البيانات">
+                          <button
+                            className="btn btn-outline-primary btn-sm btn-update"
+                            onClick={loadData}
+                            title="تحديث البيانات"
+                          >
                             <i className="fas fa-rotate-right" />
                             تحديث
                             {loading && (
