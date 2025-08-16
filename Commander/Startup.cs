@@ -111,15 +111,12 @@ namespace Commander
                 // API routes
                 endpoints.MapControllers();
 
-                // SPA fallback to React index.html inside wwwroot/build (if it exists).
                 if (buildExists)
                 {
-                    // Path is relative to WebRoot (wwwroot)
                     endpoints.MapFallbackToFile("build/index.html");
                 }
                 else
                 {
-                    // Fallback to any index at wwwroot if build not present (optional).
                     endpoints.MapFallbackToFile("index.html");
                 }
             });

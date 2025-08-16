@@ -92,16 +92,14 @@ namespace Commander.Controllers
             return "تحت العمل";
         }
 
-        // ===== Rejection log helpers (no new endpoints/tables; store inside Rejection_reason) =====
+        // ===== Rejection log helpers  =====
         private struct RejectLogEntry
         {
             public DateTime At;
             public string Reason;
         }
 
-        // Format kept inside one text column:
-        // [CURRENT] <latest reason>
-        // [H]2025-08-13T11:22:33.4567890Z|older reason
+
         private static (string current, List<RejectLogEntry> history) ParseRejectLog(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
@@ -131,7 +129,6 @@ namespace Commander.Controllers
                 }
                 else
                 {
-                    // legacy plain string => treat as current
                     if (string.IsNullOrEmpty(current))
                         current = line;
                     else
@@ -220,7 +217,6 @@ namespace Commander.Controllers
                 ParseProofs(existing.Proof_required),
                 StringComparer.OrdinalIgnoreCase);
 
-            // Apply incoming changes
             existing.Standard_number = dto.Standard_number;
             existing.Standard_name = dto.Standard_name;
             existing.Standard_goal = dto.Standard_goal;
@@ -228,8 +224,6 @@ namespace Commander.Controllers
             existing.Assigned_department_id = dto.Assigned_department_id;
             existing.Proof_required = dto.Proof_required;
 
-            // Allow client to set Status normally (e.g., non-approved states)
-            // but we may override it below for the downgrade rule.
             existing.Status = dto.Status;
 
             // --- Downgrade rule for "معتمد"
@@ -245,7 +239,6 @@ namespace Commander.Controllers
                 if (addedProof || !stillComplete)
                 {
                     existing.Status = "تحت العمل";
-                    // existing.Rejection_reason = null; // keep logs untouched
                 }
                 else
                 {
@@ -287,13 +280,11 @@ namespace Commander.Controllers
             var existing = _repository.GetStandardById(id);
             if (existing == null) return NotFound();
 
-            // Optional hardening: only approve when complete
             if (!IsComplete(existing))
             {
                 return BadRequest("لا يمكن اعتماد المعيار قبل استكمال جميع مستندات الإثبات المطلوبة.");
             }
 
-            // Move current reject reason to history (if any) and clear current
             var (current, hist) = ParseRejectLog(existing.Rejection_reason);
             if (!string.IsNullOrWhiteSpace(current))
             {
@@ -314,7 +305,6 @@ namespace Commander.Controllers
             var existing = _repository.GetStandardById(id);
             if (existing == null) return NotFound();
 
-            // Append previous CURRENT (if any) to history, then set new CURRENT (do NOT double log)
             var (current, hist) = ParseRejectLog(existing.Rejection_reason);
             if (!string.IsNullOrWhiteSpace(current))
                 hist.Add(new RejectLogEntry { At = DateTime.UtcNow, Reason = current });
@@ -330,7 +320,6 @@ namespace Commander.Controllers
             return NoContent();
         }
 
-        // NEW: simple status setter to support frontend fallback calls
         public class StatusChangeDto
         {
             public string Status { get; set; }
@@ -345,7 +334,6 @@ namespace Commander.Controllers
 
             var newStatus = (body?.Status ?? "").Trim();
 
-            // Optional hardening again for "معتمد"
             if (string.Equals(newStatus, "معتمد", StringComparison.OrdinalIgnoreCase) && !IsComplete(existing))
             {
                 return BadRequest("لا يمكن اعتماد المعيار قبل استكمال جميع مستندات الإثبات المطلوبة.");
