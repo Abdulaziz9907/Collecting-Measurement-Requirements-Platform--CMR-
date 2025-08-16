@@ -197,7 +197,7 @@ export default function StandardsEdit() {
     // 1) Validate رقم المعيار format (accept Arabic/ASCII digits & separators)
     const standardNumRaw = (form.standard_num.value || '').trim();
     const standardNumNorm = normalizeStandardNumber(standardNumRaw);
-    const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
+    const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F0-\u06F9]+$/u;
     const isStandardNumValid = STD_RE.test(standardNumRaw);
 
     if (!form.checkValidity() || !isStandardNumValid) {
@@ -438,7 +438,7 @@ export default function StandardsEdit() {
                               defaultValue={standard?.standard_number || ''}
                               onChange={onStdNumChange}
                               // Accept Arabic/ASCII digits & separators
-                              pattern="[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+"
+                              pattern="[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F0-\u06F9]+"
                               required
                             />
                             <div className="invalid-feedback">
@@ -492,7 +492,7 @@ export default function StandardsEdit() {
                               id="scope"
                               name="scope"
                               required
-                              value={standard?.assigned_department_id || ''}
+                              value={standard?.assigned_department_id ?? ''}
                               onChange={e =>
                                 setStandard(prev => ({
                                   ...prev,
@@ -552,7 +552,7 @@ export default function StandardsEdit() {
                             );
                           })}
 
-                          <button type="button" className="btn btn-light mb-3" onClick={addAttachment}>
+                          <button type="button" className="btn btn-light mb-3" onClick={() => setProofRequired(prev => [...prev, ''])}>
                             إضافة مستند إثبات
                           </button>
 
