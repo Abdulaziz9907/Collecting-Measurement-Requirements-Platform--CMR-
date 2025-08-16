@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -10,6 +9,7 @@ import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
 import DeleteModal from '../../../components/DeleteModal.jsx';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -19,22 +19,17 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
+<<<<<<< HEAD
+  const { language } = useLanguage();
   const [useSkeleton, setUseSkeleton] = useState(true); // ← نبقيه true في كل refresh
+=======
+  const [useSkeleton, setUseSkeleton] = useState(true); // ← سنبقيه true في كل refresh
+>>>>>>> parent of 4d8be48 (UI improments)
+=======
+  const [useSkeleton, setUseSkeleton] = useState(true); // ← سنبقيه true في كل refresh
+>>>>>>> parent of 4d8be48 (UI improments)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  // NEW: تحسّس عرض الشاشة لضبط سلوك القوائم على الجوال
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 576px)');
-    const update = () => setIsMobile(mq.matches);
-    update();
-    if (mq.addEventListener) mq.addEventListener('change', update);
-    else mq.addListener(update);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', update);
-      else mq.removeListener(update);
-    };
-  }, []);
 
   // Modal (تفاصيل + سياسة رفع/حذف المرفقات)
   const [showModal, setShowModal] = useState(false);
@@ -160,7 +155,7 @@ export default function Standards() {
 
   /* === Popover يشبه الأمثلة المطلوبة === */
   const popTemplateHelp = (
-    <Popover id="pop-template-help" dir="rtl">
+    <Popover id="pop-template-help" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <Popover.Header as="h6">طريقة استخدام قالب المعايير</Popover.Header>
       <Popover.Body>
         <div className="small text-muted mb-2">
@@ -184,21 +179,12 @@ export default function Standards() {
     return () => clearTimeout(t);
   }, [banner.type]);
 
-  // Popper config للقوائم المنسدلة/Popover — يسمح بالـ flip ويمنع الخروج عن الشاشة
-  const dropdownPopper = useMemo(() => ({
-    strategy: 'fixed',
-    modifiers: [
-      { name: 'offset', options: { offset: [0, 8] } },
-      { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
-      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
-    ],
-  }), []);
-
   // === refreshData: نظهر السكيلتون في كل refresh ===
   const refreshData = async (mode = 'skeleton') => {
-    setUseSkeleton(true);          // نظهر السكيلتون دائمًا أثناء التحميل
-    setLoading(true);
+    // نظهر السكيلتون دائمًا أثناء التحميل
+    setUseSkeleton(true);
 
+    setLoading(true);
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
@@ -383,11 +369,11 @@ export default function Standards() {
 
   const hasPageData = paginatedData.length > 0;
 
-  // === Skeleton control
+  // === Skeleton control: أثناء التحميل نعرض بالضبط pageSize صفوف سكيلتون (أو 15 عند "الكل") ===
   const skeletonMode = loading && useSkeleton;
   const skeletonCount = isAll ? 15 : numericPageSize;
 
-  // === Filler rows when NOT loading
+  // === Filler rows when NOT loading (to keep exact height = pageSize) ===
   const baseRowsCount = hasPageData ? paginatedData.length : 1; // واحد لصف "لا توجد نتائج"
   const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
 
@@ -415,9 +401,7 @@ export default function Standards() {
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  // PREVENT EXPORT WHILE LOADING
   const exportToExcel = () => {
-    if (loading) return; // حراسة إضافية
     const exportData = filteredData.map(item => ({
       'رقم المعيار': item.standard_number,
       'اسم المعيار': item.standard_name,
@@ -692,7 +676,7 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir={language === 'ar' ? 'rtl' : 'ltr'} style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
         <Header />
 
         {banner.type && (
@@ -726,14 +710,9 @@ export default function Standards() {
                           />
                           {user?.role?.toLowerCase?.() !== 'user' && (
                             <>
-                              {/* الحالة */}
-                              <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
+                              <Dropdown autoClose="outside" align="end" flip={false}>
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">الحالة</Dropdown.Toggle>
-                                <Dropdown.Menu
-                                  renderOnMount
-                                  popperConfig={dropdownPopper}
-                                  style={{ maxWidth: 'calc(100vw - 2rem)' }}
-                                >
+                                <Dropdown.Menu renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
                                       <input type="checkbox" className="form-check-input m-0" checked={statusFilter.includes(status)} onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)} />
@@ -743,18 +722,9 @@ export default function Standards() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* الإدارة */}
-                              <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
+                              <Dropdown autoClose="outside" align="end" flip={false}>
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
-                                <Dropdown.Menu
-                                  renderOnMount
-                                  popperConfig={dropdownPopper}
-                                  style={{
-                                    maxHeight: isMobile ? '60vh' : 320,
-                                    overflowY: 'auto',
-                                    maxWidth: 'calc(100vw - 2rem)'
-                                  }}
-                                >
+                                <Dropdown.Menu style={{ maxHeight: 320, overflowY: 'auto' }} renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
                                   {uniqueDepartments.map((dep, idx) => (
                                     <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
                                       <input className="form-check-input m-0" type="checkbox" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
@@ -766,15 +736,8 @@ export default function Standards() {
 
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
 
-                              {/* تصدير Excel — مع تعطيل أثناء التحميل */}
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={exportToExcel}
-                                  disabled={loading || skeletonMode}
-                                  title={loading ? 'جاري التحميل… انتظر حتى يكتمل لتمكين التصدير' : 'تصدير Excel'}
-                                  aria-disabled={loading || skeletonMode}
-                                >
+                                <button className="btn btn-success btn-sm" onClick={exportToExcel}>
                                   <i className="fas fa-file-excel ms-1" /> تصدير Excel
                                 </button>
                               )}
@@ -804,13 +767,13 @@ export default function Standards() {
                                     )}
                                   </button>
 
-                                  {/* زر تحميل القالب مع Popover — على الجوال يعمل بالنقر */}
+                                  {/* زر تحميل القالب مع Popover تعليمي بنفس أسلوب الأمثلة */}
                                   <OverlayTrigger
                                     placement="bottom"
                                     delay={{ show: 200, hide: 100 }}
                                     overlay={popTemplateHelp}
-                                    popperConfig={dropdownPopper}
-                                    trigger={isMobile ? ['click'] : ['hover', 'focus']}
+                                    popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}
+                                    trigger={['hover', 'focus']}
                                   >
                                     <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
                                       <i className="fas fa-download ms-1" /> تحميل القالب
@@ -976,11 +939,11 @@ export default function Standards() {
 
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
-                          <Dropdown align="start" flip={isMobile}>
+                          <Dropdown align="start">
                             <Dropdown.Toggle size="sm" variant="outline-secondary">
                               عدد الصفوف: {isAll ? 'الكل' : pageSize}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
+                            <Dropdown.Menu>
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item
                                   key={opt}
