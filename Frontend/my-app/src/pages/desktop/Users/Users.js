@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -210,20 +211,13 @@ export default function Users() {
       </tr>
     ));
 
-  const confirmDelete = async () => {
-    try {
-      await fetch(`${API_BASE}/api/users/${deleteId}`, { method: 'DELETE' });
-      setShowDelete(false);
-      await refreshData(); // سكيلتون بعد الحذف
-    } catch {}
-  };
+  // ==== التعديلات المطلوبة فقط ====
 
-  const handleDeleteClick = (empId) => {
-    setDeleteId(empId);
-    setShowDelete(true);
-  };
+  // 1) منع التصدير أثناء التحميل/السكيلتون/لا توجد نتائج
+  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || filteredUsers.length === 0;
 
   const exportToExcel = () => {
+    if (exportDisabled) return; // حارس
     const exportData = filteredUsers.map(u => {
       const dep = departments.find(d => d?.department_id === u?.department_id)?.department_name || '';
       return {
@@ -239,6 +233,27 @@ export default function Users() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'المستخدمون');
     XLSX.writeFile(wb, 'المستخدمون.xlsx');
+  };
+
+  // 2) منع حذف مستخدم بدور Admin
+  const isAdminRole = (role) => String(role || '').toLowerCase() === 'admin';
+
+  const confirmDelete = async () => {
+    if (deleteId == null) return;
+    const target = users.find(u => u?.employee_id === deleteId);
+    if (target && isAdminRole(target.role)) { setShowDelete(false); return; }
+    try {
+      await fetch(`${API_BASE}/api/users/${deleteId}`, { method: 'DELETE' });
+      setShowDelete(false);
+      await refreshData(); // سكيلتون بعد الحذف
+    } catch {}
+  };
+
+  const handleDeleteClick = (empId) => {
+    const target = users.find(u => u?.employee_id === empId);
+    if (target && isAdminRole(target.role)) return;
+    setDeleteId(empId);
+    setShowDelete(true);
   };
 
   return (
@@ -315,8 +330,14 @@ export default function Users() {
                               </Dropdown>
 
                               <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
+
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                                <button className="btn btn-success btn-sm" onClick={exportToExcel}>
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={exportToExcel}
+                                  disabled={exportDisabled}         /* ✅ منع التصدير أثناء التحميل */
+                                  title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'}
+                                >
                                   <i className="fas fa-file-excel ms-1" /> تصدير Excel
                                 </button>
                               )}
@@ -367,6 +388,7 @@ export default function Users() {
                             ) : hasPageData ? (
                               paginatedUsers.map(u => {
                                 const depName = departments.find(d => d?.department_id === u?.department_id)?.department_name;
+                                const isAdmin = isAdminRole(u?.role); // ✅ منع حذف Admin + تبديل الأيقونة
                                 return (
                                   <tr key={u?.employee_id}>
                                     <td>{u?.employee_id}</td>
@@ -383,8 +405,13 @@ export default function Users() {
                                           </button>
                                         </td>
                                         <td>
-                                          <button className="btn btn-link p-0 text-danger" onClick={() => handleDeleteClick(u?.employee_id)}>
-                                            <i className="fas fa-times" />
+                                          <button
+                                            className="btn btn-link p-0 text-danger"
+                                            onClick={() => !isAdmin && handleDeleteClick(u?.employee_id)}
+                                            disabled={isAdmin}            /* ✅ زر حذف معطّل إن كان Admin */
+                                            title={isAdmin ? 'لا يمكن حذف مستخدم Admin' : 'حذف'}
+                                          >
+                                            <i className={`fas ${isAdmin ? 'fa-lock' : 'fa-times'}`} />
                                           </button>
                                         </td>
                                       </>
