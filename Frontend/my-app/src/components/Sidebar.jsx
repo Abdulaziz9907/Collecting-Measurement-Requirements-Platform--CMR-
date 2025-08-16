@@ -10,10 +10,14 @@ import {
   faHome,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
+import useTranslation from '../hooks/useTranslation';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const location = useLocation();
+  const t = useTranslation();
+  const { language } = useLanguage();
 
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const role = user?.role?.trim().toLowerCase();
@@ -21,27 +25,27 @@ export default function Sidebar() {
 
   if (role === 'admin' || role === 'administrator') {
     navItems = [
-      { href: '/home', icon: faHome, label: 'الرئيسية' },
-      { href: '/standards', icon: faList, label: 'معايير التحول' },
-      { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
-      { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
-      { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
-      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
+      { href: '/home', icon: faHome, label: t('home') },
+      { href: '/standards', icon: faList, label: t('standards') },
+      { href: '/reports', icon: faChartPie, label: t('reports') },
+      { href: '/users', icon: faUsers, label: t('users') },
+      { href: '/departments', icon: faSitemap, label: t('departments') },
+      { href: '/profile', icon: faUser, label: t('profile') },
+      { href: '/', icon: faArrowRightFromBracket, label: t('logout'), onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   } else if (role === 'user') {
     navItems = [
-      { href: '/home', icon: faHome, label: 'الرئيسية' },
-      { href: '/standards', icon: faList, label: 'معايير التحول' },
-      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
+      { href: '/home', icon: faHome, label: t('home') },
+      { href: '/standards', icon: faList, label: t('standards') },
+      { href: '/profile', icon: faUser, label: t('profile') },
+      { href: '/', icon: faArrowRightFromBracket, label: t('logout'), onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   } else if (role === 'management') {
     navItems = [
-      { href: '/home', icon: faHome, label: 'الرئيسية' },
-      { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
-      { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => localStorage.removeItem('user'), isLogout: true },
+      { href: '/home', icon: faHome, label: t('home') },
+      { href: '/reports', icon: faChartPie, label: t('reports') },
+      { href: '/profile', icon: faUser, label: t('profile') },
+      { href: '/', icon: faArrowRightFromBracket, label: t('logout'), onClick: () => localStorage.removeItem('user'), isLogout: true },
     ];
   }
 
@@ -78,7 +82,7 @@ export default function Sidebar() {
   const barColor = sidebarVisible ? '#fff' : '#495057';
 
   return (
-    <>
+      <div dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Mobile Overlay */}
       {sidebarVisible && (
         <div
@@ -252,6 +256,6 @@ export default function Sidebar() {
 
         }
       `}</style>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -9,6 +8,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import * as XLSX from 'xlsx';
 import DeleteModal from '../../../components/DeleteModal.jsx';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -18,6 +18,7 @@ export default function Departments() {
   const [loading, setLoading] = useState(true);
   const [useSkeleton, setUseSkeleton] = useState(true); // always show skeleton while loading
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const { language } = useLanguage();
 
   // NEW: detect mobile to adjust dropdown behavior like Standards page
   const [isMobile, setIsMobile] = useState(false);
@@ -119,7 +120,7 @@ export default function Departments() {
 
   /* ===== Popover: تعليمات استخدام قالب الجهات ===== */
   const popTemplateHelp = (
-    <Popover id="pop-dept-template" dir="rtl">
+    <Popover id="pop-dept-template" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <Popover.Header as="h6">طريقة استخدام قالب الجهات</Popover.Header>
       <Popover.Body>
         <div className="small text-muted mb-2">
@@ -485,7 +486,7 @@ export default function Departments() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir={language === 'ar' ? 'rtl' : 'ltr'} style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
         <Header />
 
         {/* Auto-hiding banner */}

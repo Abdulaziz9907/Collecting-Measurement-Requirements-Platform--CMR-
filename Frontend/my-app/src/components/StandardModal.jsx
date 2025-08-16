@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function StandardModal({
   show,
@@ -33,6 +34,7 @@ export default function StandardModal({
 
   // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
+  const { language } = useLanguage();
 
   // هل لدينا مودال مكدّس (أعلى المودال الحالي)؟
   const isStacked = showReject || showReasons;
@@ -334,14 +336,14 @@ export default function StandardModal({
   return (
     <>
       {/* المحتوى الخلفي يُعتم تلقائياً عند فتح مودال علوي */}
-      <Modal
-        show={show}
-        onHide={onHide}
-        size="lg"
-        centered
-        dir="rtl"
-        contentClassName={isStacked ? 'underlay-dim-content' : undefined}
-      >
+        <Modal
+          show={show}
+          onHide={onHide}
+          size="lg"
+          centered
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          contentClassName={isStacked ? 'underlay-dim-content' : undefined}
+        >
         <Modal.Header>
           <Modal.Title>تفاصيل المعيار</Modal.Title>
         </Modal.Header>
@@ -533,13 +535,13 @@ export default function StandardModal({
       </Modal>
 
       {/* Reject reason modal — topmost, darker backdrop */}
-      <Modal
-        show={showReject}
-        onHide={() => setShowReject(false)}
-        centered
-        dir="rtl"
-        backdropClassName="reject-backdrop stacked-backdrop"
-      >
+        <Modal
+          show={showReject}
+          onHide={() => setShowReject(false)}
+          centered
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          backdropClassName="reject-backdrop stacked-backdrop"
+        >
         <Modal.Header closeButton>
           <Modal.Title>سبب الرفض</Modal.Title>
         </Modal.Header>

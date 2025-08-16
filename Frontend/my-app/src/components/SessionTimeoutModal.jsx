@@ -1,31 +1,35 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
+import useTranslation from '../hooks/useTranslation';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SessionTimeoutModal({ show, timeLeft, onStay, onLogout }) {
   const m = Math.floor(Math.max(0, timeLeft) / 60);
   const s = Math.max(0, timeLeft) % 60;
   const formatted = `${m}:${s.toString().padStart(2, '0')}`;
+  const t = useTranslation();
+  const { language } = useLanguage();
 
   return (
     <>
       <Modal
         show={show}
-        backdrop="static"     // لا تُغلق بالضغط خارج
-        keyboard={false}      // لا تُغلق بـ ESC
+        backdrop="static"
+        keyboard={false}
         centered
-        dir="rtl"
-        animation={false}     // نستخدم أنيميشننا الخاص
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        animation={false}
         dialogClassName="session-pop"
       >
         <Modal.Header>
-          <Modal.Title>انتهاء الجلسة</Modal.Title>
+          <Modal.Title>{t('sessionTimeoutTitle')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          سيتم تسجيل خروجك تلقائيًا خلال {formatted} بسبب عدم النشاط.
+          {t('sessionTimeoutBody')} {formatted} {t('sessionTimeoutBodyTail')}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onLogout}>تسجيل الخروج الآن</Button>
-          <Button variant="primary" onClick={onStay}>متابعة الجلسة</Button>
+          <Button variant="secondary" onClick={onLogout}>{t('sessionLogoutNow')}</Button>
+          <Button variant="primary" onClick={onStay}>{t('sessionStay')}</Button>
         </Modal.Footer>
       </Modal>
 
