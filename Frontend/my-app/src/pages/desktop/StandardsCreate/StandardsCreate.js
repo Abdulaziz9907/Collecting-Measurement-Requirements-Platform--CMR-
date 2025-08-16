@@ -298,6 +298,7 @@ export default function StandardsCreate() {
                             className={`form-control ${stdError ? 'is-invalid' : ''}`}
                             id="standard_num"
                             name="standard_num"
+                            inputMode="text"
                             onChange={onStdNumChange}
                             pattern="[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+"
                             required

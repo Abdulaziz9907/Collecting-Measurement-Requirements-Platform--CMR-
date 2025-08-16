@@ -745,12 +745,15 @@ export default function Report() {
                             className="btn btn-outline-primary btn-sm btn-update"
                             onClick={loadData}
                             title="تحديث البيانات"
+                            disabled={loading}
+                            aria-busy={loading}
                           >
-                            <i className="fas fa-rotate-right" />
-                            تحديث
-                            {loading && (
-                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                            {loading ? (
+                              <span className="spinner-border spinner-border-sm ms-1" />
+                            ) : (
+                              <i className="fas fa-rotate-right" />
                             )}
+                            تحديث
                           </button>
                         </div>
                       </div>

@@ -15,5 +15,6 @@ namespace Commander.Data
 
         User? AuthenticateUser(string login, string password);
         User? GetUserByLoginAndEmail(string login, string email);
+        User? GetUserByUsername(string username);
     }
 }

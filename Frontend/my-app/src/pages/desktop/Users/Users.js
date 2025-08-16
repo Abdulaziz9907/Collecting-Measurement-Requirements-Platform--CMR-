@@ -333,8 +333,14 @@ export default function Users() {
                             className="btn btn-outline-primary btn-sm btn-update"
                             onClick={refreshData}
                             title="تحديث"
+                            disabled={loading}
+                            aria-busy={loading}
                           >
-                            <i className="fas fa-rotate-right" />
+                            {loading ? (
+                              <span className="spinner-border spinner-border-sm ms-1" />
+                            ) : (
+                              <i className="fas fa-rotate-right" />
+                            )}
                             تحديث
                           </button>
                         </div>

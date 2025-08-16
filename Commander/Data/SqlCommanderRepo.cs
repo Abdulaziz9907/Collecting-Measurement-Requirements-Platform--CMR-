@@ -85,6 +85,16 @@ namespace Commander.Data
                 (x.Email ?? "").ToLower() == e);
         }
 
+        public User? GetUserByUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
+
+            var u = username.Trim();
+            return _context.Users.AsNoTracking().FirstOrDefault(x =>
+                EF.Functions.Collate(x.Username ?? "", "SQL_Latin1_General_CP1_CS_AS") == u);
+        }
+
 
     }
 }
