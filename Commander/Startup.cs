@@ -122,14 +122,16 @@ namespace Commander
                 if (buildExists)
                 {
                     // Path is relative to WebRoot (wwwroot)
+                    // Path is relative to WebRoot (wwwroot)
                     endpoints.MapFallbackToFile("build/index.html");
                 }
                 else
                 {
                     // Fallback to any index at wwwroot if build not present (optional).
+                    // Fallback to any index at wwwroot if build not present (optional).
                     endpoints.MapFallbackToFile("index.html");
                 }
->>>>>>> parent of 8980f75 (local)
+>>>>>>> parent of 8980f75(local)
             });
         }
     }
