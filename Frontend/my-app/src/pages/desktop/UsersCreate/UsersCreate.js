@@ -112,8 +112,7 @@ export default function UsersCreate() {
     const payload = {
       employee_id: parseInt(empRaw, 10),
       username,
-      // Preserve password exactly as typed; no trimming or case changes
-      password: form.password.value || '',
+      password: (form.password.value || '').trim(),
       first_name: (form.first_name.value || '').trim(),
       last_name: (form.last_name.value || '').trim(),
       email: (form.email.value || '').trim() || null,

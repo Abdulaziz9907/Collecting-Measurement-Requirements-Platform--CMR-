@@ -224,8 +224,7 @@ export default function UsersEdit() {
     const payload = {
       employee_id: newEmpNum,
       username: newUsername,
-      // Preserve password exactly as entered without trimming or casing changes
-      password: form.password.value || '',
+      password: (form.password.value || '').trim(),
       first_name: (form.first_name.value || '').trim(),
       last_name: (form.last_name.value || '').trim(),
       email: (form.email.value || '').trim() || null,
