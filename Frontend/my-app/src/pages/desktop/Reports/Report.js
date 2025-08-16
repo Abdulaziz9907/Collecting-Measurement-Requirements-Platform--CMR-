@@ -62,7 +62,7 @@ export default function Report() {
   });
 
   const [sortKey, setSortKey] = useState('progressRate');
-  const [sortDir, setSortDir] = useState('desc');
+   const [sortDir, setSortDir] = useState('desc');
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const USERS_ENDPOINT = `${API_BASE}/api/users`;
@@ -131,6 +131,12 @@ export default function Report() {
 
       .chart-wrap-md { height: 280px; }
       .chart-wrap-lg { height: 300px; }
+      /* Taller wrappers for mobile clipping fix */
+      .chart-wrap-md.tall { height: 340px; }
+      @media (max-width: 576px) {
+        .chart-wrap-md { height: 320px; }
+        .chart-wrap-md.tall { height: 380px; }
+      }
 
       .legend-inline { position:absolute; top:8px; inset-inline-start:12px; display:flex; gap:8px; flex-wrap:wrap; }
       .legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; color: var(--text); }
@@ -144,7 +150,7 @@ export default function Report() {
       /* table */
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
       .table-card .head { padding:12px 16px; border-bottom:1px solid var(--stroke); background: var(--surface-muted); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
-      .table-card .body { padding: 16px 16px 0; } /* bottom flush */
+      .table-card .body { padding: 16px 16px 0; }
       .table thead th { cursor: pointer; white-space: nowrap; }
 
       .dropdown-menu { --bs-dropdown-link-hover-bg: #f1f5f9; --bs-dropdown-link-active-bg: #e2e8f0; }
@@ -453,7 +459,12 @@ export default function Report() {
     return `${yyyy}-${MM}-${DD}_${HH}-${mm}-${ss}`;
   };
 
+  // Prevent export while loading / not ready
+  const readyForExport = !loading && hasLoadedOnce && !error && (standardsRaw?.length ?? 0) > 0;
+
   const exportToExcel = () => {
+    if (!readyForExport) return; // guard
+
     const now = riyadhNow();
     const gDate = formatGregorian(now);
     const hDate = hijriFormat(now);
@@ -485,7 +496,7 @@ export default function Report() {
       ['غير معتمد', totals.rejected],
     ];
     const wsMeta = XLSX.utils.aoa_to_sheet(metaAOA);
-    wsMeta['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }]; // merge title
+    wsMeta['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
     wsMeta['!cols'] = [{ wch: 28 }, { wch: 50 }];
     XLSX.utils.book_append_sheet(wb, wsMeta, 'تفاصيل التصدير');
 
@@ -493,7 +504,7 @@ export default function Report() {
     const deptHeader = ['الإدارة','المجموع','مكتمل','معتمد','تحت العمل','لم يبدأ','غير معتمد','المتبقي','نسبة التقدم (%)'];
     const deptAOA = [deptHeader];
     sortedStats.forEach((d, i) => {
-      const r = i + 2; // row number in Excel (1-based, header at 1)
+      const r = i + 2;
       deptAOA.push([
         d.department,
         d.total,
@@ -511,19 +522,10 @@ export default function Report() {
     wsDept['!autofilter'] = { ref: `A1:${excelCol(deptHeader.length - 1)}${deptAOA.length}` };
     XLSX.utils.book_append_sheet(wb, wsDept, 'الإدارات (تفصيلي)');
 
-    // 3) Standards details (respect selected departments)
+    // 3) Standards details
     const headersStd = [
-      'ID',
-      'العنوان/الاسم',
-      'الحالة (أصلي)',
-      'الحالة (موحدة)',
-      'الإدارة (ID)',
-      'الإدارة',
-      'تاريخ الإنشاء (UTC)',
-      'تاريخ الإنشاء (الرياض)',
-      'آخر تحديث (UTC)',
-      'آخر تحديث (الرياض)',
-      'الوصف'
+      'ID','العنوان/الاسم','الحالة (أصلي)','الحالة (موحدة)','الإدارة (ID)','الإدارة',
+      'تاريخ الإنشاء (UTC)','تاريخ الإنشاء (الرياض)','آخر تحديث (UTC)','آخر تحديث (الرياض)','الوصف'
     ];
     const isDeptSelected = selectedDepartments.length > 0;
     const stdRows = [];
@@ -544,12 +546,7 @@ export default function Report() {
       const desc = s.description ?? s.notes ?? '';
 
       stdRows.push([
-        id,
-        title,
-        statusOriginal,
-        statusUnified,
-        depId,
-        depName,
+        id, title, statusOriginal, statusUnified, depId, depName,
         createdUTC ? new Date(createdUTC).toISOString() : '',
         createdRiyadh,
         updatedUTC ? new Date(updatedUTC).toISOString() : '',
@@ -593,7 +590,6 @@ export default function Report() {
     wsMonthly['!autofilter'] = { ref: `A1:${excelCol(headersMonthly.length - 1)}${monthlyRows.length + 1}` };
     XLSX.utils.book_append_sheet(wb, wsMonthly, 'الزمن الشهري');
 
-    // Save with Riyadh timestamp in name
     const fileTs = formatGregorianFile(now);
     XLSX.writeFile(wb, `تقرير_الإدارات_${fileTs}.xlsx`);
   };
@@ -609,8 +605,7 @@ export default function Report() {
         <ul className="mb-0 ps-3">
           <li>يُحتسب فقط ما تم اعتماده رسميًا.</li>
           <li>المعايير المكتملة لا تُحتسب ضمن النسبة.</li>
-          <li>مفيد لرصد الإنجاز الفعلي   .</li>
-
+          <li>مفيد لرصد الإنجاز الفعلي.</li>
         </ul>
       </Popover.Body>
     </Popover>
@@ -663,7 +658,7 @@ export default function Report() {
                         </div>
 
                         <div className="head-actions">
-                          {/* Departments dropdown */}
+                          {/* Departments dropdown (default behavior) */}
                           <Dropdown autoClose="outside" align="end" flip={false}>
                             <Dropdown.Toggle variant="outline-secondary" size="sm">
                               {selectedDepartments.length === 0
@@ -737,7 +732,13 @@ export default function Report() {
 
                           {/* Export + Refresh */}
                           {['admin', 'administrator'].includes(user?.role?.toLowerCase?.()) && (
-                            <button className="btn btn-success btn-sm" onClick={exportToExcel} title="تصدير Excel (XLSX)">
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={exportToExcel}
+                              title={readyForExport ? 'تصدير Excel (XLSX)' : 'التصدير غير متاح حتى يكتمل التحميل'}
+                              disabled={!readyForExport}
+                              aria-disabled={!readyForExport}
+                            >
                               <i className="fas fa-file-excel ms-1" /> تصدير Excel
                             </button>
                           )}
@@ -891,7 +892,7 @@ export default function Report() {
                         ) : error ? (
                           <div className="text-center py-4 text-danger">{error}</div>
                         ) : (
-                          <div className="chart-wrap-md">
+                          <div className="chart-wrap-md tall">
                             <Pie
                               data={statusPieData}
                               options={{
@@ -913,7 +914,7 @@ export default function Report() {
                         {loading ? (
                           <div className="skeleton skeleton-block" />
                         ) : (
-                          <div className="chart-wrap-md d-flex align-items-center">
+                          <div className="chart-wrap-md tall d-flex align-items-center">
                             <div className="w-100">
                               <div className="stats-grid">
                                 <div className="mini-stat">

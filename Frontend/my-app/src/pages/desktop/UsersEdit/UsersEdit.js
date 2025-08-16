@@ -25,13 +25,18 @@ export default function UsersEdit() {
   const [employeeIdError, setEmployeeIdError] = useState('');
   const employeeIdRef = useRef(null);
 
+  const originalRoleRef = useRef(''); // lock Admin if original role is admin
+
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
   // Normalize Arabic/ASCII digits to ASCII
   const normalizeDigits = (str = '') => {
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    const map = {
+      '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'
+    };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const toSevenDigitNumber = (val) => {
@@ -100,6 +105,7 @@ export default function UsersEdit() {
           depRes.json(), userRes.json(), usersRes.json()
         ]);
         if (isMounted) {
+          originalRoleRef.current = String(userData?.role || '').toLowerCase();
           setDepartments(Array.isArray(depData) ? depData : []);
           setUser(userData || null);
           setAllUsers(Array.isArray(usersData) ? usersData : []);
@@ -108,6 +114,7 @@ export default function UsersEdit() {
         }
       } catch {
         if (isMounted) {
+          originalRoleRef.current = '';
           setDepartments([]);
           setUser(null);
           setAllUsers([]);
@@ -218,19 +225,27 @@ export default function UsersEdit() {
 
     setIsSubmitting(true);
 
-    // IMPORTANT: Use original employee_id in the URL so the backend can locate the record,
+    // Use original employee_id in the URL so the backend can locate the record,
     // and send the new employee_id in the payload (to update it).
     const originalEmpId = user?.employee_id;
+
+    const newPassword = form.password ? (form.password.value || '').trim() : '';
+    const selectedRole = form.role ? (form.role.value || '').trim() : (user?.role || '').trim();
+    const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock if originally admin
+    const finalRole = isAdminOriginal ? 'Admin' : selectedRole;
+
     const payload = {
       employee_id: newEmpNum,
       username: newUsername,
-      password: (form.password.value || '').trim(),
       first_name: (form.first_name.value || '').trim(),
       last_name: (form.last_name.value || '').trim(),
       email: (form.email.value || '').trim() || null,
-      role: (form.role.value || '').trim(),
+      role: finalRole,
       department_id: parseInt(form.department.value, 10)
     };
+
+    // Only include password if provided (and there is a password field)
+    if (newPassword) payload.password = newPassword;
 
     try {
       const res = await fetch(`${API_BASE}/api/users/${originalEmpId}`, {
@@ -275,6 +290,10 @@ export default function UsersEdit() {
       setIsSubmitting(false);
     }
   };
+
+  // UI logic:
+  const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock role select if true
+  const isAdminNow = ((user?.role || '').toLowerCase() === 'admin'); // for password visibility
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
@@ -370,20 +389,23 @@ export default function UsersEdit() {
                             </div>
                           </div>
 
-                          <div className="mb-3">
-                            <label className="form-label">كلمة المرور</label>
-                            <input
-                              type="password"
-                              className="form-control"
-                              name="password"
-                              style={{ textTransform: 'none' }}
-                              autoCapitalize="off"
-                              autoComplete="new-password"
-                              required
-                              defaultValue={user?.password || ''}
-                            />
-                            <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
-                          </div>
+                          {/* Password — hidden whenever current selection is Admin */}
+                          {!isAdminNow && (
+                            <div className="mb-3">
+                              <label className="form-label">كلمة المرور</label>
+                              <input
+                                type="password"
+                                className="form-control"
+                                name="password"
+                                style={{ textTransform: 'none' }}
+                                autoCapitalize="off"
+                                autoComplete="new-password"
+                                required
+                                defaultValue={user?.password || ''}
+                              />
+                              <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
+                            </div>
+                          )}
 
                           <div className="mb-3">
                             <label className="form-label">الاسم الأول</label>
@@ -408,13 +430,18 @@ export default function UsersEdit() {
                               className="form-select"
                               name="role"
                               required
-                              defaultValue={user?.role || ''}
-                              onChange={e => setUser(prev => ({ ...prev, role: e.target.value }))}
+                              value={user?.role || ''}
+                              onChange={e => setUser(prev => ({ ...(prev || {}), role: e.target.value }))}
+                              disabled={isAdminOriginal} // 🔒 lock if originally Admin
                             >
                               <option value="">اختر الدور...</option>
                               <option value="User">User</option>
                               <option value="Management">Management</option>
+                              <option value="Admin">Admin</option>
                             </select>
+                            {isAdminOriginal && (
+                              <small className="text-muted d-block mt-1">لا يمكن تعديل دور مدير النظام.</small>
+                            )}
                             <div className="invalid-feedback">يرجى تحديد الدور</div>
                           </div>
 
@@ -425,7 +452,7 @@ export default function UsersEdit() {
                               name="department"
                               required
                               value={user?.department_id || ''}
-                              onChange={e => setUser(prev => ({ ...prev, department_id: parseInt(e.target.value, 10) }))}
+                              onChange={e => setUser(prev => ({ ...(prev || {}), department_id: parseInt(e.target.value, 10) }))}
                             >
                               <option value="">اختر الإدارة...</option>
                               {departments.map(d => (
