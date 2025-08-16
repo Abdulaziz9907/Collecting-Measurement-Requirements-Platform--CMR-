@@ -12,14 +12,55 @@ export default function Login({ onLogin }) {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+  const [showCapsWarning, setShowCapsWarning] = useState(false);
   const navigate = useNavigate();
-  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
+  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(/\/+$/, '');
 
   useEffect(() => {
     // شغّل الأنيميشن بعد التركيب مباشرةً
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
+
+  // Check caps lock state on component mount
+  useEffect(() => {
+    const checkInitialCapsLock = (e) => {
+      if (e.getModifierState) {
+        const capsLock = e.getModifierState('CapsLock');
+        setCapsLockOn(capsLock);
+      }
+    };
+
+    // Add event listener to detect initial caps lock state
+    document.addEventListener('keydown', checkInitialCapsLock);
+    document.addEventListener('keyup', checkInitialCapsLock);
+    
+    return () => {
+      document.removeEventListener('keydown', checkInitialCapsLock);
+      document.removeEventListener('keyup', checkInitialCapsLock);
+    };
+  }, []);
+
+  // Caps Lock detection function
+  const detectCapsLock = (event) => {
+    const capsLock = event.getModifierState && event.getModifierState('CapsLock');
+    setCapsLockOn(capsLock);
+    
+    // Only show warning when focused on password field and caps lock is on
+    if (event.target.type === 'password') {
+      setShowCapsWarning(capsLock);
+    }
+  };
+
+  const handlePasswordFocus = (event) => {
+    detectCapsLock(event);
+    setShowCapsWarning(capsLockOn);
+  };
+
+  const handlePasswordBlur = () => {
+    setShowCapsWarning(false);
+  };
 
   const normalizeDigits = (s) => {
     const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -75,6 +116,11 @@ export default function Login({ onLogin }) {
         @keyframes fadeUp {
           0%   { opacity: 0; transform: translateY(18px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0% { opacity: 0.7; }
+          50% { opacity: 1; }
+          100% { opacity: 0.7; }
         }
         .anim-text,
         .anim-card {
@@ -139,6 +185,10 @@ export default function Login({ onLogin }) {
 
         .welcome-text { color: rgba(5, 0, 53, 1); }
 
+        .floating-label {
+          position: relative;
+        }
+
         .floating-label input {
           background: var(--input-bg);
           border: 2px solid var(--input-border);
@@ -154,6 +204,29 @@ export default function Login({ onLogin }) {
         .floating-label i {
           position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
           color: var(--primary-color); transition: color 0.3s ease;
+        }
+
+        /* Caps Lock Warning Styles */
+        .caps-warning {
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 6px;
+          color: #856404;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.85rem;
+          margin-top: 0.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          animation: pulse 2s infinite;
+          text-align: right;
+          direction: rtl;
+        }
+
+        .caps-warning i {
+          color: #f39c12;
+          position: static !important;
+          transform: none !important;
         }
 
         .global-error-message {
@@ -211,6 +284,11 @@ export default function Login({ onLogin }) {
             font-size: 0.95rem;
             padding: 0.7rem 1rem;
             border-radius: 12px;
+          }
+
+          .caps-warning {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
           }
         }
       `}</style>
@@ -282,6 +360,8 @@ export default function Login({ onLogin }) {
                               placeholder="اسم المستخدم"
                               value={username}
                               onChange={(e) => setUsername(e.target.value)}
+                              onKeyDown={detectCapsLock}
+                              onKeyUp={detectCapsLock}
                               required
                               disabled={isLoading}
                             />
@@ -296,6 +376,10 @@ export default function Login({ onLogin }) {
                               placeholder="كلمة المرور"
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
+                              onKeyDown={detectCapsLock}
+                              onKeyUp={detectCapsLock}
+                              onFocus={handlePasswordFocus}
+                              onBlur={handlePasswordBlur}
                               style={{ textTransform: 'none' }}
                               autoCapitalize="off"
                               autoComplete="current-password"
@@ -304,6 +388,12 @@ export default function Login({ onLogin }) {
                             />
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'}`}></i>
                           </div>
+                          {showCapsWarning && (
+                            <div className="caps-warning">
+                              <i className="fas fa-exclamation-triangle"></i>
+                              <span>تحذير: مفتاح Caps Lock مُفعّل</span>
+                            </div>
+                          )}
                         </div>
 
                         {hasError && <div className="global-error-message">{message}</div>}

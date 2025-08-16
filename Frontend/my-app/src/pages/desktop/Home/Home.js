@@ -332,11 +332,16 @@ export default function Home() {
                           aria-busy={loading}
                         >
                           {loading ? (
-                            <span className="spinner-border spinner-border-sm ms-1" />
+                            <>
+                              <Spinner size="sm" animation="border" role="status" className="ms-2" />
+                               تحديث
+                            </>
                           ) : (
-                            <i className="fas fa-rotate-right" />
+                            <>
+                              <i className="fas fa-rotate-right" />
+                              تحديث
+                            </>
                           )}
-                          تحديث
                         </button>
                       </div>
                     </div>
@@ -362,19 +367,7 @@ export default function Home() {
                         <div className="text-center py-5">
                           <div className="mb-2" style={{ fontSize: '1.15rem', fontWeight: 700 }}>لا توجد معايير حتى الآن</div>
                           <div className="muted mb-3">يرجى إضافة معايير جديدة للبدأ.</div>
-                          <button
-                            className="btn btn-outline-primary btn-sm btn-update"
-                            onClick={loadData}
-                            disabled={loading}
-                            aria-busy={loading}
-                          >
-                            {loading ? (
-                              <span className="spinner-border spinner-border-sm ms-1" />
-                            ) : (
-                              <i className="fas fa-rotate-right" />
-                            )}
-                            تحديث
-                          </button>
+                          <button className="btn btn-outline-primary" onClick={loadData}>تحديث</button>
                         </div>
                       )}
 
