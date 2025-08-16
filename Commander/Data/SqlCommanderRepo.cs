@@ -57,9 +57,9 @@ namespace Commander.Data
                     EF.Functions.Collate(x.Password, "SQL_Latin1_General_CP1_CS_AS") == p);
             }
 
-            var u = trimmed.ToLower();
+            var u = trimmed;
             return _context.Users.FirstOrDefault(x =>
-                (x.Username ?? "").ToLower() == u &&
+                EF.Functions.Collate(x.Username ?? "", "SQL_Latin1_General_CP1_CS_AS") == u &&
                 EF.Functions.Collate(x.Password, "SQL_Latin1_General_CP1_CS_AS") == p);
         }
 
@@ -79,10 +79,20 @@ namespace Commander.Data
                     (x.Email ?? "").ToLower() == e);
             }
 
-            var u = trimmed.ToLower();
+            var u = trimmed;
             return query.FirstOrDefault(x =>
-                (x.Username ?? "").ToLower() == u &&
+                EF.Functions.Collate(x.Username ?? "", "SQL_Latin1_General_CP1_CS_AS") == u &&
                 (x.Email ?? "").ToLower() == e);
+        }
+
+        public User? GetUserByUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
+
+            var u = username.Trim();
+            return _context.Users.AsNoTracking().FirstOrDefault(x =>
+                EF.Functions.Collate(x.Username ?? "", "SQL_Latin1_General_CP1_CS_AS") == u);
         }
 
 

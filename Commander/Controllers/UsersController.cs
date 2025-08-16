@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using AutoMapper;
 using Commander.Data;
@@ -69,7 +70,12 @@ namespace Commander.Controllers
         [HttpPost]
         public ActionResult<UserReadDto> CreateUser(UserCreateDto userCreateDto)
         {
+            var username = NormalizeDigits(userCreateDto.Username).Trim();
+            if (_repository.GetUserByUsername(username) != null)
+                return Conflict(new { message = "Username already exists." });
+
             var userModel = _mapper.Map<User>(userCreateDto);
+            userModel.Username = username;
             _repository.CreateUser(userModel);
             _repository.SaveChanges();
 
@@ -85,7 +91,16 @@ namespace Commander.Controllers
             if (userModelFromRepo == null)
                 return NotFound();
 
+            var newUsername = NormalizeDigits(userUpdateDto.Username).Trim();
+            if (!string.Equals(userModelFromRepo.Username, newUsername, StringComparison.Ordinal))
+            {
+                var existing = _repository.GetUserByUsername(newUsername);
+                if (existing != null && existing.Id != userModelFromRepo.Id)
+                    return Conflict(new { message = "Username already exists." });
+            }
+
             _mapper.Map(userUpdateDto, userModelFromRepo);
+            userModelFromRepo.Username = newUsername;
             _repository.UpdateUser(userModelFromRepo);
             _repository.SaveChanges();
 
@@ -106,7 +121,16 @@ namespace Commander.Controllers
             if (!TryValidateModel(userToPatch))
                 return ValidationProblem(ModelState);
 
+            var newUsername = NormalizeDigits(userToPatch.Username).Trim();
+            if (!string.Equals(userModelFromRepo.Username, newUsername, StringComparison.Ordinal))
+            {
+                var existing = _repository.GetUserByUsername(newUsername);
+                if (existing != null && existing.Id != userModelFromRepo.Id)
+                    return Conflict(new { message = "Username already exists." });
+            }
+
             _mapper.Map(userToPatch, userModelFromRepo);
+            userModelFromRepo.Username = newUsername;
             _repository.UpdateUser(userModelFromRepo);
             _repository.SaveChanges();
 

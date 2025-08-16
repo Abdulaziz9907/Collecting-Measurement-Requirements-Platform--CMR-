@@ -130,12 +130,12 @@ export default function UsersEdit() {
 
   // Duplicate helpers
   const isUsernameDuplicate = (name) => {
-    const trimmed = (name || '').trim().toLowerCase();
+    const trimmed = (name || '').trim();
     if (!trimmed) return false;
     const currentEmp = user?.employee_id;
     return (allUsers || []).some(u =>
       u?.employee_id !== currentEmp &&
-      (u?.username || '').trim().toLowerCase() === trimmed
+      (u?.username || '').trim() === trimmed
     );
   };
   const isEmployeeIdDuplicate = (val) => {
