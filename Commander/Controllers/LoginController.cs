@@ -31,6 +31,7 @@ namespace Commander.Controllers
             public DateTimeOffset ExpiresAt { get; init; }
         }
 
+        // username::email (both trimmed/lowercased) → entry
         private static readonly ConcurrentDictionary<string, ResetEntry> _resetStore = new();
 
         public LoginController(
@@ -47,6 +48,7 @@ namespace Commander.Controllers
             _logger = logger;
         }
 
+        // ---------- helpers ----------
         private static string NormalizeDigits(string input)
         {
             if (string.IsNullOrEmpty(input)) return string.Empty;
@@ -67,6 +69,7 @@ namespace Commander.Controllers
             return $"{u}::{e}";
         }
 
+        // Map Arabic-Indic & Eastern Arabic-Indic digits to ASCII and drop everything else
         private static string NormalizeCode(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "";
@@ -125,8 +128,8 @@ namespace Commander.Controllers
 
             try
             {
-                // Use the templated email from MailjetEmailService (منصة التحول الرقمي)
-                var resetUrl = $"{Request.Scheme}://{Request.Host}/reset";
+                // Use the templated email from MailjetEmailService (brand: منصة التحول الرقمي)
+                var resetUrl = $"{Request.Scheme}://{Request.Host}/reset"; // adjust to your SPA route if needed
                 await _emailService.SendPasswordResetAsync(
                     toEmail: email,
                     toName: user?.First_name ?? username,
@@ -208,6 +211,7 @@ namespace Commander.Controllers
             if (user == null)
                 return NotFound(new { message = "User could not be located." });
 
+            // TODO: hash & salt in production
             user.Password = dto.NewPassword;
             _repository.UpdateUser(user);
             _repository.SaveChanges();

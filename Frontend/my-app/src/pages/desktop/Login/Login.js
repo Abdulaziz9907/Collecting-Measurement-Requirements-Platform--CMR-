@@ -308,7 +308,7 @@ export default function Login({ onLogin }) {
                           <div className="floating-label">
                               <input
                                 type="text"
-                                placeholder="اسم المستخدم"
+                                placeholder="اسم المستخدم أو رقم الموظف"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required

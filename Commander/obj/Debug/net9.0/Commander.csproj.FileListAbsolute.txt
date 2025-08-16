@@ -145,3 +145,17 @@ D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Deb
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\Commander.pdb
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\Commander.genruntimeconfig.cache
 D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\ref\Commander.dll
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\efvxfgdske-hyslh8bvum.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\sn7at157a1-d9u1fobnmm.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\fntr86v82a-4bysstsvp2.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\kzj7hmmecg-sl60c43r8o.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\up9bg00kwi-036iacqdh2.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\hhvqz599wp-hhk99oo975.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\awbj9cxom4-fe55gr0g6m.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\etxuupgoyr-knfl2z7c7g.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\fqbo6gcrvk-senwafawls.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\ig45e45yhg-obupdx8s8l.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\og94dvv3qy-w8z8vrrjtr.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\wk8bxi9he6-eeriaob8n1.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\6onrtcg5by-m8l4ftsxwi.gz
+D:\Projects\Collecting Measurement Requirements Platform (CMR)\Commander\obj\Debug\net9.0\compressed\revrk71wqg-m0w83ilgxy.gz

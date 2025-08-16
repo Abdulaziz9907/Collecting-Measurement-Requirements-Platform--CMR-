@@ -71,7 +71,7 @@ export default function ForgotPasswordModal({ show, onHide, apiBase }) {
     const uname = normalizeDigits(username.trim());
     const mail  = email.trim();
     if (!uname || !validateEmail(mail)) {
-      showAlert('danger', 'الرجاء إدخال اسم المستخدم أو الرقم الوظيفي والبريد الإلكتروني بشكل صحيح');
+      showAlert('danger', 'الرجاء إدخال اسم المستخدم أو رقم الموظف والبريد الإلكتروني بشكل صحيح');
       return;
     }
     setLoading(true); setAlert({ show: false, variant: '', message: '' });
@@ -92,7 +92,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
         showAlert('danger', data?.error || data?.message || 'تعذر إرسال الرمز');
       }
     } catch {
-      showAlert('danger', 'خطأ في الإتصال. حاول مرة أخرى');
+      showAlert('danger', 'خطأ في الشبكة. حاول مرة أخرى');
     } finally { setLoading(false); }
   };
 
@@ -103,7 +103,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
       return;
     }
     if (secondsLeft === 0) {
-      showAlert('danger', 'انتهت صلاحية الرمز. يرجى إعادة الإرسال');
+      showAlert('danger', 'انتهت صلاحية الرمز. أعد الإرسال');
       return;
     }
     setLoading(true); setAlert({ show: false, variant: '', message: '' });
@@ -127,7 +127,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
         showAlert('danger', data?.message || 'رمز التحقق غير صحيح');
       }
     } catch {
-      showAlert('danger', 'خطأ في الإتصال. حاول مرة أخرى');
+      showAlert('danger', 'خطأ في الشبكة. حاول مرة أخرى');
     } finally { setLoading(false); }
   };
 
@@ -174,7 +174,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
         showAlert('danger', 'فشل في إعادة تعيين كلمة المرور');
       }
     } catch {
-      showAlert('danger', 'خطأ في الإتصال. حاول مرة أخرى');
+      showAlert('danger', 'خطأ في الشبكة. حاول مرة أخرى');
     } finally { setLoading(false); }
   };
 
@@ -185,7 +185,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
     <Modal show={show} onHide={handleClose} centered size="md" backdrop="static" dir="rtl">
       <Modal.Header className="border-0 pb-2">
         <Modal.Title className="w-100 text-center">
-          <h5 className="mb-0 fw-semibold">{getStepTitle()}</h5>
+          <h4 className="mb-0 fw-semibold">{getStepTitle()}</h4>
         </Modal.Title>
         <Button
           variant="link"
@@ -228,22 +228,22 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
         {step === 1 && (
           <>
             <Form.Group className="mb-3">
-              <Form.Label className="fw-medium">اسم المستخدم أو الرقم الوظيفي</Form.Label>
+              <Form.Label className="fw-medium">اسم المستخدم أو رقم الموظف</Form.Label>
               <Form.Control
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم أو الرقم الوظيفي"
+                placeholder="أدخل اسم المستخدم أو رقم الموظف"
                 disabled={loading}
                 autoFocus
-                size="md"
+                size="lg"
                 className="rounded-3"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-medium">البريد الإلكتروني</Form.Label>
-              <InputGroup size="md">
+              <InputGroup size="lg">
                 <Form.Control
                   type="email"
                   value={email}
@@ -263,7 +263,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
             <div className="d-grid">
               <Button
                 variant="primary"
-                size="md"
+                size="lg"
                 onClick={sendResetCode}
                 disabled={loading || !username.trim() || !validateEmail(email.trim())}
                 className="rounded-3"
