@@ -62,6 +62,7 @@ function App() {
 
   useEffect(() => { showTimeoutRef.current = showTimeout; }, [showTimeout]);
 
+  
   const clearAllTimers = useCallback(() => {
     const t = timersRef.current;
     if (t.warn) clearTimeout(t.warn);
