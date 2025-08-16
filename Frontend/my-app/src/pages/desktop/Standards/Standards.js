@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/css/bss-overrides.css';
 import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -10,6 +9,7 @@ import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
 import DeleteModal from '../../../components/DeleteModal.jsx';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -19,6 +19,7 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { language } = useLanguage();
   const [useSkeleton, setUseSkeleton] = useState(true); // ← نبقيه true في كل refresh
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
@@ -160,7 +161,7 @@ export default function Standards() {
 
   /* === Popover يشبه الأمثلة المطلوبة === */
   const popTemplateHelp = (
-    <Popover id="pop-template-help" dir="rtl">
+    <Popover id="pop-template-help" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <Popover.Header as="h6">طريقة استخدام قالب المعايير</Popover.Header>
       <Popover.Body>
         <div className="small text-muted mb-2">
@@ -692,7 +693,7 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir={language === 'ar' ? 'rtl' : 'ltr'} style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
         <Header />
 
         {banner.type && (

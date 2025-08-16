@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import ForgotPasswordModal from '../../../components/ForgotPasswordModal.jsx';
+import useTranslation from '../../../hooks/useTranslation';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -21,6 +23,9 @@ export default function Login({ onLogin }) {
 
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
+
+  const t = useTranslation();
+  const { language } = useLanguage();
 
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(/\/+$/, '');
@@ -376,7 +381,7 @@ export default function Login({ onLogin }) {
             <div className="container">
               <div className="row justify-content-center" style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}>
                 {/* LEFT TEXT COLUMN — hidden on md and below */}
-                <div className={`col-lg-7 d-none d-lg-block justify-content-center p-4 rounded anim-text ${mounted ? 'in' : ''}`} dir="rtl" lang="ar">
+                <div className={`col-lg-7 d-none d-lg-block justify-content-center p-4 rounded anim-text ${mounted ? 'in' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
                   <h1 className="mb-3 text-lg-end" style={{ color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
                   <p className="fw-light mt-4" style={{ fontSize: 25, color: 'rgba(209, 209, 209, 1)', textAlign: 'justify', lineHeight: 1.8 }}>
                     تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو مدينة صناعية ذكية ومستدامة.
@@ -389,7 +394,7 @@ export default function Login({ onLogin }) {
                 <div className="col-lg-5 col-md-8 col-sm-10 order-1 order-lg-2 login-wrapper mt-5 mt-lg-0">
                   <div className={`login-card anim-card ${mounted ? 'in' : ''}`}>
                     <div className="card-header-custom">
-                      <h2 className="welcome-text">تسجيل الدخول</h2>
+                      <h2 className="welcome-text">{t('loginTitle')}</h2>
                     </div>
 
                     <div className="card-body-custom">
@@ -405,7 +410,7 @@ export default function Login({ onLogin }) {
                             <input
                               ref={usernameRef}
                               type="text"
-                              placeholder="اسم المستخدم"
+                              placeholder={t('loginUsername')}
                               value={username}
                               onChange={(e) => setUsername(e.target.value)}
                               inputMode="text"
@@ -425,7 +430,7 @@ export default function Login({ onLogin }) {
                             <input
                               ref={passwordRef}
                               type={showPassword ? 'text' : 'password'}
-                              placeholder="كلمة المرور"
+                              placeholder={t('loginPassword')}
                               value={password}
                               onChange={(e) => {
                                 setPassword(e.target.value);
@@ -454,7 +459,7 @@ export default function Login({ onLogin }) {
                             <button
                               type="button"
                               className="toggle-password"
-                              aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                               onClick={() =>
                                 setShowPassword((prev) => {
                                   const next = !prev;
@@ -472,7 +477,7 @@ export default function Login({ onLogin }) {
                           {showCapsWarning && (
                             <div className="caps-warning" role="status" aria-live="polite">
                               <i className="fas fa-exclamation-triangle"></i>
-                              <span>تحذير: مفتاح (Caps) مفعل</span>
+                              <span>{t('capsWarning')}</span>
                             </div>
                           )}
                         </div>
@@ -487,7 +492,7 @@ export default function Login({ onLogin }) {
                               setShowForgotModal(true);
                             }}
                           >
-                            نسيت كلمة المرور؟
+                            {t('forgotPassword')}
                           </a>
                         </div>
 
@@ -499,7 +504,7 @@ export default function Login({ onLogin }) {
                           ) : (
                             <>
                               <i className="fas fa-sign-in-alt" aria-hidden="true"></i>
-                              <span>دخول</span>
+                              <span>{t('loginButton')}</span>
                             </>
                           )}
                         </button>

@@ -1,25 +1,28 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
-const map = {
-  standards: { label: ' معايير التحول' },
-  standards_create: { label: 'إضافة معيار جديد', parent: 'standards' },
-  standards_edit: { label: 'تعديل بيانات المعيار', parent: 'standards' },
-  departments: { label: 'إدارة الجهات' },
-  departments_create: { label: 'إضافة جهة جديدة', parent: 'departments' },
-  departments_edit: { label: 'تعديل بيانات الجهة', parent: 'departments' },
-  reports: { label: 'تقارير الإحصائيات' },
-  users: { label: 'إدارة المستخدمين' },
-  users_create: { label: 'إضافة مستخدم جديد', parent: 'users' },
-  users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' },
-  profile: { label: 'الملف الشخصي ' }
-};
+import useTranslation from '../hooks/useTranslation';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Breadcrumbs() {
   const location = useLocation();
+  const t = useTranslation();
+  const { language } = useLanguage();
+  const map = {
+    standards: { label: t('standards') },
+    standards_create: { label: t('addStandard'), parent: 'standards' },
+    standards_edit: { label: t('editStandard'), parent: 'standards' },
+    departments: { label: t('departments') },
+    departments_create: { label: t('addDepartment'), parent: 'departments' },
+    departments_edit: { label: t('editDepartment'), parent: 'departments' },
+    reports: { label: t('reports') },
+    users: { label: t('users') },
+    users_create: { label: t('addUser'), parent: 'users' },
+    users_edit: { label: t('editUser'), parent: 'users' },
+    profile: { label: t('profile') }
+  };
   const segments = location.pathname.split('/').filter(Boolean);
 
-  const breadcrumbs = [{ path: '/home', label: 'الرئيسية' }];
+  const breadcrumbs = [{ path: '/home', label: t('home') }];
 
   const mainSeg = segments.find(seg => !/^\d+$/.test(seg));
   if (mainSeg) {
@@ -34,7 +37,7 @@ export default function Breadcrumbs() {
   }
 
   return (
-    <nav aria-label="breadcrumb" dir="rtl" className="breadcrumbs-nav">
+    <nav aria-label="breadcrumb" dir={language === 'ar' ? 'rtl' : 'ltr'} className="breadcrumbs-nav">
       {/* تصغير الحجم على الموبايل فقط */}
       <style>{`
         /* ديسكتوب (تقريبًا مثل h5) */

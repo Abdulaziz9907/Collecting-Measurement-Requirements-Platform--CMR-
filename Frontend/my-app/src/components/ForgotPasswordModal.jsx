@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Button, Form, Spinner, InputGroup, Alert, Badge } from 'react-bootstrap';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ForgotPasswordModal({ show, onHide, apiBase }) {
   const [step, setStep] = useState(1);
@@ -65,6 +66,8 @@ export default function ForgotPasswordModal({ show, onHide, apiBase }) {
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
   };
   const digitsOnly = (s) => normalizeDigits(s).replace(/\D/g, '');
+
+  const { language } = useLanguage();
 
   // API
   const sendResetCode = async () => {
@@ -182,7 +185,7 @@ showAlert('success', `تم إرسال رمز التحقق إلى ${maskEmail(mai
     step === 1 ? 'معلومات الحساب' : step === 2 ? 'رمز التحقق' : 'كلمة مرور جديدة';
 
   return (
-    <Modal show={show} onHide={handleClose} centered size="md" backdrop="static" dir="rtl">
+    <Modal show={show} onHide={handleClose} centered size="md" backdrop="static" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <Modal.Header className="border-0 pb-2">
         <Modal.Title className="w-100 text-center">
           <h5 className="mb-0 fw-semibold">{getStepTitle()}</h5>
