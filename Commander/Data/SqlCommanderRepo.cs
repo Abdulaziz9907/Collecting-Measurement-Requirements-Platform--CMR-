@@ -53,12 +53,14 @@ namespace Commander.Data
             if (int.TryParse(trimmed, out var empId))
             {
                 return _context.Users.FirstOrDefault(x =>
-                    x.Employee_id == empId && x.Password == p);
+                    x.Employee_id == empId &&
+                    EF.Functions.Collate(x.Password, "SQL_Latin1_General_CP1_CS_AS") == p);
             }
 
             var u = trimmed.ToLower();
             return _context.Users.FirstOrDefault(x =>
-                (x.Username ?? "").ToLower() == u && x.Password == p);
+                (x.Username ?? "").ToLower() == u &&
+                EF.Functions.Collate(x.Password, "SQL_Latin1_General_CP1_CS_AS") == p);
         }
 
         public User? GetUserByLoginAndEmail(string login, string email)
