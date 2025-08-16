@@ -17,7 +17,9 @@ namespace Commander.Models
         public required string Proof_name { get; set; }
 
         [MaxLength(255)]
-        public required string FilePath { get; set; } // stores the path or URL to the uploaded file
+        public required string FileName { get; set; }
+
+        public required byte[] FileData { get; set; }
 
         public Standard? Standard { get; set; }
     }
