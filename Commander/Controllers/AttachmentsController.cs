@@ -5,9 +5,7 @@ using System.Text;
 using Commander.Data;
 using Commander.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Hosting;
 
 namespace Commander.Controllers
 {
@@ -17,13 +15,11 @@ namespace Commander.Controllers
     {
         private readonly IAttachmentRepo _repository;
         private readonly IStandardRepo _standardRepo;
-        private readonly IWebHostEnvironment _env;
 
-        public AttachmentsController(IAttachmentRepo repository, IStandardRepo standardRepo, IWebHostEnvironment env)
+        public AttachmentsController(IAttachmentRepo repository, IStandardRepo standardRepo)
         {
             _repository = repository;
             _standardRepo = standardRepo;
-            _env = env;
         }
 
         private static string[] ParseProofs(string? raw)
@@ -68,13 +64,23 @@ namespace Commander.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Attachment>> GetAll(int standardId)
+        public ActionResult<IEnumerable<object>> GetAll(int standardId)
         {
-            return Ok(_repository.GetAttachmentsByStandard(standardId));
+            var list = _repository
+                .GetAttachmentsByStandard(standardId)
+                .Select(a => new
+                {
+                    a.Attachment_id,
+                    a.Standard_id,
+                    a.Proof_name,
+                    a.FileName,
+                    a.Uploaded_date
+                });
+            return Ok(list);
         }
 
         [HttpPost]
-        public ActionResult<Attachment> Upload(int standardId, [FromForm] IFormFile file, [FromForm] string proofName)
+        public ActionResult Upload(int standardId, [FromForm] IFormFile file, [FromForm] string proofName)
         {
             var standard = _standardRepo.GetStandardById(standardId);
             if (standard == null) return NotFound();
@@ -82,20 +88,17 @@ namespace Commander.Controllers
 
             var wasRejected = standard.Status == "غير معتمد";
 
-            var uploadsFolder = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads");
-            Directory.CreateDirectory(uploadsFolder);
-            var fileName = Path.GetRandomFileName() + Path.GetExtension(file.FileName);
-            var path = Path.Combine(uploadsFolder, fileName);
-            using (var stream = System.IO.File.Create(path))
-            {
-                file.CopyTo(stream);
-            }
+            using var ms = new MemoryStream();
+            file.CopyTo(ms);
+
             var attachment = new Attachment
             {
                 Standard_id = standardId,
-                FilePath = Path.Combine("uploads", fileName).Replace("\\", "/"),
-                Proof_name = proofName
+                Proof_name = proofName,
+                FileName = Path.GetFileName(file.FileName),
+                FileData = ms.ToArray()
             };
+
             _repository.AddAttachment(attachment);
             _repository.SaveChanges();
 
@@ -116,7 +119,7 @@ namespace Commander.Controllers
                 standard.Rejection_reason = null;
             _standardRepo.UpdateStandard(standard);
             _standardRepo.SaveChanges();
-            return CreatedAtAction(nameof(GetAll), new { standardId }, attachment);
+            return CreatedAtAction(nameof(GetAll), new { standardId }, new { attachment.Attachment_id });
         }
 
         [HttpDelete("{id}")]
@@ -152,6 +155,14 @@ namespace Commander.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpGet("{id}")]
+        public ActionResult Download(int standardId, int id)
+        {
+            var attachment = _repository.GetAttachment(id);
+            if (attachment == null || attachment.Standard_id != standardId) return NotFound();
+            return File(attachment.FileData, "application/octet-stream", attachment.FileName);
         }
     }
 }
