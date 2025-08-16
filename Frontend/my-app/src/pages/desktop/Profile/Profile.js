@@ -21,7 +21,7 @@ export default function Profile() {
         --skeleton-speed: 1.2s;
         
       }
-      .card-like{
+      .surface {
         background: var(--surface);
         border: 1px solid var(--stroke);
         border-radius: var(--radius);
@@ -92,9 +92,9 @@ export default function Profile() {
 
     if (name === 'username') {
       // live check against allUsers (ignore current user)
-      const trimmed = (value || '').trim().toLowerCase();
+      const trimmed = (value || '').trim();
       const currentId = user?.employee_id ?? user?.id;
-      const currentUsername = (user?.username || '').trim().toLowerCase();
+      const currentUsername = (user?.username || '').trim();
 
       // If not changed from original, no error
       if (trimmed === currentUsername) {
@@ -105,7 +105,7 @@ export default function Profile() {
       if (allUsers.length) {
         const taken = allUsers.some(u =>
           (u?.employee_id ?? u?.id) !== currentId &&
-          (u?.username || '').trim().toLowerCase() === trimmed
+          (u?.username || '').trim() === trimmed
         );
         setUsernameError(taken ? 'اسم المستخدم مستخدم بالفعل' : '');
       } else {
@@ -185,12 +185,12 @@ export default function Profile() {
     }
 
     // Final duplicate guard (client-side)
-    const newName = (form.username || '').trim().toLowerCase();
-    const oldName = (user?.username || '').trim().toLowerCase();
+    const newName = (form.username || '').trim();
+    const oldName = (user?.username || '').trim();
     if (newName !== oldName && allUsers.length) {
       const taken = allUsers.some(u =>
         (u?.employee_id ?? u?.id) !== userId &&
-        (u?.username || '').trim().toLowerCase() === newName
+        (u?.username || '').trim() === newName
       );
       if (taken) {
         setUsernameError('اسم المستخدم مستخدم بالفعل');
@@ -406,7 +406,7 @@ export default function Profile() {
               {/* ===== تحديث البيانات — FULL WIDTH ===== */}
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
-                  <div className="card-like">
+                  <div className="surface">
                     <div className="head-flat d-flex align-items-center justify-content-between">
                       <span>تحديث البيانات</span>
                       <button
@@ -494,7 +494,7 @@ export default function Profile() {
               {/* ===== تغيير كلمة المرور — UNDER it, full width ===== */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-11">
-                  <div className="card-like">
+                  <div className="surface">
                     <div className="head-flat">تغيير كلمة المرور</div>
 
                     {/* Stepper */}

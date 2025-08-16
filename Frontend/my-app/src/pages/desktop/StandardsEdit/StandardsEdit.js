@@ -434,7 +434,6 @@ export default function StandardsEdit() {
                               className={`form-control ${stdError ? 'is-invalid' : ''}`}
                               id="standard_num"
                               name="standard_num"
-                              inputMode="numeric"
                               defaultValue={standard?.standard_number || ''}
                               onChange={onStdNumChange}
                               // Accept Arabic/ASCII digits & separators
