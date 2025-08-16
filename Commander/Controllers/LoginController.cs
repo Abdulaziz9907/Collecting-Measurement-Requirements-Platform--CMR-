@@ -31,7 +31,7 @@ namespace Commander.Controllers
             public DateTimeOffset ExpiresAt { get; init; }
         }
 
-        // username::email (both trimmed/lowercased) → entry
+        // username::email (username trimmed, email lowercased) → entry
         private static readonly ConcurrentDictionary<string, ResetEntry> _resetStore = new();
 
         public LoginController(
@@ -64,7 +64,7 @@ namespace Commander.Controllers
 
         private static string KeyFor(string username, string email)
         {
-            var u = NormalizeDigits(username ?? "").Trim().ToLowerInvariant();
+            var u = NormalizeDigits(username ?? "").Trim();
             var e = (email ?? "").Trim().ToLowerInvariant();
             return $"{u}::{e}";
         }

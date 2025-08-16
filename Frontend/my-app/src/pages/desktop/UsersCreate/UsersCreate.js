@@ -92,9 +92,9 @@ export default function UsersCreate() {
       form.employee_id.setCustomValidity('رقم الموظف يجب أن يتكون من 7 أرقام');
     }
 
-    // --- Username uniqueness (case-insensitive) ---
+    // --- Username uniqueness (case-sensitive) ---
     const username = (form.username.value || '').trim();
-    const usernameTaken = (users || []).some(u => (u?.username || '').trim().toLowerCase() === username.toLowerCase());
+    const usernameTaken = (users || []).some(u => (u?.username || '').trim() === username);
     if (usernameTaken) {
       form.username.setCustomValidity('اسم المستخدم مستخدم بالفعل');
     }
