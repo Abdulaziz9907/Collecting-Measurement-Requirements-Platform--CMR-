@@ -373,7 +373,13 @@ export default function UsersEdit() {
 
                           <div className="mb-3">
                             <label className="form-label">كلمة المرور</label>
-                            <input type="text" className="form-control" name="password" required defaultValue={user?.password || ''} />
+                            <input
+                              type="password"
+                              className="form-control"
+                              name="password"
+                              required
+                              defaultValue={user?.password || ''}
+                            />
                             <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
                           </div>
 

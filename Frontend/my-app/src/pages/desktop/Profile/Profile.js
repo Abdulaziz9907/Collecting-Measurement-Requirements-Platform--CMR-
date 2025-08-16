@@ -409,9 +409,14 @@ export default function Profile() {
                   <div className="card-like">
                     <div className="head-flat d-flex align-items-center justify-content-between">
                       <span>تحديث البيانات</span>
-                      <button type="button" className="btn btn-outline-primary btn-sm" onClick={refreshUser} disabled={loadingProfile}>
-                        {loadingProfile ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right ms-1" />}
-                        تحديث 
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm btn-update"
+                        onClick={refreshUser}
+                        disabled={loadingProfile}
+                      >
+                        {loadingProfile ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                        تحديث
                       </button>
                     </div>
 

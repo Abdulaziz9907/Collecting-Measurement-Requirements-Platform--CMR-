@@ -325,7 +325,7 @@ export default function Home() {
                       <div>
                         <button
                           type="button"
-                          className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+                          className="btn btn-outline-primary btn-sm btn-update"
                           onClick={loadData}
                           disabled={loading}
                           aria-label="تحديث"
