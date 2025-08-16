@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
@@ -11,8 +11,15 @@ export default function Login({ onLogin }) {
   const [isLoading, setIsLoading] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
+
+  useEffect(() => {
+    // شغّل الأنيميشن بعد التركيب مباشرةً
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const normalizeDigits = (s) => {
     const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -35,9 +42,7 @@ export default function Login({ onLogin }) {
       }
       const data = await res.json();
       localStorage.setItem('user', JSON.stringify(data));
-      if (typeof onLogin === 'function') {
-        onLogin(data);
-      }
+      if (typeof onLogin === 'function') onLogin(data);
       setMessage(`تم تسجيل الدخول باسم ${data.username}`);
       navigate('/home', { replace: true });
     } catch (err) {
@@ -66,44 +71,43 @@ export default function Login({ onLogin }) {
           --text-color: #343a40;
         }
 
-        .video-background {
-          position: relative;
-          min-height: 100vh;
-          overflow: hidden;
+        /* ===== Animations ===== */
+        @keyframes fadeUp {
+          0%   { opacity: 0; transform: translateY(18px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
-
-        .login-video {
-          position: absolute;
-          top: 0; left: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          z-index: 0;
+        .anim-text,
+        .anim-card {
           opacity: 0;
-          transition: opacity 1s ease-in-out;
+          transform: translateY(18px);
+          will-change: opacity, transform;
+        }
+        .anim-text.in {
+          animation: fadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .anim-card.in {
+          animation: fadeUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 90ms forwards; /* تأخير بسيط */
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .anim-text,
+          .anim-card {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
         }
 
-        .video-loaded {
-          opacity: 1;
+        .video-background { position: relative; min-height: 100vh; overflow: hidden; }
+        .login-video {
+          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          object-fit: cover; z-index: 0; opacity: 0; transition: opacity 1s ease-in-out;
         }
-
-        .video-overlay {
-          position: absolute;
-          top: 0; left: 0;
-          width: 100%;
-          height: 100%;
-          background: var(--overlay-bg);
-          z-index: 1;
-        }
+        .video-loaded { opacity: 1; }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay-bg); z-index: 1; }
 
         .content-layer {
-          position: relative;
-          z-index: 2;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1.5rem;
+          position: relative; z-index: 2; min-height: 100vh;
+          display: flex; align-items: center; justify-content: center; padding: 1.5rem;
         }
 
         .login-card {
@@ -127,27 +131,13 @@ export default function Login({ onLogin }) {
           border-bottom: 1px solid rgba(231, 224, 224, 0.15);
         }
 
-        .card-body-custom {
-          padding: 2rem 2.5rem 2.5rem;
-        }
+        .card-body-custom { padding: 2rem 2.5rem 2.5rem; }
 
-        .floating-label-container {
-          position: relative;
-          margin-bottom: 1.5rem;
-        }
+        .floating-label-container { position: relative; margin-bottom: 1.5rem; }
+        .floating-label-container.has-error input { border-color: #dc3545 !important; background: #fff0f0; }
+        .floating-label-container.has-error i { color: #dc3545 !important; }
 
-        .floating-label-container.has-error input {
-          border-color: #dc3545 !important;
-          background: #fff0f0;
-        }
-
-        .floating-label-container.has-error i {
-          color: #dc3545 !important;
-        }
-
-        .welcome-text{
-          color: rgba(5, 0, 53, 1);
-        }
+        .welcome-text { color: rgba(5, 0, 53, 1); }
 
         .floating-label input {
           background: var(--input-bg);
@@ -158,28 +148,18 @@ export default function Login({ onLogin }) {
           font-size: 1rem;
           width: 100%;
           transition: all 0.3s ease;
-          direction: rtl;
-          text-align: right;
+          direction: rtl; text-align: right;
         }
 
         .floating-label i {
-          position: absolute;
-          right: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--primary-color);
-          transition: color 0.3s ease;
+          position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+          color: var(--primary-color); transition: color 0.3s ease;
         }
 
         .global-error-message {
-          text-align: center;
-          color: #dc3545;
-          background: rgba(220, 53, 69, 0.1);
-          padding: 0.5rem 1rem;
-          border-radius: 8px;
-          font-size: 0.9rem;
-          margin-top: -0.5rem;
-          margin-bottom: 1.5rem;
+          text-align: center; color: #dc3545; background: rgba(220, 53, 69, 0.1);
+          padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem;
+          margin-top: -0.5rem; margin-bottom: 1.5rem;
         }
 
         .btn-login {
@@ -191,46 +171,46 @@ export default function Login({ onLogin }) {
           padding: 1rem;
           width: 100%;
           font-size: 1.1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
+          display: flex; align-items: center; justify-content: center; gap: 0.5rem;
           transition: all 0.3s ease;
         }
+        .btn-login:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-3px); }
+        .btn-login:disabled { opacity: 0.9; cursor: not-allowed; background: var(--accent-color); }
 
-        .btn-login:hover:not(:disabled) {
-          background: var(--accent-hover);
-          transform: translateY(-3px);
-        }
+        .info-card { text-align: center; color: #fff; }
+        .info-title { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
+        .info-description { font-size: 1.1rem; line-height: 1.6; }
 
-        .btn-login:disabled {
-          opacity: 0.9;
-          cursor: not-allowed;
-          background: var(--accent-color);
-        }
-
-        .info-card {
-          text-align: center;
-          color: #fff;
-        }
-
-        .info-title {
-          font-size: 2.5rem;
-          font-weight: 700;
-          margin-bottom: 1rem;
-        }
-
-        .info-description {
-          font-size: 1.1rem;
-          line-height: 1.6;
-        }
-
-
+        /* Desktop EXACTLY as before */
         @media (min-width: 1260px) {
           .login-wrapper {
             max-width: 460px;
             margin-left: 30px;
             margin-right: -100px;
+          }
+        }
+
+        /* Medium screens: narrower */
+        @media (min-width: 768px) and (max-width: 991.98px) {
+          .login-wrapper { max-width: 430px; margin-left: auto; margin-right: auto; }
+        }
+
+        /* Small screens: shorter fields/buttons */
+        @media (max-width: 576.98px) {
+          .card-header-custom { padding: 1.4rem 1rem 1rem; }
+          .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
+
+          .floating-label input {
+            font-size: 0.9rem;
+            padding: 0.65rem 2.8rem 0.65rem 0.85rem;
+            border-radius: 10px;
+          }
+          .floating-label-container { margin-bottom: 0.95rem; }
+
+          .btn-login {
+            font-size: 0.95rem;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
           }
         }
       `}</style>
@@ -240,11 +220,7 @@ export default function Login({ onLogin }) {
         <div className="video-background bg-black">
           <video
             className={`login-video ${videoLoaded ? 'video-loaded' : ''}`}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
+            autoPlay muted loop playsInline preload="auto"
             poster="/assets/loop2-fallback.jpg"
             onCanPlayThrough={() => setVideoLoaded(true)}
           >
@@ -259,41 +235,36 @@ export default function Login({ onLogin }) {
                 className="row justify-content-center"
                 style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}
               >
-           {/* LEFT TEXT COLUMN — hidden on md and below */}
-<div
-  className="col-lg-7 d-none d-lg-block justify-content-center bg-opacity-50 p-4 rounded"
-  dir="rtl"
-  lang="ar"
->
-  <h1
-    className="mb-3 text-lg-end"
-    style={{ color: 'rgba(209, 209, 209, 1)' }}
-  >
-    أهمية معايير التحول الرقمي
-  </h1>
+                {/* LEFT TEXT COLUMN — hidden on md and below */}
+                <div
+                  className={`col-lg-7 d-none d-lg-block justify-content-center bg-opacity-50 p-4 rounded anim-text ${mounted ? 'in' : ''}`}
+                  dir="rtl" lang="ar"
+                >
+                  <h1 className="mb-3 text-lg-end" style={{ color: 'rgba(209, 209, 209, 1)' }}>
+                    أهمية معايير التحول الرقمي
+                  </h1>
 
-  <p
-    className="fw-light mt-4"
-    style={{
-      fontSize: '25px',
-      color: 'rgba(209, 209, 209, 1)',
-      textAlign: 'justify',      
-      textAlignLast: 'right',
-      lineHeight: 1.8
-    }}
-  >
-    تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو
-    مدينة صناعية ذكية ومستدامة. تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة،
-    وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات. كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر
-    للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في
-    المملكة.
-  </p>
-</div>
-
+                  <p
+                    className="fw-light mt-4"
+                    style={{
+                      fontSize: '25px',
+                      color: 'rgba(209, 209, 209, 1)',
+                      textAlign: 'justify',
+                      textAlignLast: 'right',
+                      lineHeight: 1.8
+                    }}
+                  >
+                    تُعد معايير التحول الرقمي من الركائز الأساسية التي تعتمد عليها الهيئة الملكية في تحقيق رؤيتها نحو
+                    مدينة صناعية ذكية ومستدامة. تسهم هذه المعايير في ضمان توحيد الإجراءات، وتحقيق التكامل بين الأنظمة،
+                    وتعزيز الكفاءة التشغيلية عبر مختلف القطاعات. كما تضمن هذه المعايير قابلية التوسع والتحديث المستمر
+                    للأنظمة الرقمية، بما يدعم استدامة التطوير التقني ويعزز موقع المدن الصناعية كمركز صناعي وتقني رائد في
+                    المملكة.
+                  </p>
+                </div>
 
                 {/* RIGHT LOGIN COLUMN */}
                 <div className="col-lg-5 col-md-8 col-sm-10 order-1 order-lg-2 login-wrapper mt-5 mt-lg-0">
-                  <div className="login-card">
+                  <div className={`login-card anim-card ${mounted ? 'in' : ''}`}>
                     <div className="card-header-custom">
                       <h2 className="welcome-text">تسجيل الدخول</h2>
                     </div>
@@ -306,14 +277,14 @@ export default function Login({ onLogin }) {
                       >
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
                           <div className="floating-label">
-                              <input
-                                type="text"
-                                placeholder="اسم المستخدم أو رقم الموظف"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                disabled={isLoading}
-                              />
+                            <input
+                              type="text"
+                              placeholder="اسم المستخدم"
+                              value={username}
+                              onChange={(e) => setUsername(e.target.value)}
+                              required
+                              disabled={isLoading}
+                            />
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-user'}`}></i>
                           </div>
                         </div>
@@ -349,11 +320,7 @@ export default function Login({ onLogin }) {
 
                         <button type="submit" className="btn btn-login" disabled={isLoading}>
                           {isLoading ? (
-                            <div
-                              className="spinner-border text-light"
-                              role="status"
-                              style={{ width: '1.3rem', height: '1.3rem' }}
-                            >
+                            <div className="spinner-border text-light" role="status" style={{ width: '1.3rem', height: '1.3rem' }}>
                               <span className="visually-hidden">Loading...</span>
                             </div>
                           ) : (
