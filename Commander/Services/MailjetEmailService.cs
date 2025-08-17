@@ -121,6 +121,36 @@ namespace Commander.Services
             }
         }
 
+        public async Task SendVerificationCodeAsync(string toEmail, string toName, string code, string subject)
+        {
+            var text = $"رمزك: {code}";
+            var html = $"<p>رمزك: <strong>{code}</strong></p>";
+
+            var request = new MailjetRequest
+            {
+                Resource = SendV31.Resource
+            }
+            .Property("Messages", new JArray {
+                new JObject {
+                    ["From"] = new JObject { ["Email"] = _fromEmail, ["Name"] = _fromName },
+                    ["To"]   = new JArray   { new JObject { ["Email"] = toEmail, ["Name"] = toName ?? toEmail } },
+                    ["Subject"]  = subject ?? string.Empty,
+                    ["TextPart"] = text,
+                    ["HTMLPart"] = html,
+                    ["ReplyTo"]  = new JObject { ["Email"] = _replyToEmail, ["Name"] = _replyToName },
+                    ["CustomID"] = "verification_code",
+                    ["Headers"]  = new JObject { ["X-Entity-Ref-ID"] = Guid.NewGuid().ToString() }
+                }
+            });
+
+            var response = await _client.PostAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger?.LogError("Mailjet send failed ({Status}): {Body}", response.StatusCode, response.Content);
+                throw new InvalidOperationException($"Mailjet send failed ({response.StatusCode}): {response.Content}");
+            }
+        }
+
         // --------- Transactional: Password Reset (5 min validity) ---------
         public async Task SendPasswordResetAsync(string toEmail, string toName, string code, string username, string resetUrl)
         {
