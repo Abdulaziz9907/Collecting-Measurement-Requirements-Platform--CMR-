@@ -171,35 +171,25 @@ export default function Login({ onLogin }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pwdFocused, showPassword]);
 
-  // ===== Mobile heuristic (catches single uppercase keystroke too) =====
+  // ===== Mobile heuristic (NO single-letter warning) =====
   const prevPasswordRef = useRef('');
   const mobileCapsHeuristic = (val) => {
-    const prev = prevPasswordRef.current || '';
     const letters = (val || '').replace(/[^A-Za-z]/g, '');
     const upper = (letters.match(/[A-Z]/g) || []).length;
     const lower = (letters.match(/[a-z]/g) || []).length;
 
-    let warn = false;
-
-    // Rule A: ≥2 uppercase, 0 lowercase
-    if (letters.length >= 2 && upper >= 2 && lower === 0) {
-      warn = true;
-    } else {
-      // Rule B: single new uppercase typed, still 0 lowercase
-      const addedOne = val.length === prev.length + 1 && val.startsWith(prev);
-      const lastChar = val.slice(-1);
-      if ((val.length === 1 || addedOne) && /[A-Z]/.test(lastChar) && lower === 0) {
-        warn = true;
-      }
-    }
+    // Only warn if there are at least 2 uppercase letters and 0 lowercase
+    const warn = letters.length >= 2 && upper >= 2 && lower === 0;
 
     setShowCapsWarning(pwdFocused && !showPassword && warn);
     prevPasswordRef.current = val;
   };
 
   const normalizeDigits = (s) => {
-    const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
-                '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'7','۹':'9' };
+    const m = {
+      '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'
+    };
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
   };
 
@@ -335,25 +325,25 @@ export default function Login({ onLogin }) {
         .toggle-password i { color: var(--primary-color); }
 
         /* Password input visual tweaks */
-        .password-input { font-weight: 400; } /* keep bullets less chunky */
+        .password-input { font-weight: 400; }
 
-        /* Only mask via -webkit-text-security while hidden */
+        /* Only mask via -webkit-text-security while hidden (round discs) */
         @supports (-webkit-text-security: disc) {
           .password-input.masked { -webkit-text-security: disc; }
         }
 
-        /* Mobile: smaller-looking password dots */
+        /* Mobile: smaller, perfectly circular dots */
         @media (max-width: 576.98px) {
-          /* Most mobile browsers (Android etc.): reduce font-size */
+          /* Android/most: safe to reduce font-size */
           .password-input {
             font-size: 15px;
             line-height: 1.1;
           }
-          /* iOS: keep 16px to avoid auto-zoom, shrink glyphs only when masked */
+          /* iOS: keep 16px to avoid zoom; shrink the masked glyphs evenly (keeps perfect circle) */
           .ios .password-input { font-size: 16px; }
           .ios .password-input.masked {
-            transform: scaleY(0.9);
-            transform-origin: right center; /* RTL-friendly */
+            transform: scale(0.84);        /* uniform scale => perfect circle, smaller */
+            transform-origin: center center;
           }
         }
 
@@ -470,13 +460,14 @@ export default function Login({ onLogin }) {
                               onChange={(e) => {
                                 const v = e.target.value;
                                 setPassword(v);
-                                if (isMobile) mobileCapsHeuristic(v);
+                                if (isMobile) mobileCapsHeuristic(v); // no single-letter warnings
                               }}
                               onFocus={() => {
                                 setPwdFocused(true);
                                 if (!showPassword) {
                                   if (isMobile) mobileCapsHeuristic(password);
-                                  setShowCapsWarning(capsLockOn || showCapsWarning);
+                                  // Only reflect true CapsLock state on focus (no stale single-letter heuristics)
+                                  setShowCapsWarning(capsLockOn);
                                 }
                               }}
                               onBlur={() => {
@@ -502,10 +493,15 @@ export default function Login({ onLogin }) {
                               onClick={() =>
                                 setShowPassword((prev) => {
                                   const next = !prev;
-                                  // if re-hiding while focused, re-evaluate warning
+                                  // if re-hiding while focused, re-evaluate (still no single-letter warnings)
                                   if (!next && pwdFocused) {
-                                    if (isMobile) mobileCapsHeuristic(password);
-                                    setShowCapsWarning(capsLockOn || showCapsWarning);
+                                    const mobileWarn = isMobile ? (() => {
+                                      const letters = (password || '').replace(/[^A-Za-z]/g, '');
+                                      const upper = (letters.match(/[A-Z]/g) || []).length;
+                                      const lower = (letters.match(/[a-z]/g) || []).length;
+                                      return letters.length >= 2 && upper >= 2 && lower === 0;
+                                    })() : false;
+                                    setShowCapsWarning(capsLockOn || mobileWarn);
                                   } else {
                                     setShowCapsWarning(false);
                                   }
@@ -522,7 +518,7 @@ export default function Login({ onLogin }) {
                           {showCapsWarning && (
                             <div className="caps-warning" role="status" aria-live="polite">
                               <i className="fas fa-exclamation-triangle"></i>
-                              <span>تحذير: مفتاح (Caps) مفعل أو تم إدخال حرف كبير</span>
+                              <span>تحذير: مفتاح (Caps) مفعل أو تم إدخال أحرف كبيرة فقط</span>
                             </div>
                           )}
                         </div>

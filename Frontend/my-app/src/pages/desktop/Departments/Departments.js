@@ -13,7 +13,7 @@ import DeleteModal from '../../../components/DeleteModal.jsx';
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [buildingFilter, setBuildingFilter] = useState([]); // store building numbers as strings
+  const [buildingFilter, setBuildingFilter] = useState([]); // strings
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [useSkeleton, setUseSkeleton] = useState(true);
@@ -65,75 +65,74 @@ export default function Departments() {
     ],
   }), []);
 
-  /* ========== Local Theme (aligned with Users/Standards) ========== */
+  /* ===== Local Theme (aligned with Users) ===== */
   const LocalTheme = () => (
     <style>{`
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
-        --surface: #ffffff;
-        --surface-muted: #fbfdff;
-        --stroke: #eef2f7;
-        --text: #0b2440;
-        --text-muted: #6b7280;
-        --brand: #4F7689;
-        --skeleton-bg: #e9edf3;
-        --skeleton-sheen: rgba(255,255,255,.6);
-        --skeleton-speed: 1.2s;
+        --surface:#ffffff; --surface-muted:#fbfdff; --stroke:#eef2f7;
+        --text:#0b2440; --text-muted:#6b7280; --brand:#4F7689;
+        --skeleton-bg:#e9edf3; --skeleton-sheen:rgba(255,255,255,.6); --skeleton-speed:1.2s;
       }
 
-      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
-      .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
+      .table-card { background:var(--surface); border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:56px; }
+      .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
       .search-block { flex:1 1 320px; min-width:240px; }
-      .search-input { width:100%; max-width: 460px; margin:0 !important; }
+      .search-input { width:100%; max-width:460px; margin:0 !important; }
 
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
-      .th-name  { min-width: 280px; }
-      .th-bnum  { min-width: 140px; }
-      .th-icon  { width: 60px; }
+      .th-name{ min-width:280px; } .th-bnum{ min-width:140px; } .th-icon{ width:60px; }
 
-      .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 160px; }
+      .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
+      .page-spacer { height:160px; }
+      .table-card .table, .table-card .table-responsive { margin:0 !important; }
 
-      .table-card .table, .table-card .table-responsive { margin: 0 !important; }
+      /* Skeletons */
+      .skel{ position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
+      .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%);
+        background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%);
+        animation:shimmer var(--skeleton-speed) infinite; }
+      @keyframes shimmer { 100% { transform: translateX(100%);} }
+      @media (prefers-reduced-motion: reduce){ .skel::after{ animation:none; } }
+      .skel-line{ height:12px; } .skel-chip{ height:28px; width:100%; border-radius:999px; }
+      .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
-      .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
-      @keyframes shimmer { 100% { transform: translateX(100%); } }
-      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
+      /* Dropdown look identical to Users */
+      .dropdown-menu{
+        --bs-dropdown-link-hover-bg:#f1f5f9;
+        --bs-dropdown-link-active-bg:#e2e8f0;
+      }
+      .dropdown-item{ color:var(--text) !important; }
+      .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active{ color:var(--text) !important; }
 
-      .skel-line  { height: 12px; }
-      .skel-chip  { height: 28px; width: 100%; border-radius: 999px; }
-
-      .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
-
-      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; max-height: 50vh; overflow:auto; min-width: 220px; }
-      .dropdown-item { color:var(--text) !important; }
-      .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
-
-      /* ===== Mobile unified header/control sizing ===== */
-      @media (max-width: 576px) {
-        .head-row { display:none; }
-        .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
-        .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
-        .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
-        .search-input { max-width: 100%; height: 36px; line-height: 36px; }
-        .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      /* Mobile unified header sizing (like Users) */
+      @media (max-width:576px){
+        .head-row{ display:none; }
+        .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; margin:0; padding:0; }
+        .m-toolbar{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:0; padding:0; }
+        .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
+        .search-input{ max-width:100%; height:36px; line-height:36px; }
+        .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        /* The special mobile dropdown menu sizing class */
+        .m-menu{ width:min(92vw, 360px); max-width:92vw; }
+        .m-menu .dropdown-item{ padding:10px 12px; font-size:.95rem; }
+        .m-menu .dropdown-header{ font-size:.9rem; }
       }
 
-      /* ===== Mobile cards ===== */
-      .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
-      .d-card { border: 1px solid var(--stroke); border-radius: 12px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px; }
-      .d-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
-      .d-title { font-weight:700; color: var(--text); font-size: .95rem; }
-      .d-subtle { color: var(--text-muted); font-size: .8rem; }
-      .d-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
-      .d-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.78rem; background: #f8fafc; }
-      .d-actions { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px; }
-      .d-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:600; }
-      .d-btn i { font-size: .85rem; }
+      /* Mobile cards */
+      .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
+      .d-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
+      .d-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+      .d-title{ font-weight:700; color:var(--text); font-size:.95rem; }
+      .d-subtle{ color:var(--text-muted); font-size:.8rem; }
+      .d-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
+      .d-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; border:1px solid var(--stroke); font-size:.78rem; background:#f8fafc; }
+      .d-actions{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
+      .d-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:600; }
+      .d-btn i{ font-size:.85rem; }
     `}</style>
   );
 
@@ -141,15 +140,13 @@ export default function Departments() {
     <Popover id="pop-dept-template" dir="rtl">
       <Popover.Header as="h6">طريقة استخدام قالب الجهات</Popover.Header>
       <Popover.Body>
-        <div className="small text-muted mb-2">
-          الأعمدة المطلوبة: <code>اسم الجهة، رقم المبنى</code>
-        </div>
+        <div className="small text-muted mb-2">الأعمدة المطلوبة: <code>اسم الجهة، رقم المبنى</code></div>
         <ul className="mb-0 ps-3">
           <li>حمّل القالب وافتحه في Excel.</li>
-          <li>أدخل <code>اسم الجهة</code> بالاسم الرسمي المعتمد.</li>
-          <li>اكتب <code>رقم المبنى</code> كعدد صحيح فقط (مثال: <code>312</code>).</li>
-          <li>تجنّب التكرار — الصفوف المكررة تُتجاهل تلقائيًا أثناء الاستيراد.</li>
-          <li>احفظ الملف ثم استخدم زر «استيراد Excel» لرفعه.</li>
+          <li>أدخل <code>اسم الجهة</code> بالاسم الرسمي.</li>
+          <li>اكتب <code>رقم المبنى</code> كعدد صحيح فقط.</li>
+          <li>تجنّب التكرار — الصفوف المكررة تُتجاهل.</li>
+          <li>احفظ الملف ثم استخدم «استيراد Excel» لرفعه.</li>
         </ul>
       </Popover.Body>
     </Popover>
@@ -187,10 +184,7 @@ export default function Departments() {
     } finally {
       const elapsed = performance.now() - t0;
       const finish = () => {
-        if (seq === loadSeqRef.current) {
-          setHasLoadedOnce(true);
-          setLoading(false);
-        }
+        if (seq === loadSeqRef.current) { setHasLoadedOnce(true); setLoading(false); }
       };
       if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed);
       else finish();
@@ -204,30 +198,6 @@ export default function Departments() {
 
   const handleCheckboxFilter = (value) => {
     setBuildingFilter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
-  };
-
-  const stripHidden = (s='') =>
-    String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
-  const normalizeHeaderKey = (k='') => stripHidden(k);
-  const HEADER_ALIASES = {
-    'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
-    'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
-  };
-  const buildHeaderMap = (firstRowObj) => {
-    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
-    const originalKeys = Object.keys(firstRowObj || {});
-    const lookup = new Map();
-    for (const canon in HEADER_ALIASES) {
-      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
-      let foundIndex = -1;
-      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
-      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
-    }
-    return lookup;
-  };
-  const getCell = (row, headerMap, canonKey) => {
-    const actual = headerMap.get(canonKey);
-    return stripHidden(row[actual] ?? '');
   };
 
   // Filter
@@ -298,7 +268,7 @@ export default function Departments() {
       </tr>
     ));
 
-  /* ===== Only block delete if an Admin is in THIS department ===== */
+  /* Block delete if an Admin is in THIS department */
   const hasAdminInDepartment = async (departmentId) => {
     const idNum = Number(departmentId);
     try {
@@ -316,17 +286,14 @@ export default function Departments() {
         return sameDept && (role === 'admin' || role === 'administrator');
       });
     } catch {
-      return false; // don't block on fetch error
+      return false;
     }
   };
 
   const handleDeleteClick = async (id, name) => {
     const blocked = await hasAdminInDepartment(id);
     if (blocked) {
-      setBanner({
-        type: 'danger',
-        text: 'لا يمكن حذف الجهة لأنها مرتبطة بمستخدم لديه دور "Admin". يرجى نقل المستخدم أولاً.'
-      });
+      setBanner({ type: 'danger', text: 'لا يمكن حذف الجهة لأنها مرتبطة بمستخدم لديه دور "Admin". يرجى نقل المستخدم أولاً.' });
       return;
     }
     setDeleteId(id);
@@ -377,6 +344,30 @@ export default function Departments() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'قالب الجهات');
     XLSX.writeFile(wb, 'قالب_الجهات.xlsx');
+  };
+
+  const stripHidden = (s='') =>
+    String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
+  const normalizeHeaderKey = (k='') => stripHidden(k);
+  const HEADER_ALIASES = {
+    'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
+    'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
+  };
+  const buildHeaderMap = (firstRowObj) => {
+    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
+    const originalKeys = Object.keys(firstRowObj || {});
+    const lookup = new Map();
+    for (const canon in HEADER_ALIASES) {
+      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
+      let foundIndex = -1;
+      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
+      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
+    }
+    return lookup;
+  };
+  const getCell = (row, headerMap, canonKey) => {
+    const actual = headerMap.get(canonKey);
+    return stripHidden(row[actual] ?? '');
   };
 
   const handleExcelImport = async (file) => {
@@ -447,7 +438,7 @@ export default function Departments() {
     }
   };
 
-  /* ===== Mobile card ===== */
+  /* Mobile card */
   const MobileCard = ({ item }) => (
     <div className="d-card" key={item.department_id}>
       <div className="d-head">
@@ -462,11 +453,7 @@ export default function Departments() {
           <button className="btn btn-primary d-btn" onClick={() => navigate(`/departments_edit/${item.department_id}`)}>
             <i className="fas fa-pen ms-1" /> تعديل
           </button>
-          <button
-            className="btn btn-outline-danger d-btn"
-            onClick={() => handleDeleteClick(item.department_id, item.department_name)}
-            title="حذف"
-          >
+          <button className="btn btn-outline-danger d-btn" onClick={() => handleDeleteClick(item.department_id, item.department_name)} title="حذف">
             <i className="fas fa-times ms-1" /> حذف
           </button>
         </div>
@@ -498,11 +485,33 @@ export default function Departments() {
       <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }} className="min-vh-100 d-flex flex-column">
         <Header />
 
-        {banner.type && (
-          <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
-            <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
-          </div>
-        )}
+{banner.type && (
+  <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
+    <div
+      className={`alert alert-${banner.type} mb-0`}
+      role="alert"
+      dir="rtl"
+      style={{
+        position: 'relative',
+        paddingLeft: '2.5rem',   // space for the close button on the left
+      }}
+    >
+      {banner.text}
+
+      {/* Close (×) — black, not overlapping text */}
+      <button
+        type="button"
+        className="btn-close"     // default is black
+        aria-label="إغلاق"
+        onClick={() => setBanner({ type: null, text: '' })}
+        style={{ position: 'absolute', left: 8, opacity: 1 }}
+      />
+    </div>
+  </div>
+)}
+
+
+
 
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
@@ -517,7 +526,7 @@ export default function Departments() {
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-10 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
-                      {/* ===== Header ===== */}
+                      {/* Header */}
                       <div className="head-flat">
                         {/* Desktop */}
                         {!isMobile && (
@@ -608,7 +617,7 @@ export default function Departments() {
                           </div>
                         )}
 
-                        {/* Mobile (same look as Standards/Users) */}
+                        {/* Mobile (same look as Users via .m-menu & .m-btn) */}
                         {isMobile && (
                           <div className="m-stack">
                             <input
@@ -625,7 +634,7 @@ export default function Departments() {
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                   <Dropdown.Header>الاسم</Dropdown.Header>
                                   <Dropdown.Item onClick={() => setSort('name','asc')}  active={sortKey==='name' && sortDir==='asc'}>اسم الجهة (أ-ي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => setSort('name','desc')} active={sortKey==='name' && sortDir==='desc'}>اسم الجهة (ي-أ)</Dropdown.Item>
@@ -641,7 +650,7 @@ export default function Departments() {
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-filter ms-1" /> تصفية
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                   <Dropdown.Header>رقم المبنى</Dropdown.Header>
                                   {uniqueBuildings.map((num, idx) => (
                                     <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
@@ -663,7 +672,7 @@ export default function Departments() {
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                   <Dropdown.Item as={Link} to="/departments_create"><i className="fas fa-building-circle-check ms-1" /> إضافة جهة</Dropdown.Item>
                                   {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                     <>
@@ -688,7 +697,7 @@ export default function Departments() {
                         )}
                       </div>
 
-                      {/* ===== Content: Cards (mobile) / Table (desktop) ===== */}
+                      {/* Content */}
                       {isMobile ? (
                         <div className="mobile-list">
                           {skeletonMode ? (
@@ -797,7 +806,7 @@ export default function Departments() {
         </div>
       </div>
 
-      {/* Hidden input for import (desktop/mobile) */}
+      {/* Hidden input for import */}
       <input
         ref={fileInputRef}
         type="file"
@@ -811,7 +820,7 @@ export default function Departments() {
         onHide={() => setShowDelete(false)}
         onConfirm={confirmDelete}
         subject={`«${deleteName || 'هذه الجهة'}»`}
-cascadeNote="سيتم حذف جميع المعايير والمستخدمين المرتبطين بهذه الجهة "
+        cascadeNote="سيتم حذف جميع المعايير والمستخدمين المرتبطين بهذه الجهة "
         requireText={deleteName}
       />
     </>

@@ -30,7 +30,7 @@ export default function DepartmentsEdit() {
   const normalizeName = (s = '') =>
     s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
 
-  /* ===== Minimal shell + skeleton to match other pages ===== */
+  /* ===== Minimal shell + skeleton + sticky footer (mobile-safe) ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -43,7 +43,36 @@ export default function DepartmentsEdit() {
         --skeleton-sheen:rgba(255,255,255,.6);
         --skeleton-speed:1.2s;
       }
-      .page-bg { background:#f6f8fb; min-height:100vh; }
+
+      /* Full-height column so Footer sits at bottom on mobile */
+      .page-bg {
+        background:#f6f8fb;
+        min-height:100dvh;
+        min-height:100svh;
+        display:flex;
+        flex-direction:column;
+      }
+
+      /* Area under Header */
+      #wrapper {
+        flex:1 1 auto;
+        min-height:0;
+        display:flex;
+        flex-direction:row;
+      }
+
+      #content-wrapper {
+        flex:1 1 auto;
+        min-height:0;
+        display:flex;
+        flex-direction:column;
+      }
+
+      #content {
+        flex:1 1 auto;
+        min-height:0;
+      }
+
       .surface {
         background:var(--surface);
         border:1px solid var(--stroke);
@@ -60,7 +89,11 @@ export default function DepartmentsEdit() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; }
+
+      /* Responsive spacer: small on phones so footer doesn't look "lifted" */
+      .page-spacer { height:24px; }
+      @media (min-width: 768px) { .page-spacer { height:80px; } }
+      @media (min-width: 1200px) { .page-spacer { height:140px; } }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -74,6 +107,9 @@ export default function DepartmentsEdit() {
       .skel-line  { height:14px; width:40%; }
       .skel-input { height:38px; width:100%; border-radius:8px; }
       .skel-btn   { height:38px; width:120px; border-radius:8px; }
+
+      /* RTL checkbox safety if non-RTL Bootstrap leaks in */
+      [dir="rtl"] .form-check .form-check-input { float: right; }
     `}</style>
   );
 
@@ -102,7 +138,9 @@ export default function DepartmentsEdit() {
           const depId = parseInt(x?.department_id ?? x?.id ?? x?.DepartmentId ?? -1, 10);
           return depId !== currentId;
         });
-        const names = items.map(x => x?.department_name ?? x?.name ?? x?.departmentName ?? '').filter(Boolean);
+        const names = items
+          .map(x => x?.department_name ?? x?.name ?? x?.departmentName ?? '')
+          .filter(Boolean);
         if (isMounted) setExistingNames(new Set(names.map(normalizeName)));
       } catch {
         // ignore; server will still protect
@@ -198,6 +236,7 @@ export default function DepartmentsEdit() {
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
       <LocalTheme />
       <Header />
+
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
@@ -213,7 +252,7 @@ export default function DepartmentsEdit() {
         </div>
       )}
 
-      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+      <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
@@ -257,7 +296,11 @@ export default function DepartmentsEdit() {
                           </div>
                         </div>
                       ) : (
-                        <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
+                        <form
+                          className={`needs-validation ${validated ? 'was-validated' : ''}`}
+                          noValidate
+                          onSubmit={handleSubmit}
+                        >
                           <div className="mb-3">
                             <label className="form-label">اسم الجهة</label>
                             <input
@@ -272,6 +315,7 @@ export default function DepartmentsEdit() {
                               {nameIsDuplicate ? 'اسم الجهة موجود مسبقاً' : 'يرجى إدخال اسم الجهة'}
                             </div>
                           </div>
+
                           <div className="mb-3">
                             <label className="form-label">رقم المبنى</label>
                             <input
@@ -284,9 +328,19 @@ export default function DepartmentsEdit() {
                             <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
                           </div>
 
-                          <div className="d-flex align-items-center gap-2 pb-4 pt-4">
-                            <input type="checkbox" className="form-check-input" id="checkTerms" name="checkTerms" required />
-                            <label className="form-check-label" htmlFor="checkTerms">أؤكد صحة المعلومات</label>
+                          {/* Proper RTL checkbox block with validation */}
+                          <div className="form-check pt-4 pb-4 m-0">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id="checkTerms"
+                              name="checkTerms"
+                              required
+                            />
+                            <label className="form-check-label ms-0 mb-0 text-nowrap" htmlFor="checkTerms">
+                              أؤكد صحة المعلومات
+                            </label>
+                            <div className="invalid-feedback">يرجى تأكيد صحة المعلومات</div>
                           </div>
 
                           {/* Submit on one side, Cancel on the other */}
@@ -314,10 +368,12 @@ export default function DepartmentsEdit() {
                 </div>
               </div>
 
+              {/* Responsive spacer */}
               <div className="page-spacer" />
             </div>
           </div>
 
+          {/* Footer stays at bottom now on all screen sizes */}
           <Footer />
         </div>
       </div>

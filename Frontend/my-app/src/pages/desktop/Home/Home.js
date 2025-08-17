@@ -24,6 +24,10 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [standardsRaw, setStandardsRaw] = useState([]);
 
+  // Departments map (for department chip)
+  const [departmentsMap, setDepartmentsMap] = useState(new Map());
+  const [deptLoading, setDeptLoading] = useState(false);
+
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
 
@@ -112,6 +116,32 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE]);
 
+  // Fetch departments to resolve department name for the chip
+  useEffect(() => {
+    let ac = new AbortController();
+    (async () => {
+      try {
+        setDeptLoading(true);
+        const res = await fetch(`${API_BASE}/api/departments`, { signal: ac.signal });
+        if (!res.ok) throw new Error('dept fetch failed');
+        const arr = await res.json();
+        const map = new Map(
+          (arr || []).map(d => {
+            const id = d?.id ?? d?.department_id;
+            const name = d?.name ?? d?.department_name ?? d?.title ?? `إدارة (${id ?? 'غير معروف'})`;
+            return [id, name];
+          })
+        );
+        setDepartmentsMap(map);
+      } catch (_) {
+        // ignore, fallbacks below
+      } finally {
+        setDeptLoading(false);
+      }
+    })();
+    return () => ac.abort();
+  }, [API_BASE]);
+
   const ar = 'ar-SA';
   const fmt = (n) => Number(n || 0).toLocaleString(ar);
   const pct = (num, den) => {
@@ -161,9 +191,13 @@ export default function Home() {
       .sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
   }, [standardsRaw, dateKey]);
 
-  // === Roles: hide Latest for Management/Managment; others see latest 5
+  // Roles
   const role = (user?.role || '').toString().toLowerCase();
   const isManagement = role === 'management' || role === 'managment';
+
+  // Chip shown only if role === 'users' (exactly)
+  const isUsersRole = role === 'user';
+
   const recentItems = useMemo(() => recentAll.slice(0, 5), [recentAll]);
 
   const distItems = useMemo(() => ([
@@ -173,6 +207,13 @@ export default function Home() {
     { key: 'notStarted', label: 'لم يبدأ',   value: summary.notStarted, color: summaryCardColors.notStarted, pct: pct(summary.notStarted, summary.total) },
     { key: 'rejected',   label: 'غير معتمد', value: summary.rejected,   color: summaryCardColors.rejected,   pct: pct(summary.rejected,  summary.total) },
   ]), [summary, summaryCardColors]);
+
+  // Department label (fallbacks if no map)
+  const representedLabel =
+    departmentsMap.get(user?.department_id) ||
+    user?.department_name ||
+    user?.department?.name ||
+    (user?.department_id ? `إدارة (${user.department_id})` : 'غير محدد');
 
   return (
     <div
@@ -207,7 +248,7 @@ export default function Home() {
         @media (max-width:576px){ .grid-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .stat-card { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 12px; border-radius: calc(var(--radius) - 2px); color:#fff; text-align:center; min-height:92px; box-shadow: 0 8px 18px rgba(0,0,0,.08); transition: transform .15s ease, box-shadow .2s ease, filter .2s ease; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); filter: brightness(1.02); }
-        .stat-value { margin:0 0 4px; font-weight:800; font-size:1.35rem; letter-spacing:.2px; }
+        .stat-value { margin:0 0 4px; font-weight:800; font-size:1.35rem; }
         .stat-title { font-size:.9rem; opacity:.95; }
 
         /* Skeletons */
@@ -238,10 +279,7 @@ export default function Home() {
           color: var(--text);
           font-size: 1rem;
         }
-        .legend-dot {
-          width: 14px; height: 14px; border-radius: 4px; display: inline-block;
-          box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
-        }
+        .legend-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
         .legend-pct {
           justify-self: start;
           padding: 3px 8px;
@@ -269,28 +307,38 @@ export default function Home() {
         .badge-underwork{ color:#664d03; border-color:#ffecb5; background:#fff3cd; }
         .badge-notstarted{ color:#383d41; border-color:#d6d8db; background:#e2e3e5; }
 
-        .cell-title { min-width: 0; display: flex; align-items: center; gap: 8px; }
-        .cell-title i { font-size: 14px; opacity: .9; }
-        .cell-title .name { font-weight: 700; font-size: 0.98rem; }
-        .cell-title .sep { margin: 0 4px; opacity: .5; }
-        .cell-title .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cell-title { min-width: 0; display:flex; align-items:center; gap:8px; }
+        .cell-title i { font-size:14px; opacity:.9; }
+        .cell-title .name { font-weight:700; font-size:.98rem; }
+        .cell-title .sep { margin:0 4px; opacity:.5; }
+        .cell-title .truncate { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-        .cell-date { font-size: .85rem; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; text-align: start; }
-        .cell-status { text-align: end; }
+        .cell-date { font-size:.85rem; color:var(--text-muted); white-space:nowrap; font-variant-numeric:tabular-nums; text-align:start; }
+        .cell-status { text-align:end; }
 
-        .cell-meta { display: none; }
-        @media (max-width: 576px) {
-          .cell-date, .cell-status { display: none; }
+        .cell-meta { display:none; }
+        @media (max-width:576px) {
+          .cell-date, .cell-status { display:none; }
           .cell-meta { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-          .cell-meta .date { font-size: .82rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-          .cell-meta .badge-soft { padding: 3px 8px; font-size: .72rem; }
+          .cell-meta .date { font-size:.82rem; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+          .cell-meta .badge-soft { padding:3px 8px; font-size:.72rem; }
         }
 
-        .row-skeleton { padding: 16px; border-bottom:1px solid #f1f4f8; }
+        .row-skeleton { padding:16px; border-bottom:1px solid #f1f4f8; }
         .row-skeleton:last-child { border-bottom:none; }
         .row-skeleton .top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
         .row-skeleton .bottom { display:flex; justify-content:space-between; gap:12px; }
         .badge-skel { width:90px; height:22px; border-radius:999px; }
+
+        /* Small department chip inside the summary header */
+        .rep-chip{
+          display:inline-flex; align-items:center; gap:8px;
+          padding:4px 10px; border-radius:999px;
+          background:#eef6ff; border:1px solid #dbeafe;
+          font-size:.82rem; font-weight:700; color:#0b2440;
+        }
+        .rep-chip .muted{ color:#6b7280; font-weight:600; }
+        .rep-chip i{ font-size:14px; opacity:.9; }
       `}</style>
 
       <Header />
@@ -321,7 +369,26 @@ export default function Home() {
                             ? `آخر تحديث: ${new Intl.DateTimeFormat('ar-SA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Riyadh' }).format(lastUpdated)}`
                             : 'جاري التحميل...'}
                         </small>
+
+                        {/* Chip only when role === 'users' */}
+                        {isUsersRole && (
+                          <div className="rep-chip mt-2" role="status" aria-live="polite">
+                            <i className="fas fa-building" aria-hidden="true" />
+                            <span className="muted">تمثيل الإدارة:</span>
+
+                            {/* ADDED: chip shows loading while either page or departments are loading */}
+                            {(loading || deptLoading) ? (
+                              <span className="d-inline-flex align-items-center">
+                                <Spinner size="sm" animation="border" role="status" className="ms-1" />
+                                <span className="ms-2">جارِ التحميل…</span>
+                              </span>
+                            ) : (
+                              <strong>{representedLabel}</strong>
+                            )}
+                          </div>
+                        )}
                       </div>
+
                       <div>
                         <button
                           type="button"
@@ -386,7 +453,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Distribution (donut centered; legend two aligned centered columns) */}
+              {/* Distribution */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10 mb-4">
                   <div className="surface" aria-busy={loading}>
@@ -423,7 +490,6 @@ export default function Home() {
                             />
                           </div>
 
-                          {/* legend: two columns (names | percentages), both centered */}
                           <div className="legend-grid">
                             {distItems.map(({ key, label, pct: p, color }) => (
                               <React.Fragment key={key}>
@@ -442,7 +508,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Recent updates — show only for non-management roles, and limit to 5 */}
+              {/* Recent updates — show only for non-management roles */}
               {!isManagement && (
                 <div className="row justify-content-center">
                   <div className="col-12 col-xl-10 mb-5">
@@ -523,9 +589,7 @@ function Donut({ size = 260, thickness = 22, items = [], centerTop, centerBottom
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="توزيع الحالات">
       <g transform={`translate(${center}, ${center})`}>
-        {/* track */}
         <circle r={r} fill="none" stroke="#eef2f7" strokeWidth={thickness} />
-        {/* arcs */}
         {items.map((it, i) => {
           const raw = total ? (it.value / total) : 0;
           const len = raw * c;
@@ -548,8 +612,6 @@ function Donut({ size = 260, thickness = 22, items = [], centerTop, centerBottom
           offset += len;
           return arc;
         })}
-
-        {/* Center text: total + label */}
         {(centerTop || centerBottom) && (
           <>
             <circle r={r - thickness} fill="#fff" />

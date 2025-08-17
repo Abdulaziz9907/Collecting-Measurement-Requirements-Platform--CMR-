@@ -22,7 +22,7 @@ export default function Standards() {
   const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Mobile detection (to unify with Users/Departments look & feel)
+  // Mobile detection (mobile-only changes; desktop unchanged)
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
@@ -71,7 +71,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  /* ========== Local Theme (unified with Users/Departments) ========== */
+  /* ========== Local Theme (unified; desktop unchanged, adds mobile .m-menu & mobile buttons) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -102,7 +102,6 @@ export default function Standards() {
       .th-name   { min-width: 220px; }
       .th-dept   { min-width: 160px; }
       .th-status { min-width: 110px; }
-      .th-det    { min-width: 90px;  }
       .th-date   { min-width: 140px; }
       .th-icon   { width: 60px; }
 
@@ -122,12 +121,12 @@ export default function Standards() {
 
       .skel-line  { height: 12px; }
       .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
-      .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
       .skel-chip  { height: 28px; width: 100%; border-radius: 999px; }
 
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
+      /* Desktop dropdown (unchanged) */
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; max-height: 50vh; overflow:auto; min-width: 220px; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
@@ -148,6 +147,11 @@ export default function Standards() {
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
       }
 
+      /* ===== Mobile dropdowns same as Users ===== */
+      .m-menu { width: min(92vw, 360px); max-width: 92vw; }
+      .m-menu .dropdown-item { padding: 10px 12px; font-size: .95rem; }
+      .m-menu .dropdown-header { font-size: .9rem; }
+
       /* ===== Mobile cards ===== */
       .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
       .mobile-card { border: 1px solid var(--stroke); border-radius: 12px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px; }
@@ -156,12 +160,11 @@ export default function Standards() {
       .mobile-subtle { color: var(--text-muted); font-size: .85rem; }
       .mobile-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
       .mobile-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.8rem; background: #f8fafc; }
-      .mobile-actions { display:flex; align-items:center; gap:12px; }
-      .btn-icon { border:0; background:transparent; padding:0; line-height: 1; }
-      .btn-icon i { font-size: 1rem; }
 
-      /* Slightly bigger checkbox in mobile, vertically centered with title */
-      .mobile-card .form-check-input { transform: scale(1.12); margin-top: 0; }
+      /* Two action buttons like Users/Departments on mobile only */
+      .s-actions { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px; }
+      .s-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:700; }
+      .s-btn i { font-size: .85rem; }
     `}</style>
   );
 
@@ -253,7 +256,6 @@ export default function Standards() {
   };
 
   useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
-
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, departmentFilter, pageSize, sortKey, sortDir]);
 
   const uniqueStatuses = [...new Set(data.map(i => i?.status).filter(Boolean))];
@@ -408,7 +410,6 @@ export default function Standards() {
       <td><span className="skel skel-line" style={{ width: '85%' }} /></td>
       <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
       <td><span className="skel skel-badge" /></td>
-      <td><span className="skel skel-link" /></td>
       <td><span className="skel skel-line" style={{ width: '55%' }} /></td>
       {!isViewer && <td><span className="skel skel-icon" /></td>}
     </tr>
@@ -717,7 +718,7 @@ export default function Standards() {
   // Role limits in modal
   const isUserRole = user?.role?.toLowerCase?.() === 'user';
 
-  /* ===== Mobile card ===== */
+  /* ===== Mobile card (only mobile changed) ===== */
   const MobileCard = ({ item, idx }) => {
     const id = item.standard_id;
     const checked = selectedIds.has(id);
@@ -754,25 +755,29 @@ export default function Standards() {
           <span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span>
         </div>
 
-        <div className="mobile-row" style={{ marginTop: 8 }}>
-          <div className="mobile-actions">
+        {/* Two buttons like Users/Departments (Show + Edit). Desktop remains unchanged. */}
+        <div className="s-actions" style={isViewer ? { gridTemplateColumns: '1fr' } : undefined}>
+          <button
+            className="btn btn-primary s-btn"
+            onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
+            title="إظهار التفاصيل"
+            aria-label="إظهار التفاصيل"
+          >
+            <i className="fas fa-eye ms-1" />
+            إظهار
+          </button>
+
+          {!isViewer && (
             <button
-              className="btn btn-link p-0"
-              onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
+              className="btn btn-success s-btn"
+              onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
+              title="تعديل"
+              aria-label="تعديل"
             >
-              إظهار التفاصيل
+              <i className="fas fa-pen ms-1" />
+              تعديل
             </button>
-            {user?.role?.toLowerCase?.() !== 'user' && (
-              <button
-                className="btn-icon text-success"
-                onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
-                title="تعديل"
-                aria-label="تعديل"
-              >
-                <i className="fas fa-pen"></i>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
@@ -805,7 +810,7 @@ export default function Standards() {
                     <div className="table-card" aria-busy={loading}>
                       {/* ===== Header ===== */}
                       <div className="head-flat">
-                        {/* Desktop header unified */}
+                        {/* Desktop header (unchanged) */}
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
@@ -819,7 +824,7 @@ export default function Standards() {
                             </div>
 
                             <div className="controls-inline">
-                              {/* Sort */}
+                              {/* Sort (desktop unchanged) */}
                               <Dropdown align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -839,7 +844,7 @@ export default function Standards() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filters combined (Status + Department) */}
+                              {/* Filters (desktop unchanged) */}
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -917,7 +922,7 @@ export default function Standards() {
                           </div>
                         )}
 
-                        {/* Mobile header unified (matches Users/Departments) */}
+                        {/* Mobile header (ONLY mobile changed) */}
                         {isMobile && (
                           <div className="m-stack">
                             <input
@@ -929,12 +934,12 @@ export default function Standards() {
                             />
 
                             <div className="m-toolbar">
-                              {/* Sort */}
+                              {/* Sort — Users-like menu size/look */}
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
                                   <Dropdown.Header>حسب التاريخ</Dropdown.Header>
                                   <Dropdown.Item onClick={() => setSort('created_at','desc')} active={sortKey==='created_at' && sortDir==='desc'}>الأحدث أولًا</Dropdown.Item>
                                   <Dropdown.Item onClick={() => setSort('created_at','asc')}  active={sortKey==='created_at' && sortDir==='asc'}>الأقدم أولًا</Dropdown.Item>
@@ -951,12 +956,12 @@ export default function Standards() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filters (Status + Department) */}
+                              {/* Filters — Users-like menu size/look */}
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-filter ms-1" /> تصفية
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
                                   <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={`mst-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
@@ -976,12 +981,12 @@ export default function Standards() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Actions */}
+                              {/* Actions — Users-like menu size/look */}
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
                                   <Dropdown.Item as={Link} to="/standards_create"><i className="fas fa-square-plus ms-1" /> إضافة معيار</Dropdown.Item>
                                   {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                     <>
@@ -1006,7 +1011,7 @@ export default function Standards() {
                         )}
                       </div>
 
-                      {/* Selection bar */}
+                      {/* Selection bar (unchanged) */}
                       {(!isViewer && anySelected) && (
                         <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
                           <div className="d-flex align-items-center gap-2">
@@ -1043,6 +1048,7 @@ export default function Standards() {
                           )}
                         </div>
                       ) : (
+                        // Desktop table (UNCHANGED)
                         <div className="table-responsive">
                           <table className="table table-hover text-center align-middle">
                             <thead>
@@ -1082,7 +1088,7 @@ export default function Standards() {
                                     حالة المعيار{sortIcon('status')}
                                   </button>
                                 </th>
-                                <th className="th-det">تفاصيل</th>
+                                <th>تفاصيل</th>
                                 <th className="th-date">
                                   <button type="button" className="th-sort" onClick={() => toggleSort('created_at')} disabled={skeletonMode}>
                                     تاريخ الإنشاء{sortIcon('created_at')}
@@ -1151,7 +1157,7 @@ export default function Standards() {
                         </div>
                       )}
 
-                      {/* Footer */}
+                      {/* Footer (unchanged) */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
@@ -1195,6 +1201,7 @@ export default function Standards() {
         </div>
       </div>
 
+      {/* Hidden input for import (works for mobile actions too) */}
       <input
         ref={fileInputRef}
         type="file"

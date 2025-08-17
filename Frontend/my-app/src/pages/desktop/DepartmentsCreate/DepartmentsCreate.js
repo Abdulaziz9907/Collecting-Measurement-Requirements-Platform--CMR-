@@ -21,7 +21,7 @@ export default function DepartmentsCreate() {
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const navigate = useNavigate();
 
-  /* ===== Minimal shell to match other pages (card + exact header height) ===== */
+  /* ===== Layout fixes: full-height column + sticky footer ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -31,7 +31,36 @@ export default function DepartmentsCreate() {
         --surface-muted:#fbfdff;
         --stroke:#eef2f7;
       }
-      .page-bg { background:#f6f8fb; min-height:100vh; }
+
+      /* Make whole page (below) fill the viewport and push Footer down */
+      .page-bg {
+        background:#f6f8fb;
+        min-height: 100dvh;      /* modern mobile browsers */
+        min-height: 100svh;      /* small viewport unit fallback */
+        display:flex;
+        flex-direction:column;
+      }
+
+      /* The region under the Header should grow to fill remaining height */
+      #wrapper {
+        flex: 1 1 auto;          /* take up leftover space under header */
+        min-height: 0;           /* prevent overflow issues in nested flex */
+        display:flex;
+        flex-direction:row;
+      }
+
+      #content-wrapper {
+        flex: 1 1 auto;
+        min-height: 0;
+        display:flex;
+        flex-direction:column;   /* so Footer sits after #content */
+      }
+
+      #content {
+        flex: 1 1 auto;          /* grow to push Footer down */
+        min-height: 0;
+      }
+
       .surface {
         background:var(--surface);
         border:1px solid var(--stroke);
@@ -48,9 +77,13 @@ export default function DepartmentsCreate() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; }
 
-      /* Safety net in case non-RTL Bootstrap is used somewhere */
+      /* Responsive spacer: small on phones, larger on desktop */
+      .page-spacer { height: 24px; }
+      @media (min-width: 768px) { .page-spacer { height: 80px; } }
+      @media (min-width: 1200px) { .page-spacer { height: 140px; } }
+
+      /* Safety net for RTL checkboxes if non-RTL Bootstrap leaks in */
       [dir="rtl"] .form-check .form-check-input{
         float: right;
       }
@@ -90,7 +123,6 @@ export default function DepartmentsCreate() {
     const value = e.target.value;
     const dup = existingNames.has(normalizeName(value));
     setNameIsDuplicate(dup);
-    // Hook into browser validity for Bootstrap's invalid-feedback
     if (dup) {
       e.target.setCustomValidity('duplicate');
     } else {
@@ -105,7 +137,7 @@ export default function DepartmentsCreate() {
     setShowError(false);
     setErrorMessage('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
 
-    // Re-check duplicate before submit (in case user bypassed change event)
+    // Re-check duplicate before submit
     const nameInput = form.department_name;
     const rawName = nameInput?.value ?? '';
     const normName = normalizeName(rawName);
@@ -142,7 +174,6 @@ export default function DepartmentsCreate() {
 
       if (!res.ok) {
         if (res.status === 409) {
-          // Server says duplicate
           setErrorMessage('اسم الجهة موجود مسبقاً، لا يمكن إنشاء جهة مكررة');
           setShowError(true);
           setNameIsDuplicate(true);
@@ -153,7 +184,6 @@ export default function DepartmentsCreate() {
         }
       } else {
         setShowSuccess(true);
-        // Add to local set so a second submit with same name is blocked immediately
         setExistingNames(prev => new Set([...prev, normName]));
         form.reset();
         setValidated(false);
@@ -170,6 +200,7 @@ export default function DepartmentsCreate() {
       <LocalTheme />
       <Header />
 
+      {/* Top alerts */}
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
@@ -185,8 +216,9 @@ export default function DepartmentsCreate() {
         </div>
       )}
 
-      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+      <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
+
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
           <div id="content" className="flex-grow-1">
             <div className="container-fluid">
@@ -230,7 +262,7 @@ export default function DepartmentsCreate() {
                           <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
                         </div>
 
-                        {/* Proper RTL checkbox block — no wrapping/warping */}
+                        {/* Proper RTL checkbox block */}
                         <div className="form-check pt-4 pb-4 m-0">
                           <input
                             type="checkbox"
@@ -271,10 +303,12 @@ export default function DepartmentsCreate() {
                 </div>
               </div>
 
+              {/* Responsive spacer (small on phones so the footer doesn't look "lifted") */}
               <div className="page-spacer" />
             </div>
           </div>
 
+          {/* Footer will naturally sit at the bottom now */}
           <Footer />
         </div>
       </div>

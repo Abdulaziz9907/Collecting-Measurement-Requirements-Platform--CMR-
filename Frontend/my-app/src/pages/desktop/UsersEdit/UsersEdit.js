@@ -62,16 +62,9 @@ export default function UsersEdit() {
         --skeleton-speed:1.2s;
       }
 
-      /* صفحة كاملة بمرونة عمودية لضمان التصاق الفوتر بأسفل الشاشة */
       .page-shell { min-height: 100dvh; display: flex; flex-direction: column; background:#f6f8fb; }
-
-      /* الحاوية الرئيسية (السايدبار + المحتوى) تملأ المساحة المتبقية تحت الهيدر */
       #wrapper { display:flex; flex-direction:row; flex: 1 1 auto; min-height:0; }
-
-      /* عمود المحتوى يمتد عموديًا ويمنع الانكماش */
       #content-wrapper { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
-
-      /* منطقة المحتوى تتمدد؛ لا نحتاج لأي spacer يدوي */
       #content { flex: 1 1 auto; min-height:0; }
 
       .surface {
@@ -103,16 +96,14 @@ export default function UsersEdit() {
       .skel-input { height:38px; width:100%; border-radius:8px; }
       .skel-btn   { height:38px; width:120px; border-radius:8px; }
 
-      /* === Password field icons (match Login) === */
+      /* === Password field (no lock icon) === */
       .pwd-floating { position: relative; }
       .pwd-floating input.form-control {
-        padding: .75rem 2.75rem; /* مساحة للأيقونتين يمين/يسار */
+        /* space on LEFT for the eye button; normal padding on the RIGHT */
+        padding: .75rem 1rem .75rem 2.75rem; /* top right bottom left */
         direction: rtl; text-align: right;
       }
-      .pwd-floating i.field-icon {
-        position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
-        color: #667eea; pointer-events: none;
-      }
+      /* removed the lock .field-icon usage */
       .pwd-floating .toggle-password {
         position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
         background: transparent; border: none; padding: 0; line-height: 0; cursor: pointer;
@@ -356,7 +347,8 @@ export default function UsersEdit() {
 
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
-                  <div className="surface" aria-busy={isLoading}>
+                  {/* ✅ أضفنا mb-5 لإيجاد مسافة أسفل الكارد قبل الفوتر */}
+                  <div className="surface mb-5" aria-busy={isLoading}>
                     <div className="head-flat head-match">
                       <h5 className="m-0">تعديل مستخدم</h5>
                     </div>
@@ -436,10 +428,7 @@ export default function UsersEdit() {
                                   defaultValue={user?.password || ''}
                                   aria-label="حقل كلمة المرور"
                                 />
-                                {/* أيقونة القفل — يمين */}
-                                <i className="fas fa-lock field-icon" aria-hidden="true"></i>
-
-                                {/* زر إظهار/إخفاء — يسار */}
+                                {/* 🔍 زر إظهار/إخفاء فقط (تم إزالة أيقونة القفل) */}
                                 <button
                                   type="button"
                                   className="toggle-password"

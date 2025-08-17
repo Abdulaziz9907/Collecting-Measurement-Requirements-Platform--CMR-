@@ -1,3 +1,4 @@
+// components/SessionTimeoutModal.jsx
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
@@ -11,11 +12,11 @@ export default function SessionTimeoutModal({ show, timeLeft, onStay, onLogout }
     <>
       <Modal
         show={show}
-        backdrop="static"     // لا تُغلق بالضغط خارج
-        keyboard={false}      // لا تُغلق بـ ESC
+        backdrop="static"
+        keyboard={false}
         centered
         dir="rtl"
-        animation={false}     // نستخدم أنيميشننا الخاص
+        animation={false}
         dialogClassName="session-pop"
       >
         <Modal.Header>
