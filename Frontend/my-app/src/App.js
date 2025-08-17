@@ -583,7 +583,16 @@ useEffect(() => {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Login onLogin={setUser} />} />
+        <Route
+          path="/"
+          element={
+            currentUser ? (
+              <Navigate to="/home" replace />
+            ) : (
+              <Login onLogin={setUser} />
+            )
+          }
+        />
         <Route
           path="/home"
           element={currentUser ? <Home /> : <Navigate to="/" replace />}
