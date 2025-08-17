@@ -29,7 +29,7 @@ namespace Commander.Controllers
             if (string.IsNullOrEmpty(raw))
                 return Array.Empty<string>();
 
-            // Treat Arabic commas like English ones and support escaping via "\,"
+            // Convert Arabic commas and allow \ escapes
             raw = raw.Replace('،', ',');
 
             var list = new List<string>();
@@ -232,7 +232,7 @@ namespace Commander.Controllers
             // but we may override it below for the downgrade rule.
             existing.Status = dto.Status;
 
-            // --- Downgrade rule for "معتمد"
+            // Downgrade rule for approved status
             var newProofs = new HashSet<string>(
                 ParseProofs(existing.Proof_required),
                 StringComparer.OrdinalIgnoreCase);
@@ -345,7 +345,7 @@ namespace Commander.Controllers
 
             var newStatus = (body?.Status ?? "").Trim();
 
-            // Optional hardening again for "معتمد"
+            // Extra check for approved status
             if (string.Equals(newStatus, "معتمد", StringComparison.OrdinalIgnoreCase) && !IsComplete(existing))
             {
                 return BadRequest("لا يمكن اعتماد المعيار قبل استكمال جميع مستندات الإثبات المطلوبة.");
@@ -364,7 +364,7 @@ namespace Commander.Controllers
             var s = _repository.GetStandardById(id);
             if (s == null) return NotFound();
 
-            // Move CURRENT to history if present, clear current, set "تحت العمل"
+            // Move CURRENT to history, clear current, set to in-progress
             var (current, hist) = ParseRejectLog(s.Rejection_reason);
             if (!string.IsNullOrWhiteSpace(current))
                 hist.Add(new RejectLogEntry { At = DateTime.UtcNow, Reason = current });

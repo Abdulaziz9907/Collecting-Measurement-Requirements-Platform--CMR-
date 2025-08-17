@@ -404,7 +404,7 @@ export default function Standards() {
     ));
 
   // Skeleton rows/cards
-// Desktop skeleton row: now includes a cell for "تفاصيل" and a separate one for "تاريخ الإنشاء"
+// Desktop skeleton row: separate cells for details and created date
 const SkeletonRow = ({ idx }) => (
   <tr key={`sk-${idx}`}>
     {/* Select checkbox (admins only) */}

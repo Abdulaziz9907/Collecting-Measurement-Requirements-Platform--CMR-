@@ -193,7 +193,7 @@ export default function StandardsEdit() {
     setProofMinError(false);
     setStdError('');
 
-    // 1) Validate رقم المعيار format (accept Arabic/ASCII digits & separators)
+    // 1) Validate standard number (Arabic/ASCII digits allowed)
     const standardNumRaw = (form.standard_num.value || '').trim();
     const standardNumNorm = normalizeStandardNumber(standardNumRaw);
     const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F0-\u06F9]+$/u;
@@ -335,32 +335,26 @@ export default function StandardsEdit() {
   /* ------- Skeleton renderer (matches form layout visually) ------- */
   const FormSkeleton = () => (
     <div>
-      {/* رقم المعيار */}
       <div className="mb-3">
         <div className="skel skel-label" />
         <div className="skel skel-input" />
       </div>
-      {/* اسم المعيار */}
       <div className="mb-3">
         <div className="skel skel-label" />
         <div className="skel skel-input" />
       </div>
-      {/* الهدف */}
       <div className="mb-3">
         <div className="skel skel-label" />
         <div className="skel skel-textarea" />
       </div>
-      {/* متطلبات التطبيق */}
       <div className="mb-3">
         <div className="skel skel-label" />
         <div className="skel skel-textarea" />
       </div>
-      {/* الجهة */}
       <div className="mb-3">
         <div className="skel skel-label" />
         <div className="skel skel-input" />
       </div>
-      {/* مستند إثبات */}
       <div className="mb-4">
         <div className="skel skel-label" />
         <div className="d-flex align-items-center gap-2">

@@ -33,7 +33,6 @@
 //             <div className="container-fluid">
 //               <div className="row p-4">
 //                 <div className="col-md-12">
-//                   <h4>الرئيسية / إدارة المعايير</h4>
 //                 </div>
 //               </div>
 //               <div className="row">

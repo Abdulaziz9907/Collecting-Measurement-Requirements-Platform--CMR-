@@ -35,17 +35,17 @@ export default function Breadcrumbs() {
 
   return (
     <nav aria-label="breadcrumb" dir="rtl" className="breadcrumbs-nav">
-      {/* تصغير الحجم على الموبايل فقط */}
+      {/* Smaller font on mobile */}
       <style>{`
-        /* ديسكتوب (تقريبًا مثل h5) */
+        /* Desktop size */
         @media (min-width: 992px) {
           .breadcrumbs-nav { font-size: 1.25rem; }
         }
-        /* تابلت */
+        /* Tablet */
         @media (min-width: 576px) and (max-width: 991.98px) {
           .breadcrumbs-nav { font-size: 1rem; }
         }
-        /* موبايل */
+        /* Mobile */
         @media (max-width: 575.98px) {
           .breadcrumbs-nav { font-size: 0.99rem; }
           .breadcrumbs-nav .breadcrumb { padding-top: .125rem !important; padding-bottom: .125rem !important; }

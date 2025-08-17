@@ -15,7 +15,7 @@ function escapeInput(str) {
 function escapeCommas(str) {
   return String(str).replace(/[,،]/g, '\\,');
 }
-// ✅ Normalize Arabic/ASCII digits & separators to ASCII ("." and 0-9)
+// Normalize digits and separators to ASCII
 function normalizeStandardNumber(str = "") {
   const map = {
     '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -44,7 +44,7 @@ export default function StandardsCreate() {
   const [proofEmptyIdxs, setProofEmptyIdxs] = useState(new Set());
   const [proofMinError, setProofMinError] = useState(false);
 
-  // One source of truth for the رقم المعيار error message
+  // Single source for the standard number error message
   // '' means no error; otherwise we render this text in the invalid-feedback
   const [stdError, setStdError] = useState('');
 
@@ -118,7 +118,7 @@ export default function StandardsCreate() {
     setProofMinError(false);
     setStdError('');
 
-    // 1) رقم المعيار — صيغة صحيحة؟
+    // 1) Validate standard number format
     const standardNumRaw = (form.standard_num.value || '').trim();
     const standardNumNorm = normalizeStandardNumber(standardNumRaw);
     const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
@@ -136,7 +136,7 @@ export default function StandardsCreate() {
     }
     form.standard_num.setCustomValidity('');
 
-    // 2) مستندات الإثبات — واحد على الأقل + لا تكرار عناوين + لا فراغات
+    // 2) Proofs: at least one, no duplicates or blanks
     const trimmed = proofRequired.map(p => p.trim());
     const nonEmptyProofs = trimmed.filter(Boolean);
     const dupIdxs = new Set();
@@ -171,14 +171,14 @@ export default function StandardsCreate() {
     setProofEmptyIdxs(new Set());
     setProofMinError(false);
 
-    // 3) منع تكرار رقم المعيار — واستبدال نص الخطأ بالعربية
+    // 3) Prevent duplicate standard number with custom error
     setIsSubmitting(true);
     try {
       const exists = await standardNumberExists(standardNumNorm);
       if (exists) {
         const msg = 'رقم المعيار مُستخدم بالفعل — لا يُسمح بتكرار رقم المعيار';
-        setStdError(msg);                               // <-- يظهر بدلاً من رسالة الصيغة
-        form.standard_num.setCustomValidity(msg);       // <-- يجعل الحقل غير صالح بنفس النص
+        setStdError(msg);                               // replaced default format message
+        form.standard_num.setCustomValidity(msg);       // set field as invalid with same text
         setShowError(true);
         setValidated(true);
         form.reportValidity?.();
@@ -186,12 +186,12 @@ export default function StandardsCreate() {
         return;
       }
     } catch {
-      // تجاهل فشل التحقق هنا — الخادم يجب أن يفرض التفرّد أيضاً
+      // Ignore failure here; server must enforce uniqueness
     } finally {
       if (!stdError) form.standard_num.setCustomValidity('');
     }
 
-    // 4) تجهيز الحمولة
+    // 4) Build payload
     const proofsJoined = nonEmptyProofs
       .map(text => escapeCommas(escapeInput(text)))
       .join(',');
@@ -205,7 +205,7 @@ export default function StandardsCreate() {
       proof_required: proofsJoined,
     };
 
-    // 5) إرسال
+    // 5) Submit
     try {
       const res = await fetch(`${API_BASE}/api/standards`, {
         method: 'POST',
@@ -229,7 +229,7 @@ export default function StandardsCreate() {
     }
   };
 
-  // Clear رقم المعيار error as user types
+  // Clear standard number error as user types
   const onStdNumChange = (e) => {
     if (stdError) setStdError('');
     e.currentTarget.setCustomValidity('');

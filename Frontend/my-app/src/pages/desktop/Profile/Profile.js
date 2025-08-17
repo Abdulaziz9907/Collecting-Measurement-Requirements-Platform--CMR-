@@ -540,7 +540,7 @@ export default function Profile() {
                 <div className="col-12"><Breadcrumbs /></div>
               </div>
 
-              {/* ===== تحديث البيانات — FULL WIDTH ===== */}
+              {/* Update info — full width */}
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">
@@ -631,7 +631,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* ===== تغيير البريد الإلكتروني — FULL WIDTH ===== */}
+              {/* Change email — full width */}
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">
@@ -771,7 +771,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* ===== تغيير كلمة المرور — UNDER it, full width ===== */}
+              {/* Change password — full width below */}
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">

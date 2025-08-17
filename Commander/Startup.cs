@@ -22,7 +22,7 @@ namespace Commander
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Resolve connection string from multiple possible sources.
+            // Resolve connection string from available sources.
             string conn =
                 Configuration["ConnectionStrings:DBConnection"] ??
                 Configuration.GetConnectionString("DBConnection") ??
@@ -68,9 +68,7 @@ namespace Commander
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // The database schema is managed outside of this application.
-            // No automatic EF Core migrations are executed on startup to
-            // avoid altering an already provisioned database.
+            // Schema handled externally; no EF migrations run here.
 
             if (env.IsDevelopment())
             {
@@ -79,10 +77,10 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            // Serve static files from wwwroot (e.g., uploads, images).
+            // Serve static files from wwwroot.
             app.UseStaticFiles();
 
-            // Serve the React build from wwwroot/build at the root URL ("/") if present.
+            // Serve React build from wwwroot/build at root if present.
             var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
             var buildExists = Directory.Exists(buildPath);
 

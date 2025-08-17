@@ -8,14 +8,13 @@ export default function DeleteModal({
   subject = 'هذا العنصر',
   cascadeNote,
   cascade = [],
-  requireText,   // نص مطلوب كتابته حرفيًا (اختياري)
-  requireCount,  // عدد مطلوب كتابته (اختياري)
+  requireText,
+  requireCount,
 }) {
-  const hasCascade = (cascadeNote && cascadeNote.trim()) || (cascade && cascade.length > 0);
+  const hasCascade = Boolean((cascadeNote && cascadeNote.trim()) || (cascade && cascade.length > 0));
 
   const clean = (s = '') => String(s).replace(/\u200f|\u200e|\ufeff/g, '').trim();
 
-  // تحويل أرقام عربية/فارسية إلى لاتينية
   const normalizeDigits = (str = '') => {
     const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
                   '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
@@ -35,7 +34,6 @@ export default function DeleteModal({
   const needsCount = Number.isFinite(requireCount) && requireCount > 0;
   const needsText  = typeof requireText === 'string' && requireText.trim().length > 0;
 
-  // تحقق من متطلبات الإدخال (إن وُجدت)
   let textOk = true;
   if (needsCount) {
     const asNumber = Number(normalizeDigits(clean(typed)));

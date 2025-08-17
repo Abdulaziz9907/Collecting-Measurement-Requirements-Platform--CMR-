@@ -22,23 +22,19 @@ export default function StandardModal({
   const prevEffectiveRef = useRef(null);
   const autoDowngradedOnceRef = useRef(false);
 
-  // تحميل/خطأ + منع السباقات
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const reqIdRef = useRef(0);
   const abortRef = useRef(null);
 
-  // مفاتيح الأنيميشن
   const [animTick, setAnimTick] = useState(0);
   const prevLoadingRef = useRef(false);
 
   // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
 
-  // هل لدينا مودال مكدّس (أعلى المودال الحالي)؟
   const isStacked = showReject || showReasons;
 
-  // ===================== تطبيع الاسم =====================
   const normalizeProof = (s = '') =>
     String(s).replace(/\u060C/g, ',').normalize('NFC').replace(/\s+/g, ' ').trim();
 
@@ -216,7 +212,6 @@ export default function StandardModal({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // تفريغ + تفعيل التحميل
     setLoading(true);
     setLoadError('');
     setStandard(null);
@@ -296,7 +291,6 @@ export default function StandardModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [standard, hasAllProofs, apiStatus, effectiveStatus]);
 
-  // ✅ تشغيل الأنيميشن فور انتهاء التحميل بوجود بيانات
   useEffect(() => {
     if (prevLoadingRef.current && !loading && standard) {
       setAnimTick(t => t + 1);
@@ -334,7 +328,6 @@ export default function StandardModal({
 
   return (
     <>
-      {/* المحتوى الخلفي يُعتم تلقائياً عند فتح مودال علوي */}
       <Modal
         show={show}
         onHide={onHide}
@@ -356,7 +349,6 @@ export default function StandardModal({
           ) : loadError ? (
             <div className="alert alert-danger mb-0">{loadError}</div>
           ) : standard ? (
-            // ✅ المفتاح يعيد تركيب الحاوية لتشغيل الأنيميشن في كل مرة ينتهي فيها التحميل
             <div
               key={`content-${animTick}`}
               className="modal-content-animated"
@@ -611,7 +603,7 @@ export default function StandardModal({
       <style>{`
         .drag-over { background-color: #f0f8ff; border: 2px dashed #007bff; }
 
-        /* Darker backdrop only for the TOP modal(s) */
+        /* Darker backdrop for top modal */
         .modal-backdrop.reject-backdrop.show,
         .modal-backdrop.stacked-backdrop.show {
           opacity: 0.85 !important;
@@ -619,7 +611,6 @@ export default function StandardModal({
           backdrop-filter: blur(2px);
         }
 
-        /* عندما يكون هناك مودال علوي، اعتم المودال السفلي قليلاً */
         .underlay-dim-content {
           position: relative; /* anchor for ::after */
           filter: brightness(.72) saturate(.92) blur(.6px);
@@ -639,7 +630,6 @@ export default function StandardModal({
           word-break: break-word;
         }
 
-        /* ======= فتح أنيق وسريع بعد التحميل ======= */
         .modal-content-animated {
           animation: modalPop .22s cubic-bezier(.22,.61,.36,1) both;
           will-change: transform, opacity, filter;
@@ -657,7 +647,7 @@ export default function StandardModal({
           }
         }
 
-        /* Label should not occupy full clickable width when next to actions */
+        /* Limit label width near actions */
         .form-label { display: inline-block; }
 
         @media (prefers-reduced-motion: reduce) {

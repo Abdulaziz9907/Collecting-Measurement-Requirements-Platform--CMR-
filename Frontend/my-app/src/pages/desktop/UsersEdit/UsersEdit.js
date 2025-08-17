@@ -31,7 +31,7 @@ export default function UsersEdit() {
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
-  // 👁 نفس سلوك الأيقونة في صفحة تسجيل الدخول
+  // Match login icon behavior
   const [showPassword, setShowPassword] = useState(false);
 
   // Normalize Arabic/ASCII digits to ASCII
@@ -360,7 +360,6 @@ export default function UsersEdit() {
 
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
-                  {/* ✅ أضفنا mb-5 لإيجاد مسافة أسفل الكارد قبل الفوتر */}
                   <div className="surface mb-5" aria-busy={isLoading}>
                     <div className="head-flat head-match">
                       <h5 className="m-0">تعديل مستخدم</h5>
@@ -441,7 +440,6 @@ export default function UsersEdit() {
                                   defaultValue={user?.password || ''}
                                   aria-label="حقل كلمة المرور"
                                 />
-                                {/* 🔍 زر إظهار/إخفاء فقط (تم إزالة أيقونة القفل) */}
                                 <button
                                   type="button"
                                   className="toggle-password"
