@@ -270,17 +270,13 @@ export default function Profile() {
   };
 
   // ---------- Email change (3 steps) ----------
-  // Steps: 1) send code to current email  2) verify current code  3) send/verify code to new email and update
+  // Steps: 1) send code to current email  2) verify current code  3) enter new email and save
   const [emailStep, setEmailStep] = useState(1); // 1: send to current, 2: verify current, 3: new email
   const [emailLoading, setEmailLoading] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newEmailCode, setNewEmailCode] = useState('');
-  const [newCodeSent, setNewCodeSent] = useState(false);
   const [emailBanner, setEmailBanner] = useState({ type: null, text: '' });
   const [currCooldown, setCurrCooldown] = useState(0);   // resend timer for current email code
-  const [emailCooldown, setEmailCooldown] = useState(0); // resend timer for new email code
-  const [emailExpiryAt, setEmailExpiryAt] = useState(null);
   const showEmailBanner = (type, text) => setEmailBanner({ type, text });
 
   useEffect(() => {
@@ -288,12 +284,6 @@ export default function Profile() {
     const t = setInterval(() => setCurrCooldown(s => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [currCooldown]);
-
-  useEffect(() => {
-    if (emailCooldown <= 0) return;
-    const t = setInterval(() => setEmailCooldown(s => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, [emailCooldown]);
 
   const sendCurrentCode = async () => {
     const userId = user?.employee_id ?? user?.id;
@@ -360,7 +350,7 @@ export default function Profile() {
     }
   };
 
-  const sendNewEmailCode = async () => {
+  const saveNewEmail = async () => {
     if (!validateEmail(newEmail.trim())) {
       showEmailBanner('warning', 'أدخل بريداً إلكترونياً صالحاً');
       return;
@@ -372,80 +362,27 @@ export default function Profile() {
     }
     setEmailLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/login/email/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, newEmail: newEmail.trim() })
+      const res = await fetch(`${API_BASE}/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json-patch+json' },
+        body: JSON.stringify([{ op: 'replace', path: '/email', value: newEmail.trim() }])
       });
-      const data = await res.json().catch(() => null);
       if (res.ok) {
-        setNewCodeSent(true);
-        setEmailCooldown(60);
-        setEmailExpiryAt(Date.now() + 5 * 60 * 1000);
-        showEmailBanner('success', `تم إرسال رمز التحقق إلى ${newEmail.trim()}`);
+        const updated = { ...user, email: newEmail.trim() };
+        setUser(updated);
+        setForm(prev => ({ ...prev, email: newEmail.trim() }));
+        storeUser(updated);
+        showBanner('success', 'تم تحديث البريد الإلكتروني بنجاح.');
+        setEmailStep(1);
+        setCurrentCode('');
+        setNewEmail('');
+        setCurrCooldown(0);
+        setEmailBanner({ type: null, text: '' });
       } else {
-        showEmailBanner('danger', data?.message || 'تعذر إرسال الرمز');
+        showEmailBanner('danger', 'فشل تحديث البريد الإلكتروني');
       }
     } catch {
-      showEmailBanner('danger', 'تعذر إرسال الرمز');
-    } finally {
-      setEmailLoading(false);
-    }
-  };
-
-  const resendNewEmailCode = async () => {
-    if (emailCooldown > 0) return;
-    await sendNewEmailCode();
-  };
-
-  const verifyNewEmailCode = async () => {
-    const norm = normalizeDigits(newEmailCode).replace(/\D/g, '').slice(0, 6);
-    if (norm.length !== 6) {
-      showEmailBanner('warning', 'أدخل رمزًا مكوّنًا من ٦ أرقام');
-      return;
-    }
-    const userId = user?.employee_id ?? user?.id;
-    if (!userId) {
-      showEmailBanner('danger', 'معرّف المستخدم غير معروف.');
-      return;
-    }
-    setEmailLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/login/email/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, newEmail: newEmail.trim(), code: norm })
-      });
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.valid) {
-        // Update email in Users
-        const res2 = await fetch(`${API_BASE}/api/users/${userId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json-patch+json' },
-          body: JSON.stringify([{ op: 'replace', path: '/email', value: newEmail.trim() }])
-        });
-        if (res2.ok) {
-          const updated = { ...user, email: newEmail.trim() };
-          setUser(updated);
-          setForm(prev => ({ ...prev, email: newEmail.trim() }));
-          storeUser(updated);
-          showBanner('success', 'تم تحديث البريد الإلكتروني بنجاح.');
-          // Reset email change flow
-          setEmailStep(1);
-          setCurrentCode('');
-          setNewEmail('');
-          setNewEmailCode('');
-          setNewCodeSent(false);
-          setCurrCooldown(0);
-          setEmailCooldown(0);
-        } else {
-          showEmailBanner('danger', 'فشل تحديث البريد الإلكتروني');
-        }
-      } else {
-        showEmailBanner('danger', data?.message || 'الرمز غير صحيح أو منتهي');
-      }
-    } catch {
-      showEmailBanner('danger', 'الرمز غير صحيح أو منتهي');
+      showEmailBanner('danger', 'فشل تحديث البريد الإلكتروني');
     } finally {
       setEmailLoading(false);
     }
@@ -709,8 +646,14 @@ export default function Profile() {
                           <div className={`step-dot ${emailStep >= 3 ? 'active' : 'inactive'}`}>3</div>
                         </div>
                         {emailBanner.type && (
-                          <div className={`alert alert-${emailBanner.type}`} role="alert">
-                            {emailBanner.text}
+                          <div className={`alert alert-${emailBanner.type} d-flex align-items-center justify-content-between py-2 rounded-soft mb-0`} role="alert">
+                            <span>{emailBanner.text}</span>
+                            <button
+                              type="button"
+                              className="btn-close"
+                              aria-label="Close"
+                              onClick={() => setEmailBanner({ type: null, text: '' })}
+                            />
                           </div>
                         )}
                       </div>
@@ -795,81 +738,29 @@ export default function Profile() {
                                 className="form-control"
                                 value={newEmail}
                                 onChange={(e) => setNewEmail(e.target.value)}
-                                disabled={emailLoading || newCodeSent}
+                                autoFocus
+                                disabled={emailLoading}
                               />
                             </div>
-
-                            {!newCodeSent && (
-                              <div className="d-flex gap-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-primary"
-                                  onClick={sendNewEmailCode}
-                                  disabled={emailLoading}
-                                >
-                                  {emailLoading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
-                                  إرسال رمز التحقق
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-secondary btn-sm rounded"
-                                  onClick={() => { setEmailStep(2); setNewEmail(''); }}
-                                  disabled={emailLoading}
-                                >
-                                  الرجوع
-                                </button>
-                              </div>
-                            )}
-
-                            {newCodeSent && (
-                              <>
-                                <div className="mb-3">
-                                  <label className="form-label">رمز التحقق</label>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={6}
-                                    className="form-control text-center fw-bold"
-                                    style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
-                                    value={newEmailCode}
-                                    onChange={(e) => {
-                                      const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
-                                      setNewEmailCode(norm);
-                                    }}
-                                    placeholder="••••••"
-                                    disabled={emailLoading}
-                                  />
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-secondary btn-sm rounded"
-                                    onClick={() => { setNewCodeSent(false); setNewEmailCode(''); }}
-                                    disabled={emailLoading}
-                                  >
-                                    الرجوع
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-link p-0"
-                                    onClick={resendNewEmailCode}
-                                    disabled={emailLoading || emailCooldown > 0}
-                                  >
-                                    {emailCooldown > 0 ? `إعادة الإرسال (${emailCooldown})` : 'إعادة إرسال الرمز'}
-                                  </button>
-                                </div>
-                                <div className="d-flex gap-2">
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={verifyNewEmailCode}
-                                    disabled={emailLoading || newEmailCode.length !== 6}
-                                  >
-                                    تأكيد
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                            <div className="d-flex justify-content-between align-items-center">
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm rounded"
+                                onClick={() => { setEmailStep(2); setNewEmail(''); }}
+                                disabled={emailLoading}
+                              >
+                                الرجوع للتحقق
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={saveNewEmail}
+                                disabled={emailLoading || !validateEmail(newEmail.trim())}
+                              >
+                                {emailLoading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
+                                حفظ
+                              </button>
+                            </div>
                           </>
                         )}
                       </div>
