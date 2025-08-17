@@ -94,7 +94,7 @@ namespace Commander.Controllers
             return $"{u}::{e}";
         }
 
-        // Map Arabic-Indic & Eastern Arabic-Indic digits to ASCII and drop everything else
+        // Map Arabic-Indic & Eastern Arabic-Indic digits to ASCII and keep only digits (max 6)
         private static string NormalizeCode(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "";

@@ -270,6 +270,7 @@ export default function Profile() {
   };
 
   // ---------- Email change (3 steps) ----------
+  // Steps: 1) send code to current email  2) verify current code  3) send/verify code to new email and update
   const [emailStep, setEmailStep] = useState(1); // 1: send to current, 2: verify current, 3: new email
   const [emailLoading, setEmailLoading] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
@@ -277,8 +278,8 @@ export default function Profile() {
   const [newEmailCode, setNewEmailCode] = useState('');
   const [newCodeSent, setNewCodeSent] = useState(false);
   const [emailBanner, setEmailBanner] = useState({ type: null, text: '' });
-  const [currCooldown, setCurrCooldown] = useState(0);
-  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [currCooldown, setCurrCooldown] = useState(0);   // resend timer for current email code
+  const [emailCooldown, setEmailCooldown] = useState(0); // resend timer for new email code
   const [emailExpiryAt, setEmailExpiryAt] = useState(null);
   const showEmailBanner = (type, text) => setEmailBanner({ type, text });
 
@@ -417,6 +418,7 @@ export default function Profile() {
       });
       const data = await res.json().catch(() => null);
       if (res.ok && data?.valid) {
+        // Update email in Users
         const res2 = await fetch(`${API_BASE}/api/users/${userId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json-patch+json' },
@@ -428,6 +430,7 @@ export default function Profile() {
           setForm(prev => ({ ...prev, email: newEmail.trim() }));
           storeUser(updated);
           showBanner('success', 'تم تحديث البريد الإلكتروني بنجاح.');
+          // Reset email change flow
           setEmailStep(1);
           setCurrentCode('');
           setNewEmail('');
@@ -695,6 +698,8 @@ export default function Profile() {
                   <div className="surface-wrap">
                     <div className="surface">
                       <div className="head-flat">تغيير البريد الإلكتروني</div>
+
+                      {/* Stepper + banner */}
                       <div className="px-4 pt-3">
                         <div className="stepper">
                           <div className={`step-dot ${emailStep >= 1 ? 'active' : 'inactive'}`}>1</div>
@@ -709,6 +714,7 @@ export default function Profile() {
                           </div>
                         )}
                       </div>
+
                       <div className="p-4">
                         {emailStep === 1 && (
                           <>
