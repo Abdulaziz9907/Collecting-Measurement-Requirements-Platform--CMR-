@@ -302,7 +302,8 @@ export default function Profile() {
       if (res.ok) {
         setEmailStep(2);
         setCurrCooldown(60);
-        showEmailBanner('success', `تم إرسال رمز التحقق إلى ${maskEmail(form.email)}`);
+        showEmailBanner('success', `تم إرسال رمز التحقق إلى ${form.email}.      ، يرجى التحقق من مجلد الرسائل غير المرغوب فيها (Spam).`);
+
       } else {
         showEmailBanner('danger', data?.message || 'تعذر إرسال الرمز');
       }
@@ -436,7 +437,8 @@ export default function Profile() {
         setCooldown(60);
         const sec = (data?.secondsLeft && Number.isFinite(data.secondsLeft)) ? data.secondsLeft : 5 * 60;
         setExpiryAt(Date.now() + sec * 1000);
-        showPwBanner('success', `تم إرسال رمز التحقق إلى ${form.email.trim()}. إذا لم تصلك الرسالة خلال دقيقة، يرجى التحقق من مجلد الرسائل غير المرغوب فيها (Spam).`);
+        showPwBanner('success', `تم إرسال رمز التحقق إلى ${form.email.trim()}.      ، يرجى التحقق من مجلد الرسائل غير المرغوب فيها (Spam).`);
+
       } else if (res.status === 404) {
         showPwBanner('warning', 'المستخدم غير موجود أو البريد الإلكتروني غير مطابق');
       } else {
@@ -662,7 +664,7 @@ export default function Profile() {
                         {emailStep === 1 && (
                           <>
                             <div className="mb-2 text-muted">
-                              سيتم إرسال رمز تحقق إلى بريدك: <span className="fw-semibold">{maskEmail(form.email)}</span>
+                              سيتم إرسال رمز تحقق إلى بريدك: <span className="fw-semibold">{(form.email)}</span>
                             </div>
                             <div className="d-flex gap-2">
                               <button

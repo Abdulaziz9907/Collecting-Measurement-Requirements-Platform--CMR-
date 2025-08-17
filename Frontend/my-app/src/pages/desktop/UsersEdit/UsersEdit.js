@@ -265,12 +265,17 @@ export default function UsersEdit() {
       finalRole = original.charAt(0).toUpperCase() + original.slice(1);
     }
 
+    // 🔒 If originally Admin, ignore any email changes and keep the stored value
+    const emailToSend = isAdminOriginal
+      ? (user?.email || null)
+      : ((form.email.value || '').trim() || null);
+
     const payload = {
       employee_id: newEmpNum,
       username: newUsername,
       first_name: (form.first_name.value || '').trim(),
       last_name: (form.last_name.value || '').trim(),
-      email: (form.email.value || '').trim() || null,
+      email: emailToSend,
       role: finalRole,
       department_id: parseInt(form.department.value, 10),
       // Always include a password to satisfy backend requirements
@@ -322,7 +327,7 @@ export default function UsersEdit() {
   };
 
   // UI logic:
-  const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock role select if true
+  const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock role select & email if true
   const isAdminNow = ((user?.role || '').toLowerCase() === 'admin'); // for password visibility
 
   return (
@@ -464,10 +469,37 @@ export default function UsersEdit() {
                             <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
                           </div>
 
-                          <div className="mb-3">
-                            <label className="form-label">البريد الإلكتروني</label>
-                            <input type="email" className="form-control" name="email" defaultValue={user?.email || ''} />
-                          </div>
+                  {/* 🔒 Email: block editing for Admin (original) */}
+<div className="mb-3">
+  <label className="form-label">البريد الإلكتروني</label>
+  <input
+    type="email"
+    className="form-control"
+    name="email"
+    defaultValue={user?.email || ''}
+    disabled={isAdminOriginal}
+    readOnly={isAdminOriginal}
+    title={
+      isAdminOriginal
+        ? 'لا يمكن تعديل بريد مدير النظام هنا. لتحديث البريد، استخدم صفحة "الملف الشخصي".'
+        : undefined
+    }
+    aria-describedby={isAdminOriginal ? 'emailHelp' : undefined}
+  />
+  {isAdminOriginal && (
+    <small id="emailHelp" className="text-muted d-block mt-1">
+لا يمكن تعديل بريد مدير النظام من هذه الصفحة. لتحديث البريد انتقل الى صفحة{' '}      <button
+        type="button"
+        className="btn btn-link p-0 align-baseline"
+        onClick={() => navigate('/profile')}
+      >
+        <span className="fw-light">الملف الشخصي</span>
+      </button>
+      .
+    </small>
+  )}
+</div>
+
 
                           <div className="mb-3">
                             <label className="form-label">الدور</label>

@@ -133,7 +133,7 @@ namespace Commander.Services
 هذا الرمز صالح لمدة 5 دقائق. إذا لم تطلب هذا التغيير، فتجاهل هذه الرسالة.";
 
             var preheader = $"رمز تأكيد البريد الإلكتروني: {code} – صالح 5 دقائق.";
-            var intro = $"وردنا طلب لتغيير عنوان البريد الإلكتروني لحسابك في <strong>{_brand}</strong>. الرجاء استخدام الرمز أدناه لتأكيد بريدك الحالي:";
+            var intro = $"وردنا طلب لتغيير البريد الإلكتروني لحسابك في <strong>{_brand}</strong>. الرجاء استخدام الرمز أدناه لتأكيد بريدك الحالي:";
             var html = BuildCodeHtml(_brand, code, toName ?? toEmail, preheader, intro);
 
             var request = new MailjetRequest
