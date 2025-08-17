@@ -93,26 +93,27 @@ function SessionDevPanel({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          position: 'fixed',
-          bottom: 14,
-          right: 14,
-          zIndex: 10000,
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          border: '1px solid #ddd',
-          background: '#fff',
-          cursor: 'pointer',
-          boxShadow: '0 6px 18px rgba(0,0,0,.12)`,
-        }}
-        title="Session Dev Panel"
-      >
-        timer
-      </button>
+  <button
+  type="button"
+  onClick={() => setOpen((v) => !v)}
+  style={{
+    position: 'fixed',
+    bottom: 14,
+    right: 14,
+    zIndex: 10000,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    border: '1px solid #ddd',
+    background: '#fff',
+    cursor: 'pointer',
+    boxShadow: '0 6px 18px rgba(0,0,0,.12)', 
+  }}
+  title="Session Dev Panel"
+>
+  timer
+</button>
+
 
       {open && (
         <div
