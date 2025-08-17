@@ -187,8 +187,10 @@ export default function Login({ onLogin }) {
 
   const normalizeDigits = (s) => {
     const m = {
+      // Arabic-Indic digits
       '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
-      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'6','۶':'6','۷':'7','۸':'8','۹':'9'
+      // Eastern Arabic-Indic (Persian) digits
+      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'
     };
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
   };
@@ -208,8 +210,13 @@ export default function Login({ onLogin }) {
         return;
       }
       const data = await res.json();
+
+      // 🔒 Reset session namespace so timers/clocks start fresh on first render after login
+      localStorage.removeItem('cmr:sessionId');
+
       localStorage.setItem('user', JSON.stringify(data));
       if (typeof onLogin === 'function') onLogin(data);
+
       navigate('/home', { replace: true });
     } catch (err) {
       console.error(err);
@@ -223,166 +230,309 @@ export default function Login({ onLogin }) {
 
   return (
     <>
-      <style>{`
-        :root {
-          --primary-color: #667eea;
-          --secondary-color: #764ba2;
-          --accent-color: #010B38;
-          --accent-hover: #021452;
-          --card-bg: #ffffff;
-          --card-border: rgba(255, 255, 255, 0.3);
-          --overlay-bg: rgba(0, 0, 0, 0.35);
-          --input-bg: #fff;
-          --input-border: #e2e2e2ff;
-          --text-color: #343a40;
-        }
 
-        @keyframes fadeUp {
-          0% { opacity: 0; transform: translateY(18px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-          0% { opacity: .7; }
-          50% { opacity: 1; }
-          100% { opacity: .7; }
-        }
-        .anim-text, .anim-card { opacity: 0; transform: translateY(18px); will-change: opacity, transform; }
-        .anim-text.in  { animation: fadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        .anim-card.in  { animation: fadeUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 90ms forwards; }
-        @media (prefers-reduced-motion: reduce) {
-          .anim-text, .anim-card { animation: none !important; opacity: 1 !important; transform: none !important; }
-        }
+<style>{`
 
-        .video-background { position: relative; min-height: 100vh; overflow: hidden; }
-        .login-video {
-          position: absolute; inset: 0; width: 100%; height: 100%;
-          object-fit: cover; z-index: 0; opacity: 0; transition: opacity 1s ease-in-out;
-        }
-        .video-loaded { opacity: 1; }
-        .video-overlay { position: absolute; inset: 0; background: var(--overlay-bg); z-index: 1; }
+    /* =========================
+   Login Page Styles (RTL)
+   ========================= */
 
-        .content-layer {
-          position: relative; z-index: 2; min-height: 100vh;
-          display: flex; align-items: center; justify-content: center; padding: 1.5rem;
-        }
+:root {
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --accent-color: #010B38;
+  --accent-hover: #021452;
+  --card-bg: #ffffff;
+  --card-border: rgba(255, 255, 255, 0.3);
+  --overlay-bg: rgba(0, 0, 0, 0.35);
+  --input-bg: #fff;
+  --input-border: #e2e2e2ff;
+  --text-color: #343a40;
+}
 
-        .login-card {
-          background: var(--card-bg);
-          backdrop-filter: blur(20px);
-          border: 1px solid var(--card-border);
-          border-radius: 12px;
-          box-shadow: 0 24px 48px rgba(0,0,0,0.15);
-          overflow: hidden;
-          max-width: 540px; width: 100%;
-        }
+/* Animations */
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0% { opacity: .7; }
+  50% { opacity: 1; }
+  100% { opacity: .7; }
+}
+.anim-text,
+.anim-card {
+  opacity: 0;
+  transform: translateY(18px);
+  will-change: opacity, transform;
+}
+.anim-text.in { animation: fadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.anim-card.in { animation: fadeUp 700ms cubic-bezier(0.22, 1, 0.36, 1) 90ms forwards; }
 
-        .card-header-custom {
-          background: #fff; color: #050035;
-          text-align: center; padding: 2.5rem 2rem 2rem;
-          border-bottom: 1px solid rgba(231, 224, 224, 0.15);
-        }
-        .welcome-text { margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-text,
+  .anim-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 
-        .card-body-custom { padding: 2rem 2.5rem 2.5rem; }
+/* Background video & overlay */
+.video-background {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+.login-video {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+.video-loaded { opacity: 1; }
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 1;
+}
 
-        .floating-label-container { position: relative; margin-bottom: 1.4rem; }
-        .floating-label-container.has-error input { border-color: #dc3545 !important; background: #fff0f0; }
+/* Foreground content layer */
+.content-layer {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
 
-        .floating-label { position: relative; }
-        .floating-label input {
-          background: var(--input-bg);
-          border: 2px solid var(--input-border);
-          border-radius: 8px;
-          color: var(--text-color);
-          padding: 1rem 3.5rem 1rem 3.5rem; /* RTL: space for icons */
-          font-size: 1rem;
-          width: 100%;
-          transition: all .3s ease;
-          direction: rtl; text-align: right;
-          -webkit-text-size-adjust: 100%;
+/* Card */
+.login-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.15);
+  overflow: hidden;
+  max-width: 540px;
+  width: 100%;
+}
 
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          overscroll-behavior: contain;
-          touch-action: manipulation;
-        }
-        .floating-label input::-webkit-scrollbar { display: none; }
+/* Card header */
+.card-header-custom {
+  background: #fff;
+  color: #050035;
+  text-align: center;
+  padding: 2.5rem 2rem 2rem;
+  border-bottom: 1px solid rgba(231, 224, 224, 0.15);
+}
+.welcome-text { margin: 0; }
 
-        /* right-side field icon */
-        .floating-label i.field-icon {
-          position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
-          color: var(--primary-color); transition: color .3s ease;
-        }
+/* Card body */
+.card-body-custom { padding: 2rem 2.5rem 2.5rem; }
 
-        /* Eye toggle on the left for RTL */
-        .toggle-password {
-          position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
-          background: transparent; border: none; padding: 0; cursor: pointer; line-height: 0;
-        }
-        .toggle-password i { color: var(--primary-color); }
+/* Floating label group */
+.floating-label-container {
+  position: relative;
+  margin-bottom: 1.4rem;
+}
+.floating-label-container.has-error input {
+  border-color: #dc3545 !important;
+  background: #fff0f0;
+}
+.floating-label { position: relative; }
 
-        /* Password input visual tweaks */
-        .password-input { font-weight: 400; }
+/* Inputs (RTL) */
+.floating-label input {
+  background: var(--input-bg);
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--text-color);
+  padding: 1rem 3.5rem 1rem 3.5rem; /* space for icons (RTL) */
+  font-size: 1rem;
+  width: 100%;
+  transition: all .3s ease;
+  direction: rtl;
+  text-align: right;
+  -webkit-text-size-adjust: 100%;
 
-        /* Only mask via -webkit-text-security while hidden (round discs) */
-        @supports (-webkit-text-security: disc) {
-          .password-input.masked { -webkit-text-security: disc; }
-        }
+  white-space: nowrap;        /* prevent line breaks */
+  overflow: hidden;           /* hide scrollbars */
+  text-overflow: ellipsis;    /* show ellipsis if long */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+  touch-action: manipulation;
+}
+.floating-label input::-webkit-scrollbar { display: none; }
 
-        /* Login button — original style (unchanged everywhere) */
-        .btn-login {
-          background: var(--accent-color); border: none; border-radius: 16px; color: #fff;
-          font-weight: 600; padding: 1rem; width: 100%; font-size: 1.05rem;
-          display: flex; align-items: center; justify-content: center; gap: .5rem;
-          transition: all .3s ease;
-        }
-        .btn-login:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-2px); }
-        .btn-login:disabled { opacity: .9; cursor: not-allowed; background: var(--accent-color); }
+/* Field icon (right side in RTL) */
+.floating-label i.field-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  transition: color .3s ease;
+}
 
-        @media (min-width: 1260px) {
-          .login-wrapper { max-width: 460px; margin-left: 30px; margin-right: -100px; }
-        }
-        @media (min-width: 768px) and (max-width: 991.98px) {
-          .login-wrapper { max-width: 430px; margin-left: auto; margin-right: auto; }
-        }
+/* Eye toggle (left side in RTL) */
+.toggle-password {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+}
+.toggle-password i { color: var(--primary-color); }
 
-        /* Mobile: compact inputs, keep button as before */
-        @media (max-width: 576.98px) {
-          :root { --m-input-h: 44px; } /* adjust 40–46px to taste */
+/* Password field masking */
+.password-input { font-weight: 400; }
+@supports (-webkit-text-security: disc) {
+  .password-input.masked { -webkit-text-security: disc; }
+}
 
-          .card-header-custom { padding: 1.4rem 1rem 1rem; }
-          .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
+/* Caps warning (base) */
+.caps-warning {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .5rem;
+  padding: .45rem .65rem;
+  background: #fff6e5;
+  color: #9a6a00;
+  border-radius: 8px;
+  font-size: .9rem;
+  line-height: 1.3;
+  direction: rtl;
+}
 
-          /* Force same visual height on both inputs */
-          .floating-label input {
-            box-sizing: border-box !important;
-            height: var(--m-input-h);
-            padding: 0 3rem !important;   /* keep space for icons (RTL) */
-            border-radius: 10px;
-            font-size: 16px;              /* avoid iOS zoom */
-            line-height: var(--m-input-h);
-          }
+/* Global error message — smaller, centered, no border/outline */
+.global-error-message {
+  display: block;
+  width: 100%;
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  text-align: center;
+  background: #fdecec;     /* soft pink */
+  color: #c62828;          /* clear red */
+  border: 0;               /* no border */
+  outline: 0;              /* no outline */
+  border-radius: 10px;
+  font-weight: 400;        /* not bold */
+  font-size: 0.95rem;      /* a bit smaller */
+  line-height: 1.4;
+  direction: rtl;
+}
 
-          /* Ensure password field matches exactly in both hidden/visible states */
-          .password-input { font-size: 16px; line-height: var(--m-input-h); }
-          .ios .password-input { font-size: 16px; } /* keep 16px on iOS */
+/* Primary login button — desktop/tablet default */
+.btn-login {
+  background: var(--accent-color);
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  font-weight: 600;
+  padding: 1rem;
+  width: 100%;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  transition: all .3s ease;
+}
+.btn-login:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+.btn-login:disabled {
+  opacity: .9;
+  cursor: not-allowed;
+  background: var(--accent-color);
+}
 
-          /* Eye toggle should never change input height */
-          .toggle-password {
-            height: var(--m-input-h);
-            width: 2.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
+/* Layout tuning for large screens */
+@media (min-width: 1260px) {
+  .login-wrapper {
+    max-width: 460px;
+    margin-left: 30px;
+    margin-right: -100px;
+  }
+}
+/* Layout tuning for medium screens */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .login-wrapper {
+    max-width: 430px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 
-          .floating-label-container { margin-bottom: 0.85rem; }
-          /* Note: NO .btn-login overrides here — button stays like before */
-          .caps-warning { font-size: .8rem; padding: .4rem .6rem; }
-        }
+/* =========================
+   Mobile (≤ 576.98px)
+   Make button same size as fields
+   ========================= */
+@media (max-width: 576.98px) {
+  :root { --m-input-h: 44px; } /* adjust 40–46px as needed */
+
+  .card-header-custom { padding: 1.4rem 1rem 1rem; }
+  .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
+
+  /* Inputs: fixed height + no zoom on iOS */
+  .floating-label input {
+    box-sizing: border-box !important;
+    height: var(--m-input-h);
+    padding: 0 3rem !important;   /* keep space for icons (RTL) */
+    border-radius: 10px;
+    font-size: 16px;              /* avoid iOS zoom */
+    line-height: var(--m-input-h);
+  }
+
+  /* Password field exact match in both states */
+  .password-input { font-size: 16px; line-height: var(--m-input-h); }
+  .ios .password-input { font-size: 16px; }
+
+  /* Eye toggle fits the input height */
+  .toggle-password {
+    height: var(--m-input-h);
+    width: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .floating-label-container { margin-bottom: 0.85rem; }
+
+  /* Button matches inputs on mobile */
+  .btn-login {
+    height: var(--m-input-h);
+    padding: 0 1rem;        /* compact like fields */
+    font-size: 0.95rem;     /* slightly smaller on mobile */
+    border-radius: 10px;    /* match inputs */
+    gap: .4rem;             /* tighter gap */
+  }
+
+  /* Spinner scaled for 44px button */
+  .btn-login .spinner-border {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  .caps-warning { font-size: .8rem; padding: .4rem .6rem; }
+}
+
+
+
       `}</style>
 
       <div className="d-flex flex-column min-vh-100" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
@@ -519,7 +669,11 @@ export default function Login({ onLogin }) {
                           )}
                         </div>
 
-                        {hasError && <div className="global-error-message">{message}</div>}
+{hasError && (
+  <div className="global-error-message" role="alert" aria-live="polite">
+    {message}
+  </div>
+)}
 
                         <div className="text-end mb-3">
                           <a

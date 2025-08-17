@@ -297,6 +297,17 @@ function App() {
   useEffect(() => {
     showTimeoutRef.current = showTimeout;
   }, [showTimeout]);
+  
+useEffect(() => {
+  if (!ENABLE_SESSION_TIMER) return;
+  if (user && location.pathname !== '/') {
+    // make sure we have a SID and fresh clocks right after login
+    ensureSessionId();
+    persistClocks(Date.now());
+    scheduleFromClocks();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user]);
 
   // ----- session helpers -----
   const ensureSessionId = useCallback(() => {
