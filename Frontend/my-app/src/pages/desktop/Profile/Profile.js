@@ -221,8 +221,7 @@ export default function Profile() {
         body: JSON.stringify([
           { op: 'replace', path: '/username',   value: form.username },
           { op: 'replace', path: '/first_name', value: form.first_name },
-          { op: 'replace', path: '/last_name',  value: form.last_name },
-          { op: 'replace', path: '/email',      value: form.email }
+          { op: 'replace', path: '/last_name',  value: form.last_name }
         ])
       });
 
@@ -233,7 +232,7 @@ export default function Profile() {
           username: form.username,
           first_name: form.first_name,
           last_name: form.last_name,
-          email: form.email,
+          email: user.email,
           department_id: user.department_id,
           role: user.role,
           password: user.password
@@ -267,6 +266,109 @@ export default function Profile() {
       }
     } catch {
       showBanner('danger', 'فشل تحديث البيانات.');
+    }
+  };
+
+  // ---------- Email change (2 steps) ----------
+  const [emailStep, setEmailStep] = useState(1);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailCode, setEmailCode] = useState('');
+  const [emailBanner, setEmailBanner] = useState({ type: null, text: '' });
+  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [emailExpiryAt, setEmailExpiryAt] = useState(null);
+  const showEmailBanner = (type, text) => setEmailBanner({ type, text });
+
+  useEffect(() => {
+    if (emailCooldown <= 0) return;
+    const t = setInterval(() => setEmailCooldown(s => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [emailCooldown]);
+
+  const sendEmailCode = async () => {
+    if (!validateEmail(newEmail.trim())) {
+      showEmailBanner('warning', 'أدخل بريداً إلكترونياً صالحاً');
+      return;
+    }
+    const userId = user?.employee_id ?? user?.id;
+    if (!userId) {
+      showEmailBanner('danger', 'معرّف المستخدم غير معروف.');
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/login/email/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newEmail: newEmail.trim() })
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setEmailStep(2);
+        setEmailCooldown(60);
+        setEmailExpiryAt(Date.now() + 5 * 60 * 1000);
+        showEmailBanner('success', `تم إرسال رمز التحقق إلى ${newEmail.trim()}`);
+      } else {
+        showEmailBanner('danger', data?.message || 'تعذر إرسال الرمز');
+      }
+    } catch {
+      showEmailBanner('danger', 'تعذر إرسال الرمز');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const resendEmailCode = async () => {
+    if (emailCooldown > 0) return;
+    await sendEmailCode();
+  };
+
+  const verifyEmailCode = async () => {
+    const norm = normalizeDigits(emailCode).replace(/\D/g, '').slice(0, 6);
+    if (norm.length !== 6) {
+      showEmailBanner('warning', 'أدخل رمزًا مكوّنًا من 6 أرقام');
+      return;
+    }
+    const userId = user?.employee_id ?? user?.id;
+    if (!userId) {
+      showEmailBanner('danger', 'معرّف المستخدم غير معروف.');
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/login/email/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newEmail: newEmail.trim(), code: norm })
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.valid) {
+        // update email
+        const res2 = await fetch(`${API_BASE}/api/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json-patch+json' },
+          body: JSON.stringify([{ op: 'replace', path: '/email', value: newEmail.trim() }])
+        });
+        if (res2.ok) {
+          const updated = { ...user, email: newEmail.trim() };
+          setUser(updated);
+          setForm(prev => ({ ...prev, email: newEmail.trim() }));
+          storeUser(updated);
+          showBanner('success', 'تم تحديث البريد الإلكتروني بنجاح.');
+          setEmailStep(1);
+          setNewEmail('');
+          setEmailCode('');
+          setEmailCooldown(0);
+        } else {
+          showEmailBanner('danger', 'فشل تحديث البريد الإلكتروني');
+        }
+      } else {
+        showEmailBanner('danger', data?.message || 'الرمز غير صحيح أو منتهي');
+      }
+    } catch {
+      showEmailBanner('danger', 'الرمز غير صحيح أو منتهي');
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -482,7 +584,8 @@ export default function Profile() {
                               </div>
                               <div className="col-12 col-md-6">
                                 <label className="form-label">البريد الإلكتروني</label>
-                                <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
+                                <input type="email" className="form-control" name="email" value={form.email} disabled readOnly />
+                                <div className="form-text">لتغيير البريد الإلكتروني، استخدم القسم أدناه.</div>
                               </div>
                               <div className="col-12 col-md-6">
                                 <label className="form-label">الإسم الأول</label>
@@ -505,6 +608,101 @@ export default function Profile() {
                           </>
                         )}
                       </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ===== تغيير البريد الإلكتروني — FULL WIDTH ===== */}
+              <div className="row justify-content-center mb-4">
+                <div className="col-12 col-xl-11">
+                  <div className="surface-wrap">
+                    <div className="surface">
+                      <div className="head-flat">تغيير البريد الإلكتروني</div>
+                      <div className="p-4">
+                        {emailBanner.type && (
+                          <div className={`alert alert-${emailBanner.type}`} role="alert">
+                            {emailBanner.text}
+                          </div>
+                        )}
+
+                        {emailStep === 1 && (
+                          <>
+                            <div className="mb-3">
+                              <label className="form-label">البريد الإلكتروني الجديد</label>
+                              <input
+                                type="email"
+                                className="form-control"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                disabled={emailLoading}
+                              />
+                            </div>
+                            <div className="d-flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={sendEmailCode}
+                                disabled={emailLoading}
+                              >
+                                {emailLoading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
+                                إرسال رمز التحقق
+                              </button>
+                            </div>
+                          </>
+                        )}
+
+                        {emailStep === 2 && (
+                          <>
+                            <div className="mb-3">
+                              <label className="form-label">رمز التحقق</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={6}
+                                className="form-control text-center fw-bold"
+                                style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
+                                value={emailCode}
+                                onChange={(e) => {
+                                  const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
+                                  setEmailCode(norm);
+                                }}
+                                placeholder="••••••"
+                                disabled={emailLoading}
+                                autoFocus
+                              />
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm rounded"
+                                onClick={() => setEmailStep(1)}
+                                disabled={emailLoading}
+                              >
+                                الرجوع
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-link p-0"
+                                onClick={resendEmailCode}
+                                disabled={emailLoading || emailCooldown > 0}
+                              >
+                                {emailCooldown > 0 ? `إعادة الإرسال (${emailCooldown})` : 'إعادة إرسال الرمز'}
+                              </button>
+                            </div>
+                            <div className="d-flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={verifyEmailCode}
+                                disabled={emailLoading || emailCode.length !== 6}
+                              >
+                                تأكيد
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

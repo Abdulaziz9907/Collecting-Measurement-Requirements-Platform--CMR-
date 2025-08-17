@@ -26,6 +26,9 @@ const Header = () => {
           object-fit: contain;
           transition: transform 180ms cubic-bezier(.2,.7,.3,1), filter 180ms ease;
           will-change: transform;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          transform: translateZ(0);
         }
         .brand-btn:hover .brand-img,
         .brand-btn:focus-visible .brand-img {
