@@ -107,7 +107,7 @@ function SessionDevPanel({
           border: '1px solid #ddd',
           background: '#fff',
           cursor: 'pointer',
-          boxShadow: '0 6px 18px rgba(0,0,0,.12)',
+          boxShadow: '0 6px 18px rgba(0,0,0,.12)`,
         }}
         title="Session Dev Panel"
       >
@@ -230,6 +230,9 @@ function App() {
   const [user, setUser] = useState(() =>
     JSON.parse(localStorage.getItem('user') || 'null')
   );
+
+  // Always-available view of the auth state for guards (avoids first-render race)
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
 
   // -------- modal + countdown (seconds) --------
   const [showTimeout, setShowTimeout] = useState(false);
@@ -369,13 +372,8 @@ function App() {
     navigate('/', { replace: true });
   }, [navigate, clearAllTimers, clearClockKeys, clearSessionId]);
 
-  const role = user?.role?.trim().toLowerCase();
+  const role = currentUser?.role?.trim().toLowerCase();
   const allow = (roles) => roles.map((r) => r.toLowerCase()).includes(role);
-
-  // refresh user on route change (e.g., after login)
-  useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem('user') || 'null'));
-  }, [location]);
 
   // never show modal on login page
   useEffect(() => {
@@ -397,7 +395,7 @@ function App() {
       if (
         ENABLE_TEST_SESSION &&
         showOverlay &&
-        user &&
+        currentUser &&
         location.pathname !== '/'
       ) {
         const toWarn = warnAt ? Math.max(0, Math.ceil((warnAt - now) / 1000)) : 0;
@@ -414,7 +412,7 @@ function App() {
         }
       }
     }, 1000);
-  }, [handleLogout, clearAllTimers, location.pathname, showOverlay, user]);
+  }, [handleLogout, clearAllTimers, location.pathname, showOverlay, currentUser]);
 
   // schedule from current clocks (no overwrite unless missing)
   const scheduleFromClocks = useCallback(() => {
@@ -576,111 +574,111 @@ function App() {
         <Route path="/" element={<Login onLogin={setUser} />} />
         <Route
           path="/home"
-          element={user ? <Home /> : <Navigate to="/" replace />}
+          element={currentUser ? <Home /> : <Navigate to="/" replace />}
         />
         <Route
           path="/standards_create"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <StandardsCreate />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/standards"
           element={
-            user && allow(['admin', 'administrator', 'user']) ? (
+            currentUser && allow(['admin', 'administrator', 'user']) ? (
               <Standards />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/standards_edit/:id"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <StandardsEdit />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/departments"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <Departments />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/departments_edit/:id"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <DepartmentsEdit />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/departments_create"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <DepartmentsCreate />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/users"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <Users />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/users_create"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <UsersCreate />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/users_edit/:id"
           element={
-            user && allow(['admin', 'administrator']) ? (
+            currentUser && allow(['admin', 'administrator']) ? (
               <UsersEdit />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/reports"
           element={
-            user && allow(['admin', 'administrator', 'management']) ? (
+            currentUser && allow(['admin', 'administrator', 'management']) ? (
               <Report />
             ) : (
-              <Navigate to={user ? '/home' : '/'} replace />
+              <Navigate to={currentUser ? '/home' : '/'} replace />
             )
           }
         />
         <Route
           path="/profile"
-          element={user ? <Profile /> : <Navigate to="/" replace />}
+          element={currentUser ? <Profile /> : <Navigate to="/" replace />}
         />
       </Routes>
 
@@ -699,7 +697,7 @@ function App() {
         visible={
           ENABLE_TEST_SESSION &&
           showOverlay &&
-          user &&
+          currentUser &&
           location.pathname !== '/'
         }
         toWarn={dbg.toWarn}
@@ -707,7 +705,7 @@ function App() {
       />
 
       {/* Dev panel is entirely gated by ENABLE_TEST_SESSION (and the button by ENABLE_DEBUG_BUTTON) */}
-      {ENABLE_TEST_SESSION && user && location.pathname !== '/' && (
+      {ENABLE_TEST_SESSION && currentUser && location.pathname !== '/' && (
         <SessionDevPanel
           testMode={testMode}
           setTestMode={setTestMode}

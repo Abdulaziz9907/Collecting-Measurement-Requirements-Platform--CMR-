@@ -188,13 +188,14 @@ export default function Login({ onLogin }) {
   const normalizeDigits = (s) => {
     const m = {
       '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
-      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'
+      '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'6','۶':'6','۷':'7','۸':'8','۹':'9'
     };
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
   };
 
   const handleLogin = async () => {
     setIsLoading(true);
+    setMessage('');
     try {
       const res = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
@@ -209,7 +210,6 @@ export default function Login({ onLogin }) {
       const data = await res.json();
       localStorage.setItem('user', JSON.stringify(data));
       if (typeof onLogin === 'function') onLogin(data);
-      setMessage(`تم تسجيل الدخول باسم ${data.username}`);
       navigate('/home', { replace: true });
     } catch (err) {
       console.error(err);
@@ -423,8 +423,10 @@ export default function Login({ onLogin }) {
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           handleLogin();
                         }}
+                        noValidate
                       >
                         {/* Username */}
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
@@ -458,13 +460,12 @@ export default function Login({ onLogin }) {
                               onChange={(e) => {
                                 const v = e.target.value;
                                 setPassword(v);
-                                if (isMobile) mobileCapsHeuristic(v); // no single-letter warnings
+                                if (isMobile) mobileCapsHeuristic(v);
                               }}
                               onFocus={() => {
                                 setPwdFocused(true);
                                 if (!showPassword) {
                                   if (isMobile) mobileCapsHeuristic(password);
-                                  // Only reflect true CapsLock state on focus (no stale single-letter heuristics)
                                   setShowCapsWarning(capsLockOn);
                                 }
                               }}
@@ -491,14 +492,11 @@ export default function Login({ onLogin }) {
                               onClick={() =>
                                 setShowPassword((prev) => {
                                   const next = !prev;
-                                  // if re-hiding while focused, re-evaluate (still no single-letter warnings)
                                   if (!next && pwdFocused) {
-                                    const mobileWarn = isMobile ? (() => {
-                                      const letters = (password || '').replace(/[^A-Za-z]/g, '');
-                                      const upper = (letters.match(/[A-Z]/g) || []).length;
-                                      const lower = (letters.match(/[a-z]/g) || []).length;
-                                      return letters.length >= 2 && upper >= 2 && lower === 0;
-                                    })() : false;
+                                    const letters = (password || '').replace(/[^A-Za-z]/g, '');
+                                    const upper = (letters.match(/[A-Z]/g) || []).length;
+                                    const lower = (letters.match(/[a-z]/g) || []).length;
+                                    const mobileWarn = isMobile ? (letters.length >= 2 && upper >= 2 && lower === 0) : false;
                                     setShowCapsWarning(capsLockOn || mobileWarn);
                                   } else {
                                     setShowCapsWarning(false);
