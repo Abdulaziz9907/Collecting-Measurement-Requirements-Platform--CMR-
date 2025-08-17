@@ -4,7 +4,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const Footer = () => {
   return (
-    <>
+    <footer className="mt-auto w-100">
       <style>{`
         @media (max-width: 576px) {
           .footer-text { font-size: 13px !important; }
@@ -21,7 +21,7 @@ const Footer = () => {
           </h6>
         </div>
       </nav>
-    </>
+    </footer>
   );
 };
 
