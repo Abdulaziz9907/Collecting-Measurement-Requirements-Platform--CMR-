@@ -374,15 +374,29 @@ useEffect(() => {
     timersRef.current = { warn: null, logout: null, tick: null };
   }, []);
 
-  const handleLogout = useCallback(() => {
+  const cleanupLogout = useCallback(() => {
     clearAllTimers();
-    setShowTimeout(false);
     clearClockKeys();
     clearSessionId();
     localStorage.removeItem('user');
+  }, [clearAllTimers, clearClockKeys, clearSessionId]);
+
+  const handleLogout = useCallback(() => {
+    cleanupLogout();
+    setShowTimeout(false);
     setUser(null);
     navigate('/', { replace: true });
-  }, [navigate, clearAllTimers, clearClockKeys, clearSessionId]);
+  }, [navigate, cleanupLogout]);
+
+  useEffect(() => {
+    window.addEventListener('cmr:logout', handleLogout);
+    return () => window.removeEventListener('cmr:logout', handleLogout);
+  }, [handleLogout]);
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', cleanupLogout);
+    return () => window.removeEventListener('beforeunload', cleanupLogout);
+  }, [cleanupLogout]);
 
   const role = currentUser?.role?.trim().toLowerCase();
   const allow = (roles) => roles.map((r) => r.toLowerCase()).includes(role);
