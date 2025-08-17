@@ -34,6 +34,22 @@ namespace Commander.Controllers
         // username::email (username trimmed, email lowercased) → entry
         private static readonly ConcurrentDictionary<string, ResetEntry> _resetStore = new();
 
+        private sealed class EmailChangeEntry
+        {
+            public int UserId { get; init; }
+            public string Email { get; init; } = "";
+            public string Code { get; init; } = "";
+            public DateTimeOffset ExpiresAt { get; init; }
+        }
+
+        private static string EmailChangeKey(int userId, string email)
+        {
+            var e = (email ?? "").Trim().ToLowerInvariant();
+            return $"{userId}::{e}";
+        }
+
+        private static readonly ConcurrentDictionary<string, EmailChangeEntry> _emailChangeStore = new();
+
         public LoginController(
             InterfaceRepo repository,
             IMapper mapper,
@@ -218,6 +234,70 @@ namespace Commander.Controllers
 
             _resetStore.TryRemove(key, out _);
             return Ok(new { reset = true });
+        }
+
+        // ---------- email change: send code ----------
+        [HttpPost("email/request")]
+        public async Task<ActionResult> SendEmailChangeCode([FromBody] EmailChangeRequestDto dto)
+        {
+            if (dto == null || dto.UserId <= 0 || string.IsNullOrWhiteSpace(dto.NewEmail))
+                return BadRequest("UserId and new email are required.");
+
+            var user = _repository.GetUserById(dto.UserId);
+            if (user == null)
+                return NotFound("User not found.");
+
+            var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            _emailChangeStore[EmailChangeKey(dto.UserId, dto.NewEmail)] = new EmailChangeEntry
+            {
+                UserId = dto.UserId,
+                Email = dto.NewEmail,
+                Code = code,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
+            };
+
+            try
+            {
+                var subject = "رمز تأكيد تغيير البريد الإلكتروني";
+                var text = $"رمزك: {code}";
+                var html = $"<p>رمزك: <strong>{code}</strong></p>";
+                await _emailService.SendAsync(dto.NewEmail, subject, text, html);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email change code to {Email}", dto.NewEmail);
+                if (_env.IsDevelopment()) return Ok(new { sent = false, error = ex.Message });
+                return StatusCode(500, "Failed to send verification email. Please try again later.");
+            }
+
+            return Ok(new { sent = true });
+        }
+
+        // ---------- email change: verify code ----------
+        [HttpPost("email/verify")]
+        public ActionResult VerifyEmailChange([FromBody] EmailChangeVerifyDto dto)
+        {
+            if (dto == null || dto.UserId <= 0 ||
+                string.IsNullOrWhiteSpace(dto.NewEmail) ||
+                string.IsNullOrWhiteSpace(dto.Code))
+                return BadRequest(new { message = "Incomplete payload." });
+
+            var key = EmailChangeKey(dto.UserId, dto.NewEmail);
+            if (!_emailChangeStore.TryGetValue(key, out var entry))
+                return NotFound(new { message = "No email change request found." });
+
+            if (DateTimeOffset.UtcNow > entry.ExpiresAt)
+            {
+                _emailChangeStore.TryRemove(key, out _);
+                return BadRequest(new { message = "Verification code expired." });
+            }
+
+            var provided = NormalizeCode(dto.Code);
+            if (!string.Equals(entry.Code, provided, StringComparison.Ordinal))
+                return BadRequest(new { message = "يرجى التأكد من صحة كود التحقق." });
+
+            _emailChangeStore.TryRemove(key, out _);
+            return Ok(new { valid = true });
         }
     }
 }
