@@ -254,7 +254,16 @@ export default function UsersEdit() {
     const newPassword = form.password ? (form.password.value || '').trim() : '';
     const selectedRole = form.role ? (form.role.value || '').trim() : (user?.role || '').trim();
     const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock if originally admin
-    const finalRole = isAdminOriginal ? 'Admin' : selectedRole;
+
+    // Prevent privilege escalation: only keep Admin if the original role was Admin
+    let finalRole = selectedRole;
+    if (isAdminOriginal) {
+      finalRole = 'Admin';
+    } else if (selectedRole.toLowerCase() === 'admin') {
+      // Revert to the original role if a non-admin tries to switch to Admin
+      const original = originalRoleRef.current || 'user';
+      finalRole = original.charAt(0).toUpperCase() + original.slice(1);
+    }
 
     const payload = {
       employee_id: newEmpNum,
@@ -263,11 +272,10 @@ export default function UsersEdit() {
       last_name: (form.last_name.value || '').trim(),
       email: (form.email.value || '').trim() || null,
       role: finalRole,
-      department_id: parseInt(form.department.value, 10)
+      department_id: parseInt(form.department.value, 10),
+      // Always include a password to satisfy backend requirements
+      password: newPassword || user?.password || ''
     };
-
-    // Only include password if provided (and there is a password field)
-    if (newPassword) payload.password = newPassword;
 
     try {
       const res = await fetch(`${API_BASE}/api/users/${originalEmpId}`, {
@@ -474,7 +482,7 @@ export default function UsersEdit() {
                               <option value="">اختر الدور...</option>
                               <option value="User">User</option>
                               <option value="Management">Management</option>
-                              <option value="Admin">Admin</option>
+                              {isAdminOriginal && <option value="Admin">Admin</option>}
                             </select>
                             {isAdminOriginal && (
                               <small className="text-muted d-block mt-1">لا يمكن تعديل دور مدير النظام.</small>
