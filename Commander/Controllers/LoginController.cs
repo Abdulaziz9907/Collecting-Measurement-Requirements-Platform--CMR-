@@ -42,6 +42,13 @@ namespace Commander.Controllers
             public DateTimeOffset ExpiresAt { get; init; }
         }
 
+        private sealed class EmailCurrentEntry
+        {
+            public int UserId { get; init; }
+            public string Code { get; init; } = "";
+            public DateTimeOffset ExpiresAt { get; init; }
+        }
+
         private static string EmailChangeKey(int userId, string email)
         {
             var e = (email ?? "").Trim().ToLowerInvariant();
@@ -49,6 +56,8 @@ namespace Commander.Controllers
         }
 
         private static readonly ConcurrentDictionary<string, EmailChangeEntry> _emailChangeStore = new();
+        private static readonly ConcurrentDictionary<int, EmailCurrentEntry> _emailCurrentStore = new();
+        private static readonly ConcurrentDictionary<int, DateTimeOffset> _emailCurrentVerified = new();
 
         public LoginController(
             InterfaceRepo repository,
@@ -85,7 +94,7 @@ namespace Commander.Controllers
             return $"{u}::{e}";
         }
 
-        // Map Arabic-Indic & Eastern Arabic-Indic digits to ASCII and drop everything else
+        // Map Arabic-Indic & Eastern Arabic-Indic digits to ASCII and keep only digits (max 6)
         private static string NormalizeCode(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "";
@@ -236,12 +245,76 @@ namespace Commander.Controllers
             return Ok(new { reset = true });
         }
 
-        // ---------- email change: send code ----------
+        // ---------- email change: verify current email (send code) ----------
+        [HttpPost("email/current/request")]
+        public async Task<ActionResult> SendCurrentEmailCode([FromBody] EmailChangeCurrentRequestDto dto)
+        {
+            if (dto == null || dto.UserId <= 0)
+                return BadRequest("UserId is required.");
+
+            var user = _repository.GetUserById(dto.UserId);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+                return NotFound("User not found.");
+
+            var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            _emailCurrentStore[dto.UserId] = new EmailCurrentEntry
+            {
+                UserId = dto.UserId,
+                Code = code,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
+            };
+
+            try
+            {
+                var subject = "رمز تأكيد البريد الحالي";
+                var text = $"رمزك: {code}";
+                var html = $"<p>رمزك: <strong>{code}</strong></p>";
+                await _emailService.SendAsync(user.Email, subject, text, html);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send current email code to {Email}", user.Email);
+                if (_env.IsDevelopment()) return Ok(new { sent = false, error = ex.Message });
+                return StatusCode(500, "Failed to send verification email. Please try again later.");
+            }
+
+            return Ok(new { sent = true });
+        }
+
+        // ---------- email change: verify current email ----------
+        [HttpPost("email/current/verify")]
+        public ActionResult VerifyCurrentEmail([FromBody] EmailChangeCurrentVerifyDto dto)
+        {
+            if (dto == null || dto.UserId <= 0 || string.IsNullOrWhiteSpace(dto.Code))
+                return BadRequest(new { message = "Incomplete payload." });
+
+            if (!_emailCurrentStore.TryGetValue(dto.UserId, out var entry))
+                return NotFound(new { message = "No verification request found." });
+
+            if (DateTimeOffset.UtcNow > entry.ExpiresAt)
+            {
+                _emailCurrentStore.TryRemove(dto.UserId, out _);
+                return BadRequest(new { message = "Verification code expired." });
+            }
+
+            var provided = NormalizeCode(dto.Code);
+            if (!string.Equals(entry.Code, provided, StringComparison.Ordinal))
+                return BadRequest(new { message = "يرجى التأكد من صحة كود التحقق." });
+
+            _emailCurrentStore.TryRemove(dto.UserId, out _);
+            _emailCurrentVerified[dto.UserId] = DateTimeOffset.UtcNow.AddMinutes(10);
+            return Ok(new { valid = true });
+        }
+
+        // ---------- email change: send code to new email ----------
         [HttpPost("email/request")]
         public async Task<ActionResult> SendEmailChangeCode([FromBody] EmailChangeRequestDto dto)
         {
             if (dto == null || dto.UserId <= 0 || string.IsNullOrWhiteSpace(dto.NewEmail))
                 return BadRequest("UserId and new email are required.");
+
+            if (!_emailCurrentVerified.TryGetValue(dto.UserId, out var verified) || DateTimeOffset.UtcNow > verified)
+                return BadRequest("Current email not verified.");
 
             var user = _repository.GetUserById(dto.UserId);
             if (user == null)
@@ -273,7 +346,7 @@ namespace Commander.Controllers
             return Ok(new { sent = true });
         }
 
-        // ---------- email change: verify code ----------
+        // ---------- email change: verify code for new email ----------
         [HttpPost("email/verify")]
         public ActionResult VerifyEmailChange([FromBody] EmailChangeVerifyDto dto)
         {
@@ -281,6 +354,9 @@ namespace Commander.Controllers
                 string.IsNullOrWhiteSpace(dto.NewEmail) ||
                 string.IsNullOrWhiteSpace(dto.Code))
                 return BadRequest(new { message = "Incomplete payload." });
+
+            if (!_emailCurrentVerified.TryGetValue(dto.UserId, out var verified) || DateTimeOffset.UtcNow > verified)
+                return BadRequest(new { message = "Current email not verified." });
 
             var key = EmailChangeKey(dto.UserId, dto.NewEmail);
             if (!_emailChangeStore.TryGetValue(key, out var entry))
@@ -297,6 +373,7 @@ namespace Commander.Controllers
                 return BadRequest(new { message = "يرجى التأكد من صحة كود التحقق." });
 
             _emailChangeStore.TryRemove(key, out _);
+            _emailCurrentVerified.TryRemove(dto.UserId, out _);
             return Ok(new { valid = true });
         }
     }

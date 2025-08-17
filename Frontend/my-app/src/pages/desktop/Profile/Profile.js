@@ -269,15 +269,25 @@ export default function Profile() {
     }
   };
 
-  // ---------- Email change (2 steps) ----------
-  const [emailStep, setEmailStep] = useState(1);
+  // ---------- Email change (3 steps) ----------
+  // Steps: 1) send code to current email  2) verify current code  3) send/verify code to new email and update
+  const [emailStep, setEmailStep] = useState(1); // 1: send to current, 2: verify current, 3: new email
   const [emailLoading, setEmailLoading] = useState(false);
+  const [currentCode, setCurrentCode] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [emailCode, setEmailCode] = useState('');
+  const [newEmailCode, setNewEmailCode] = useState('');
+  const [newCodeSent, setNewCodeSent] = useState(false);
   const [emailBanner, setEmailBanner] = useState({ type: null, text: '' });
-  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [currCooldown, setCurrCooldown] = useState(0);   // resend timer for current email code
+  const [emailCooldown, setEmailCooldown] = useState(0); // resend timer for new email code
   const [emailExpiryAt, setEmailExpiryAt] = useState(null);
   const showEmailBanner = (type, text) => setEmailBanner({ type, text });
+
+  useEffect(() => {
+    if (currCooldown <= 0) return;
+    const t = setInterval(() => setCurrCooldown(s => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [currCooldown]);
 
   useEffect(() => {
     if (emailCooldown <= 0) return;
@@ -285,7 +295,72 @@ export default function Profile() {
     return () => clearInterval(t);
   }, [emailCooldown]);
 
-  const sendEmailCode = async () => {
+  const sendCurrentCode = async () => {
+    const userId = user?.employee_id ?? user?.id;
+    if (!userId) {
+      showEmailBanner('danger', 'معرّف المستخدم غير معروف.');
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/login/email/current/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setEmailStep(2);
+        setCurrCooldown(60);
+        showEmailBanner('success', `تم إرسال رمز التحقق إلى ${maskEmail(form.email)}`);
+      } else {
+        showEmailBanner('danger', data?.message || 'تعذر إرسال الرمز');
+      }
+    } catch {
+      showEmailBanner('danger', 'تعذر إرسال الرمز');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const resendCurrentCode = async () => {
+    if (currCooldown > 0) return;
+    await sendCurrentCode();
+  };
+
+  const verifyCurrentCode = async () => {
+    const norm = normalizeDigits(currentCode).replace(/\D/g, '').slice(0, 6);
+    if (norm.length !== 6) {
+      showEmailBanner('warning', 'أدخل رمزًا مكوّنًا من ٦ أرقام');
+      return;
+    }
+    const userId = user?.employee_id ?? user?.id;
+    if (!userId) {
+      showEmailBanner('danger', 'معرّف المستخدم غير معروف.');
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/login/email/current/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, code: norm })
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.valid) {
+        setEmailStep(3);
+        showEmailBanner('success', 'تم التحقق من البريد الحالي.');
+      } else {
+        showEmailBanner('danger', data?.message || 'الرمز غير صحيح أو منتهي');
+      }
+    } catch {
+      showEmailBanner('danger', 'الرمز غير صحيح أو منتهي');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const sendNewEmailCode = async () => {
     if (!validateEmail(newEmail.trim())) {
       showEmailBanner('warning', 'أدخل بريداً إلكترونياً صالحاً');
       return;
@@ -304,7 +379,7 @@ export default function Profile() {
       });
       const data = await res.json().catch(() => null);
       if (res.ok) {
-        setEmailStep(2);
+        setNewCodeSent(true);
         setEmailCooldown(60);
         setEmailExpiryAt(Date.now() + 5 * 60 * 1000);
         showEmailBanner('success', `تم إرسال رمز التحقق إلى ${newEmail.trim()}`);
@@ -318,15 +393,15 @@ export default function Profile() {
     }
   };
 
-  const resendEmailCode = async () => {
+  const resendNewEmailCode = async () => {
     if (emailCooldown > 0) return;
-    await sendEmailCode();
+    await sendNewEmailCode();
   };
 
-  const verifyEmailCode = async () => {
-    const norm = normalizeDigits(emailCode).replace(/\D/g, '').slice(0, 6);
+  const verifyNewEmailCode = async () => {
+    const norm = normalizeDigits(newEmailCode).replace(/\D/g, '').slice(0, 6);
     if (norm.length !== 6) {
-      showEmailBanner('warning', 'أدخل رمزًا مكوّنًا من 6 أرقام');
+      showEmailBanner('warning', 'أدخل رمزًا مكوّنًا من ٦ أرقام');
       return;
     }
     const userId = user?.employee_id ?? user?.id;
@@ -343,7 +418,7 @@ export default function Profile() {
       });
       const data = await res.json().catch(() => null);
       if (res.ok && data?.valid) {
-        // update email
+        // Update email in Users
         const res2 = await fetch(`${API_BASE}/api/users/${userId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json-patch+json' },
@@ -355,9 +430,13 @@ export default function Profile() {
           setForm(prev => ({ ...prev, email: newEmail.trim() }));
           storeUser(updated);
           showBanner('success', 'تم تحديث البريد الإلكتروني بنجاح.');
+          // Reset email change flow
           setEmailStep(1);
+          setCurrentCode('');
           setNewEmail('');
-          setEmailCode('');
+          setNewEmailCode('');
+          setNewCodeSent(false);
+          setCurrCooldown(0);
           setEmailCooldown(0);
         } else {
           showEmailBanner('danger', 'فشل تحديث البريد الإلكتروني');
@@ -619,30 +698,34 @@ export default function Profile() {
                   <div className="surface-wrap">
                     <div className="surface">
                       <div className="head-flat">تغيير البريد الإلكتروني</div>
-                      <div className="p-4">
+
+                      {/* Stepper + banner */}
+                      <div className="px-4 pt-3">
+                        <div className="stepper">
+                          <div className={`step-dot ${emailStep >= 1 ? 'active' : 'inactive'}`}>1</div>
+                          <div className={`step-line ${emailStep >= 2 ? 'active' : ''}`} />
+                          <div className={`step-dot ${emailStep >= 2 ? 'active' : 'inactive'}`}>2</div>
+                          <div className={`step-line ${emailStep >= 3 ? 'active' : ''}`} />
+                          <div className={`step-dot ${emailStep >= 3 ? 'active' : 'inactive'}`}>3</div>
+                        </div>
                         {emailBanner.type && (
                           <div className={`alert alert-${emailBanner.type}`} role="alert">
                             {emailBanner.text}
                           </div>
                         )}
+                      </div>
 
+                      <div className="p-4">
                         {emailStep === 1 && (
                           <>
-                            <div className="mb-3">
-                              <label className="form-label">البريد الإلكتروني الجديد</label>
-                              <input
-                                type="email"
-                                className="form-control"
-                                value={newEmail}
-                                onChange={(e) => setNewEmail(e.target.value)}
-                                disabled={emailLoading}
-                              />
+                            <div className="mb-2 text-muted">
+                              سيتم إرسال رمز تحقق إلى بريدك: <span className="fw-semibold">{maskEmail(form.email)}</span>
                             </div>
                             <div className="d-flex gap-2">
                               <button
                                 type="button"
                                 className="btn btn-primary"
-                                onClick={sendEmailCode}
+                                onClick={sendCurrentCode}
                                 disabled={emailLoading}
                               >
                                 {emailLoading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
@@ -662,10 +745,10 @@ export default function Profile() {
                                 maxLength={6}
                                 className="form-control text-center fw-bold"
                                 style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
-                                value={emailCode}
+                                value={currentCode}
                                 onChange={(e) => {
                                   const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
-                                  setEmailCode(norm);
+                                  setCurrentCode(norm);
                                 }}
                                 placeholder="••••••"
                                 disabled={emailLoading}
@@ -684,22 +767,109 @@ export default function Profile() {
                               <button
                                 type="button"
                                 className="btn btn-link p-0"
-                                onClick={resendEmailCode}
-                                disabled={emailLoading || emailCooldown > 0}
+                                onClick={resendCurrentCode}
+                                disabled={emailLoading || currCooldown > 0}
                               >
-                                {emailCooldown > 0 ? `إعادة الإرسال (${emailCooldown})` : 'إعادة إرسال الرمز'}
+                                {currCooldown > 0 ? `إعادة الإرسال (${currCooldown})` : 'إعادة إرسال الرمز'}
                               </button>
                             </div>
                             <div className="d-flex gap-2">
                               <button
                                 type="button"
                                 className="btn btn-primary"
-                                onClick={verifyEmailCode}
-                                disabled={emailLoading || emailCode.length !== 6}
+                                onClick={verifyCurrentCode}
+                                disabled={emailLoading || currentCode.length !== 6}
                               >
                                 تأكيد
                               </button>
                             </div>
+                          </>
+                        )}
+
+                        {emailStep === 3 && (
+                          <>
+                            <div className="mb-3">
+                              <label className="form-label">البريد الإلكتروني الجديد</label>
+                              <input
+                                type="email"
+                                className="form-control"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                disabled={emailLoading || newCodeSent}
+                              />
+                            </div>
+
+                            {!newCodeSent && (
+                              <div className="d-flex gap-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  onClick={sendNewEmailCode}
+                                  disabled={emailLoading}
+                                >
+                                  {emailLoading ? <span className="spinner-border spinner-border-sm ms-1" /> : null}
+                                  إرسال رمز التحقق
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-secondary btn-sm rounded"
+                                  onClick={() => { setEmailStep(2); setNewEmail(''); }}
+                                  disabled={emailLoading}
+                                >
+                                  الرجوع
+                                </button>
+                              </div>
+                            )}
+
+                            {newCodeSent && (
+                              <>
+                                <div className="mb-3">
+                                  <label className="form-label">رمز التحقق</label>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    className="form-control text-center fw-bold"
+                                    style={{ letterSpacing: '0.5em', fontSize: '1.25rem' }}
+                                    value={newEmailCode}
+                                    onChange={(e) => {
+                                      const norm = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 6);
+                                      setNewEmailCode(norm);
+                                    }}
+                                    placeholder="••••••"
+                                    disabled={emailLoading}
+                                  />
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-secondary btn-sm rounded"
+                                    onClick={() => { setNewCodeSent(false); setNewEmailCode(''); }}
+                                    disabled={emailLoading}
+                                  >
+                                    الرجوع
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0"
+                                    onClick={resendNewEmailCode}
+                                    disabled={emailLoading || emailCooldown > 0}
+                                  >
+                                    {emailCooldown > 0 ? `إعادة الإرسال (${emailCooldown})` : 'إعادة إرسال الرمز'}
+                                  </button>
+                                </div>
+                                <div className="d-flex gap-2">
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={verifyNewEmailCode}
+                                    disabled={emailLoading || newEmailCode.length !== 6}
+                                  >
+                                    تأكيد
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
