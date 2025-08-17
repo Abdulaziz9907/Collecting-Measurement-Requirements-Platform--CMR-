@@ -123,8 +123,18 @@ namespace Commander.Services
 
         public async Task SendVerificationCodeAsync(string toEmail, string toName, string code, string subject)
         {
-            var text = $"رمزك: {code}";
-            var html = $"<p>رمزك: <strong>{code}</strong></p>";
+            var subjectLine = subject ?? $"{_brand} – رمز تأكيد البريد الإلكتروني";
+            var text = $@"{_brand} - رمز التأكيد
+
+مرحباً {toName ?? toEmail},
+
+رمزك: {code}
+
+هذا الرمز صالح لمدة 5 دقائق. إذا لم تطلب هذا التغيير، فتجاهل هذه الرسالة.";
+
+            var preheader = $"رمز تأكيد البريد الإلكتروني: {code} – صالح 5 دقائق.";
+            var intro = $"وردنا طلب لتغيير عنوان البريد الإلكتروني لحسابك في <strong>{_brand}</strong>. الرجاء استخدام الرمز أدناه لتأكيد بريدك الحالي:";
+            var html = BuildCodeHtml(_brand, code, toName ?? toEmail, preheader, intro);
 
             var request = new MailjetRequest
             {
@@ -134,7 +144,7 @@ namespace Commander.Services
                 new JObject {
                     ["From"] = new JObject { ["Email"] = _fromEmail, ["Name"] = _fromName },
                     ["To"]   = new JArray   { new JObject { ["Email"] = toEmail, ["Name"] = toName ?? toEmail } },
-                    ["Subject"]  = subject ?? string.Empty,
+                    ["Subject"]  = subjectLine,
                     ["TextPart"] = text,
                     ["HTMLPart"] = html,
                     ["ReplyTo"]  = new JObject { ["Email"] = _replyToEmail, ["Name"] = _replyToName },
@@ -197,6 +207,13 @@ namespace Commander.Services
 
         private static string BuildResetHtml(string brand, string code, string username, string resetUrl)
         {
+            var preheader = $"رمز إعادة تعيين كلمة المرور: {code} – صالح 5 دقائق.";
+            var intro = $"وردنا طلب لإعادة تعيين كلمة المرور لحسابك في <strong>{brand}</strong>. الرجاء استخدام الرمز أدناه:";
+            return BuildCodeHtml(brand, code, username, preheader, intro);
+        }
+
+        private static string BuildCodeHtml(string brand, string code, string username, string preheader, string intro)
+        {
             return $@"
 <!doctype html>
 <html lang=""ar"" dir=""rtl"">
@@ -219,7 +236,7 @@ namespace Commander.Services
     </style>
   </head>
   <body>
-    <div class=""preheader"">رمز إعادة تعيين كلمة المرور: {code} – صالح 5 دقائق.</div>
+    <div class=""preheader"">{preheader}</div>
     <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" width=""100%"" style=""padding:20px 12px;"">
       <tr>
         <td align=""center"">
@@ -227,7 +244,7 @@ namespace Commander.Services
             <div class=""header"">{brand}</div>
             <div class=""content"">
               <p class=""greeting"">،مرحباً {username}</p>
-              <p class=""lead"">وردنا طلب لإعادة تعيين كلمة المرور لحسابك في <strong>{brand}</strong>. الرجاء استخدام الرمز أدناه:</p>
+              <p class=""lead"">{intro}</p>
 
               <div class=""codebox"">{code}</div>
 
