@@ -352,7 +352,7 @@ export default function Home() {
           .rep-chip i{
             font-size: 12px;
           }
-          /* Hide the "تمثيل الإدارة:" label on phones to save space */
+          /* Hide "department representation" label on phones */
           .rep-chip .muted{
             display: none;
           }

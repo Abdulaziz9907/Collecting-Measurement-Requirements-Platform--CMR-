@@ -640,7 +640,6 @@ export default function Users() {
                             </div>
 
                             <div className="m-toolbar">
-                              {/* فرز */}
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
@@ -666,7 +665,6 @@ export default function Users() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* تصفية */}
                               {!isViewer ? (
                                 <Dropdown autoClose="outside" align="start">
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
@@ -706,7 +704,6 @@ export default function Users() {
                                 </Dropdown>
                               ) : <div />}
 
-                              {/* إجراءات */}
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات

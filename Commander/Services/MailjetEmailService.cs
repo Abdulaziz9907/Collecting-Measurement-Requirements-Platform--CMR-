@@ -38,7 +38,7 @@ namespace Commander.Services
                 ?? config["Mailjet:SenderEmail"]
                 ?? string.Empty;
 
-            // Default sender/brand → منصة التحول الرقمي
+            // Default sender/brand -> Digital Transformation Platform
             _fromName =
                 Environment.GetEnvironmentVariable("MAILJET_SENDER_NAME")
                 ?? config["MAILJET_SENDER_NAME"]

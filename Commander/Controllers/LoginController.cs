@@ -138,7 +138,7 @@ namespace Commander.Controllers
 
             try
             {
-                // Use the templated email from MailjetEmailService (brand: منصة التحول الرقمي)
+                // Use template from MailjetEmailService (brand: Digital Transformation Platform)
                 var resetUrl = $"{Request.Scheme}://{Request.Host}/reset"; // adjust to your SPA route if needed
                 await _emailService.SendPasswordResetAsync(
                     toEmail: email,
