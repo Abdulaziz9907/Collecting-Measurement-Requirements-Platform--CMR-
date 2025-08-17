@@ -332,35 +332,7 @@ export default function Login({ onLogin }) {
           .password-input.masked { -webkit-text-security: disc; }
         }
 
-        /* Mobile: smaller, perfectly circular dots */
-        @media (max-width: 576.98px) {
-          /* Android/most: safe to reduce font-size */
-          .password-input {
-            font-size: 15px;
-            line-height: 1.1;
-          }
-          /* iOS: keep 16px to avoid zoom; shrink the masked glyphs evenly (keeps perfect circle) */
-          .ios .password-input { font-size: 16px; }
-          .ios .password-input.masked {
-            transform: scale(0.84);        /* uniform scale => perfect circle, smaller */
-            transform-origin: center center;
-          }
-        }
-
-        .caps-warning {
-          background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px;
-          color: #856404; padding: .5rem .75rem; font-size: .85rem; margin-top: .5rem;
-          display: flex; align-items: center; gap: .5rem; animation: pulse 2s infinite;
-          text-align: right; direction: rtl;
-        }
-        .caps-warning i { color: #f39c12; position: static !important; transform: none !important; }
-
-        .global-error-message {
-          text-align: center; color: #dc3545; background: rgba(220,53,69,.1);
-          padding: .5rem 1rem; border-radius: 8px; font-size: .9rem;
-          margin-top: -.5rem; margin-bottom: 1.2rem;
-        }
-
+        /* Login button — original style (unchanged everywhere) */
         .btn-login {
           background: var(--accent-color); border: none; border-radius: 16px; color: #fff;
           font-weight: 600; padding: 1rem; width: 100%; font-size: 1.05rem;
@@ -377,12 +349,38 @@ export default function Login({ onLogin }) {
           .login-wrapper { max-width: 430px; margin-left: auto; margin-right: auto; }
         }
 
+        /* Mobile: compact inputs, keep button as before */
         @media (max-width: 576.98px) {
+          :root { --m-input-h: 44px; } /* adjust 40–46px to taste */
+
           .card-header-custom { padding: 1.4rem 1rem 1rem; }
           .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
-          .floating-label input { font-size: 16px; padding: .9rem 3rem; border-radius: 10px; }
-          .floating-label-container { margin-bottom: .95rem; }
-          .btn-login { font-size: .95rem; padding: .7rem 1rem; border-radius: 12px; }
+
+          /* Force same visual height on both inputs */
+          .floating-label input {
+            box-sizing: border-box !important;
+            height: var(--m-input-h);
+            padding: 0 3rem !important;   /* keep space for icons (RTL) */
+            border-radius: 10px;
+            font-size: 16px;              /* avoid iOS zoom */
+            line-height: var(--m-input-h);
+          }
+
+          /* Ensure password field matches exactly in both hidden/visible states */
+          .password-input { font-size: 16px; line-height: var(--m-input-h); }
+          .ios .password-input { font-size: 16px; } /* keep 16px on iOS */
+
+          /* Eye toggle should never change input height */
+          .toggle-password {
+            height: var(--m-input-h);
+            width: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .floating-label-container { margin-bottom: 0.85rem; }
+          /* Note: NO .btn-login overrides here — button stays like before */
           .caps-warning { font-size: .8rem; padding: .4rem .6rem; }
         }
       `}</style>

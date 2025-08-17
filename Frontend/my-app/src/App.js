@@ -18,120 +18,187 @@ import Home from './pages/desktop/Home/Home';
 import Profile from './pages/desktop/Profile/Profile';
 import SessionTimeoutModal from './components/SessionTimeoutModal.jsx';
 
+// ===================== Feature Flags (Production Toggles) =====================
+// Toggle the entire inactivity timer system (listeners, timeouts, modal)
+const ENABLE_SESSION_TIMER = true;
+// Toggle test/dev session controls (seconds-based timings, overlay, 10s demo)
+const ENABLE_TEST_SESSION = false;
+// Toggle the floating debug button that opens the test/dev panel
+const ENABLE_DEBUG_BUTTON = false;
+// ============================================================================
+
 // ---------- Session-scoped storage keys ----------
 const SESSION_KEY = 'cmr:sessionId';
-const mkKeys = (sid) => sid ? ({
-  lastActivity: `cmr:${sid}:lastActivity`,
-  warnAt:       `cmr:${sid}:warnAt`,
-  logoutAt:     `cmr:${sid}:logoutAt`,
-}) : null;
+const mkKeys = (sid) =>
+  sid
+    ? {
+        lastActivity: `cmr:${sid}:lastActivity`,
+        warnAt: `cmr:${sid}:warnAt`,
+        logoutAt: `cmr:${sid}:logoutAt`,
+      }
+    : null;
 
 // ---------- Dev settings keys ----------
 const DEV_KEYS = {
-  testMode:    'cmr:testMode',     // '1' | '0'
-  showOverlay: 'cmr:showOverlay',  // '1' | '0'
-  testIdle:    'cmr:testIdleSec',  // number
-  testWarn:    'cmr:testWarnSec',  // number
+  testMode: 'cmr:testMode', // '1' | '0'
+  showOverlay: 'cmr:showOverlay', // '1' | '0'
+  testIdle: 'cmr:testIdleSec', // number
+  testWarn: 'cmr:testWarnSec', // number
 };
 
 function DebugTimerOverlay({ toWarn, toLogout, visible }) {
   if (!visible) return null;
   return (
-    <div style={{
-      position: 'fixed', top: 12, right: 12, zIndex: 9999,
-      background: 'rgba(0,0,0,.75)', color: '#fff',
-      padding: '10px 12px', borderRadius: 10, fontSize: 13,
-      boxShadow: '0 6px 16px rgba(0,0,0,.25)'
-    }}>
-      <div style={{fontWeight:600, marginBottom:4}}>⏱️ Session Timer</div>
-      <div>Warn in: <b>{toWarn}s</b></div>
-      <div>Logout in: <b>{toLogout}s</b></div>
+    <div
+      style={{
+        position: 'fixed',
+        top: 12,
+        right: 12,
+        zIndex: 9999,
+        background: 'rgba(0,0,0,.75)',
+        color: '#fff',
+        padding: '10px 12px',
+        borderRadius: 10,
+        fontSize: 13,
+        boxShadow: '0 6px 16px rgba(0,0,0,.25)',
+      }}
+    >
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>Session Timer</div>
+      <div>
+        Warn in: <b>{toWarn}s</b>
+      </div>
+      <div>
+        Logout in: <b>{toLogout}s</b>
+      </div>
     </div>
   );
 }
 
 function SessionDevPanel({
-  testMode, setTestMode,
-  showOverlay, setShowOverlay,
-  testIdle, setTestIdle,
-  testWarn, setTestWarn,
+  testMode,
+  setTestMode,
+  showOverlay,
+  setShowOverlay,
+  testIdle,
+  setTestIdle,
+  testWarn,
+  setTestWarn,
   onTenSecDemo,
-  onResetSession
+  onResetSession,
 }) {
   const [open, setOpen] = useState(false);
+
+  // If the debug button is disabled via flag, don't render anything
+  if (!ENABLE_DEBUG_BUTTON) return null;
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         style={{
-          position: 'fixed', bottom: 14, right: 14, zIndex: 10000,
-          width: 44, height: 44, borderRadius: 12, border: '1px solid #ddd',
-          background: '#fff', cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,.12)'
+          position: 'fixed',
+          bottom: 14,
+          right: 14,
+          zIndex: 10000,
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          border: '1px solid #ddd',
+          background: '#fff',
+          cursor: 'pointer',
+          boxShadow: '0 6px 18px rgba(0,0,0,.12)',
         }}
         title="Session Dev Panel"
       >
-        ⚙️
+        timer
       </button>
 
       {open && (
         <div
           style={{
-            position: 'fixed', bottom: 68, right: 14, zIndex: 10000,
-            width: 300, borderRadius: 14, border: '1px solid #e5e7eb',
-            background: '#fff', boxShadow: '0 16px 40px rgba(0,0,0,.14)', padding: 12
+            position: 'fixed',
+            bottom: 68,
+            right: 14,
+            zIndex: 10000,
+            width: 300,
+            borderRadius: 14,
+            border: '1px solid #e5e7eb',
+            background: '#fff',
+            boxShadow: '0 16px 40px rgba(0,0,0,.14)',
+            padding: 12,
           }}
           dir="rtl"
         >
-          <div style={{fontWeight:700, marginBottom:8}}>لوحة الاختبار</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>لوحة الاختبار</div>
 
-          <label style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <input
               type="checkbox"
               checked={testMode}
-              onChange={(e)=>setTestMode(e.target.checked)}
+              onChange={(e) => setTestMode(e.target.checked)}
             />
             <span>وضع الاختبار (بالـثواني)</span>
           </label>
 
-          <label style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <input
               type="checkbox"
               checked={showOverlay}
-              onChange={(e)=>setShowOverlay(e.target.checked)}
+              onChange={(e) => setShowOverlay(e.target.checked)}
             />
             <span>إظهار العداد على الشاشة</span>
           </label>
 
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:8}}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
             <div>
-              <div style={{fontSize:12, marginBottom:4}}>Idle (sec)</div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>Idle (sec)</div>
               <input
                 type="number"
                 min="0"
                 value={testIdle}
-                onChange={(e)=>setTestIdle(Math.max(0, Number(e.target.value)||0))}
-                style={{width:'100%', padding:'6px 8px', borderRadius:8, border:'1px solid #ddd'}}
+                onChange={(e) =>
+                  setTestIdle(Math.max(0, Number(e.target.value) || 0))
+                }
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                }}
               />
             </div>
             <div>
-              <div style={{fontSize:12, marginBottom:4}}>Warn (sec)</div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>Warn (sec)</div>
               <input
                 type="number"
                 min="0"
                 value={testWarn}
-                onChange={(e)=>setTestWarn(Math.max(0, Number(e.target.value)||0))}
-                style={{width:'100%', padding:'6px 8px', borderRadius:8, border:'1px solid #ddd'}}
+                onChange={(e) =>
+                  setTestWarn(Math.max(0, Number(e.target.value) || 0))
+                }
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                }}
               />
             </div>
           </div>
 
-          <div style={{display:'flex', gap:8, marginTop:12}}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button
               type="button"
               onClick={onTenSecDemo}
-              style={{flex:1, padding:'8px 10px', borderRadius:10, border:'1px solid #ddd', background:'#f8fafc', cursor:'pointer'}}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: 10,
+                border: '1px solid #ddd',
+                background: '#f8fafc',
+                cursor: 'pointer',
+              }}
               title="Idle=10s, Warn=7s, Test Mode ON"
             >
               10s demo
@@ -139,10 +206,18 @@ function SessionDevPanel({
             <button
               type="button"
               onClick={onResetSession}
-              style={{flex:1, padding:'8px 10px', borderRadius:10, border:'1px solid #ddd', background:'#fff', cursor:'pointer'}}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: 10,
+                border: '1px solid #ddd',
+                background: '#fff',
+                cursor: 'pointer',
+              }}
               title="Recalculate clocks from now"
             >
-set            </button>
+              تعيين الآن
+            </button>
           </div>
         </div>
       )}
@@ -152,27 +227,53 @@ set            </button>
 
 function App() {
   // -------- user/login state --------
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
+  const [user, setUser] = useState(() =>
+    JSON.parse(localStorage.getItem('user') || 'null')
+  );
 
   // -------- modal + countdown (seconds) --------
   const [showTimeout, setShowTimeout] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   // -------- dev/test settings (persisted) --------
-  const [testMode, setTestMode]       = useState(() => localStorage.getItem(DEV_KEYS.testMode) === '1');
-  const [showOverlay, setShowOverlay] = useState(() => localStorage.getItem(DEV_KEYS.showOverlay) !== '0');
-  const [testIdle, setTestIdle]       = useState(() => Number(localStorage.getItem(DEV_KEYS.testIdle)) || 10);
-  const [testWarn, setTestWarn]       = useState(() => Number(localStorage.getItem(DEV_KEYS.testWarn)) || 7);
+  // If test session is disabled, force-safe defaults and ignore persisted values
+  const initialTestMode =
+    ENABLE_TEST_SESSION && localStorage.getItem(DEV_KEYS.testMode) === '1';
+  const initialShowOverlay =
+    ENABLE_TEST_SESSION && localStorage.getItem(DEV_KEYS.showOverlay) !== '0';
 
-  // persist dev settings
-  useEffect(()=>localStorage.setItem(DEV_KEYS.testMode, testMode ? '1':'0'), [testMode]);
-  useEffect(()=>localStorage.setItem(DEV_KEYS.showOverlay, showOverlay ? '1':'0'), [showOverlay]);
-  useEffect(()=>localStorage.setItem(DEV_KEYS.testIdle, String(testIdle)), [testIdle]);
-  useEffect(()=>localStorage.setItem(DEV_KEYS.testWarn, String(testWarn)), [testWarn]);
+  const [testMode, setTestMode] = useState(initialTestMode);
+  const [showOverlay, setShowOverlay] = useState(initialShowOverlay);
+  const [testIdle, setTestIdle] = useState(() =>
+    ENABLE_TEST_SESSION ? Number(localStorage.getItem(DEV_KEYS.testIdle)) || 10 : 10
+  );
+  const [testWarn, setTestWarn] = useState(() =>
+    ENABLE_TEST_SESSION ? Number(localStorage.getItem(DEV_KEYS.testWarn)) || 7 : 7
+  );
+
+  // Persist dev settings only if test session feature is enabled
+  useEffect(() => {
+    if (!ENABLE_TEST_SESSION) return;
+    localStorage.setItem(DEV_KEYS.testMode, testMode ? '1' : '0');
+  }, [testMode]);
+  useEffect(() => {
+    if (!ENABLE_TEST_SESSION) return;
+    localStorage.setItem(DEV_KEYS.showOverlay, showOverlay ? '1' : '0');
+  }, [showOverlay]);
+  useEffect(() => {
+    if (!ENABLE_TEST_SESSION) return;
+    localStorage.setItem(DEV_KEYS.testIdle, String(testIdle));
+  }, [testIdle]);
+  useEffect(() => {
+    if (!ENABLE_TEST_SESSION) return;
+    localStorage.setItem(DEV_KEYS.testWarn, String(testWarn));
+  }, [testWarn]);
 
   // -------- derived durations --------
-  const idleSec = testMode ? testIdle : 25 * 60; // 25 min in prod, seconds in test
-  const warnSec = testMode ? testWarn : 5  * 60; // 5 min in prod, seconds in test
+  const idleSec =
+    ENABLE_TEST_SESSION && testMode ? testIdle : 25 * 60; // 25 min in prod
+  const warnSec =
+    ENABLE_TEST_SESSION && testMode ? testWarn : 5 * 60; // 5 min in prod
 
   // -------- refs & routing --------
   const resetRef = useRef(() => {});
@@ -189,14 +290,16 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => { showTimeoutRef.current = showTimeout; }, [showTimeout]);
+  useEffect(() => {
+    showTimeoutRef.current = showTimeout;
+  }, [showTimeout]);
 
   // ----- session helpers -----
   const ensureSessionId = useCallback(() => {
     if (!user) return null;
     let sid = sessionIdRef.current || localStorage.getItem(SESSION_KEY);
     if (!sid) {
-      sid = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      sid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       localStorage.setItem(SESSION_KEY, sid);
     }
     sessionIdRef.current = sid;
@@ -211,18 +314,21 @@ function App() {
   }, []);
 
   // ----- clocks I/O (scoped by session) -----
-  const persistClocks = useCallback((lastActivityMs) => {
-    if (!lsKeysRef.current) return {};
-    const { lastActivity, warnAt, logoutAt } = lsKeysRef.current;
-    const warnAtVal = lastActivityMs + idleSec * 1000;
-    const logoutAtVal = lastActivityMs + (idleSec + warnSec) * 1000;
-    localStorage.setItem(lastActivity, String(lastActivityMs));
-    localStorage.setItem(warnAt, String(warnAtVal));
-    localStorage.setItem(logoutAt, String(logoutAtVal));
-    warnAtRef.current = warnAtVal;
-    logoutAtRef.current = logoutAtVal;
-    return { warnAt: warnAtVal, logoutAt: logoutAtVal };
-  }, [idleSec, warnSec]);
+  const persistClocks = useCallback(
+    (lastActivityMs) => {
+      if (!lsKeysRef.current) return {};
+      const { lastActivity, warnAt, logoutAt } = lsKeysRef.current;
+      const warnAtVal = lastActivityMs + idleSec * 1000;
+      const logoutAtVal = lastActivityMs + (idleSec + warnSec) * 1000;
+      localStorage.setItem(lastActivity, String(lastActivityMs));
+      localStorage.setItem(warnAt, String(warnAtVal));
+      localStorage.setItem(logoutAt, String(logoutAtVal));
+      warnAtRef.current = warnAtVal;
+      logoutAtRef.current = logoutAtVal;
+      return { warnAt: warnAtVal, logoutAt: logoutAtVal };
+    },
+    [idleSec, warnSec]
+  );
 
   const readClocks = useCallback(() => {
     if (!lsKeysRef.current) return {};
@@ -264,7 +370,7 @@ function App() {
   }, [navigate, clearAllTimers, clearClockKeys, clearSessionId]);
 
   const role = user?.role?.trim().toLowerCase();
-  const allow = roles => roles.map(r => r.toLowerCase()).includes(role);
+  const allow = (roles) => roles.map((r) => r.toLowerCase()).includes(role);
 
   // refresh user on route change (e.g., after login)
   useEffect(() => {
@@ -278,13 +384,22 @@ function App() {
 
   // ticker for countdown + overlay
   const startTick = useCallback(() => {
+    // If session timer is disabled, do nothing
+    if (!ENABLE_SESSION_TIMER) return;
+
     if (timersRef.current.tick) return;
     timersRef.current.tick = setInterval(() => {
       const now = Date.now();
       const warnAt = warnAtRef.current;
       const logoutAt = logoutAtRef.current;
 
-      if (showOverlay && user && location.pathname !== '/') {
+      // Only update debug overlay when test session is enabled
+      if (
+        ENABLE_TEST_SESSION &&
+        showOverlay &&
+        user &&
+        location.pathname !== '/'
+      ) {
         const toWarn = warnAt ? Math.max(0, Math.ceil((warnAt - now) / 1000)) : 0;
         const toLogout = logoutAt ? Math.max(0, Math.ceil((logoutAt - now) / 1000)) : 0;
         setDbg({ toWarn, toLogout });
@@ -303,6 +418,7 @@ function App() {
 
   // schedule from current clocks (no overwrite unless missing)
   const scheduleFromClocks = useCallback(() => {
+    if (!ENABLE_SESSION_TIMER) return; // gated by feature flag
     if (!sessionIdRef.current || !lsKeysRef.current) return;
     clearAllTimers();
 
@@ -334,6 +450,13 @@ function App() {
 
   // core inactivity logic
   useEffect(() => {
+    if (!ENABLE_SESSION_TIMER) {
+      // Ensure everything is cleanly off when disabled
+      clearAllTimers();
+      setShowTimeout(false);
+      return;
+    }
+
     if (!user || location.pathname === '/') {
       clearAllTimers();
       return;
@@ -356,20 +479,35 @@ function App() {
       scheduleFromClocks();
     };
 
-    const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart', 'pointerdown'];
-    events.forEach(e => window.addEventListener(e, activityHandler, { passive: true }));
+    const events = [
+      'click',
+      'mousemove',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'pointerdown',
+    ];
+    events.forEach((e) =>
+      window.addEventListener(e, activityHandler, { passive: true })
+    );
 
     const resumeHandler = () => {
       scheduleFromClocks();
     };
-    document.addEventListener('visibilitychange', resumeHandler, { passive: true });
+    document.addEventListener('visibilitychange', resumeHandler, {
+      passive: true,
+    });
     window.addEventListener('focus', resumeHandler, { passive: true });
     window.addEventListener('pageshow', resumeHandler, { passive: true });
 
     const storageHandler = (ev) => {
       if (!sessionIdRef.current) return;
       const keys = lsKeysRef.current || {};
-      if (ev.key === keys.warnAt || ev.key === keys.logoutAt || ev.key === keys.lastActivity) {
+      if (
+        ev.key === keys.warnAt ||
+        ev.key === keys.logoutAt ||
+        ev.key === keys.lastActivity
+      ) {
         scheduleFromClocks();
       }
       if (ev.key === 'user') {
@@ -388,17 +526,26 @@ function App() {
     scheduleFromClocks();
 
     return () => {
-      events.forEach(e => window.removeEventListener(e, activityHandler));
+      events.forEach((e) => window.removeEventListener(e, activityHandler));
       document.removeEventListener('visibilitychange', resumeHandler);
       window.removeEventListener('focus', resumeHandler);
       window.removeEventListener('pageshow', resumeHandler);
       window.removeEventListener('storage', storageHandler);
       clearAllTimers();
     };
-  }, [user, location.pathname, ensureSessionId, persistClocks, scheduleFromClocks, clearAllTimers, handleLogout]);
+  }, [
+    user,
+    location.pathname,
+    ensureSessionId,
+    persistClocks,
+    scheduleFromClocks,
+    clearAllTimers,
+    handleLogout,
+  ]);
 
   // when durations change (toggle test mode or change values), apply immediately
   useEffect(() => {
+    if (!ENABLE_SESSION_TIMER) return;
     if (user && location.pathname !== '/' && sessionIdRef.current) {
       persistClocks(Date.now());
       scheduleFromClocks();
@@ -408,16 +555,16 @@ function App() {
 
   const stayLoggedIn = () => resetRef.current();
 
-  // Dev helpers
+  // Dev helpers (no-ops if test session disabled)
   const tenSecDemo = () => {
+    if (!ENABLE_TEST_SESSION) return;
     setTestMode(true);
     setTestIdle(10);
     setTestWarn(7);
-    // clocks will auto-apply via the durations effect above
   };
   const devResetSession = () => {
-    // rebase clocks from "now"
     if (!sessionIdRef.current) return;
+    if (!ENABLE_SESSION_TIMER) return;
     persistClocks(Date.now());
     scheduleFromClocks();
     setShowTimeout(false);
@@ -427,39 +574,149 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Login onLogin={setUser} />} />
-        <Route path="/home" element={user ? <Home /> : <Navigate to="/" replace />} />
-        <Route path="/standards_create" element={user && allow(['admin','administrator']) ? <StandardsCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/standards" element={user && allow(['admin','administrator','user']) ? <Standards /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/standards_edit/:id" element={user && allow(['admin','administrator']) ? <StandardsEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/departments" element={user && allow(['admin','administrator']) ? <Departments /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/departments_edit/:id" element={user && allow(['admin','administrator']) ? <DepartmentsEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/departments_create" element={user && allow(['admin','administrator']) ? <DepartmentsCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/users" element={user && allow(['admin','administrator']) ? <Users /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/users_create" element={user && allow(['admin','administrator']) ? <UsersCreate /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/users_edit/:id" element={user && allow(['admin','administrator']) ? <UsersEdit /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/reports" element={user && allow(['admin','administrator','management']) ? <Report /> : <Navigate to={user ? '/home' : '/'} replace />} />
-        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/" replace />} />
+        <Route
+          path="/home"
+          element={user ? <Home /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/standards_create"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <StandardsCreate />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/standards"
+          element={
+            user && allow(['admin', 'administrator', 'user']) ? (
+              <Standards />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/standards_edit/:id"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <StandardsEdit />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/departments"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <Departments />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/departments_edit/:id"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <DepartmentsEdit />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/departments_create"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <DepartmentsCreate />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <Users />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/users_create"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <UsersCreate />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/users_edit/:id"
+          element={
+            user && allow(['admin', 'administrator']) ? (
+              <UsersEdit />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            user && allow(['admin', 'administrator', 'management']) ? (
+              <Report />
+            ) : (
+              <Navigate to={user ? '/home' : '/'} replace />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={user ? <Profile /> : <Navigate to="/" replace />}
+        />
       </Routes>
 
-      <SessionTimeoutModal
-        show={showTimeout}
-        timeLeft={secondsLeft}
-        onStay={stayLoggedIn}
-        onLogout={handleLogout}
-      />
+      {/* Session timeout modal (gated by master flag) */}
+      {ENABLE_SESSION_TIMER && (
+        <SessionTimeoutModal
+          show={showTimeout}
+          timeLeft={secondsLeft}
+          onStay={stayLoggedIn}
+          onLogout={handleLogout}
+        />
+      )}
 
+      {/* Debug overlay only when test session is enabled */}
       <DebugTimerOverlay
-        visible={showOverlay && user && location.pathname !== '/'}
+        visible={
+          ENABLE_TEST_SESSION &&
+          showOverlay &&
+          user &&
+          location.pathname !== '/'
+        }
         toWarn={dbg.toWarn}
         toLogout={dbg.toLogout}
       />
 
-      {user && location.pathname !== '/' && (
+      {/* Dev panel is entirely gated by ENABLE_TEST_SESSION (and the button by ENABLE_DEBUG_BUTTON) */}
+      {ENABLE_TEST_SESSION && user && location.pathname !== '/' && (
         <SessionDevPanel
-          testMode={testMode} setTestMode={setTestMode}
-          showOverlay={showOverlay} setShowOverlay={setShowOverlay}
-          testIdle={testIdle} setTestIdle={setTestIdle}
-          testWarn={testWarn} setTestWarn={setTestWarn}
+          testMode={testMode}
+          setTestMode={setTestMode}
+          showOverlay={showOverlay}
+          setShowOverlay={setShowOverlay}
+          testIdle={testIdle}
+          setTestIdle={setTestIdle}
+          testWarn={testWarn}
+          setTestWarn={setTestWarn}
           onTenSecDemo={tenSecDemo}
           onResetSession={devResetSession}
         />

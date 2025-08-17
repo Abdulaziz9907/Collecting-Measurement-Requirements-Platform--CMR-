@@ -339,6 +339,38 @@ export default function Home() {
         }
         .rep-chip .muted{ color:#6b7280; font-weight:600; }
         .rep-chip i{ font-size:14px; opacity:.9; }
+
+        /* Mobile: smaller department chip */
+        @media (max-width: 576px) {
+          .rep-chip{
+            padding: 2px 8px;
+            gap: 6px;
+            font-size: .72rem;
+            white-space: nowrap;
+          }
+          .rep-chip i{
+            font-size: 12px;
+          }
+          /* Hide the "تمثيل الإدارة:" label on phones to save space */
+          .rep-chip .muted{
+            display: none;
+          }
+          /* Keep department name on one line and truncate if long */
+          .rep-chip strong{
+            display: inline-block;
+            max-width: 60vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 800;
+          }
+          /* Smaller spinner inside the chip on mobile */
+          .rep-chip .spinner-border{
+            width: .9rem;
+            height: .9rem;
+            border-width: .12rem;
+          }
+        }
       `}</style>
 
       <Header />
@@ -376,7 +408,6 @@ export default function Home() {
                             <i className="fas fa-building" aria-hidden="true" />
                             <span className="muted">تمثيل الإدارة:</span>
 
-                            {/* ADDED: chip shows loading while either page or departments are loading */}
                             {(loading || deptLoading) ? (
                               <span className="d-inline-flex align-items-center">
                                 <Spinner size="sm" animation="border" role="status" className="ms-1" />
