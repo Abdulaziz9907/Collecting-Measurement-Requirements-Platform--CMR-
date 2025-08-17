@@ -10,6 +10,7 @@ import StandardModal from '../../../components/StandardModal.jsx';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
 import DeleteModal from '../../../components/DeleteModal.jsx';
+import { getStoredUser } from '../../../utils/auth';
 
 export default function Standards() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -54,7 +55,7 @@ export default function Standards() {
   const fileInputRef = useRef(null);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const user = useMemo(() => getStoredUser(), []);
   const navigate = useNavigate();
 
   // Pagination

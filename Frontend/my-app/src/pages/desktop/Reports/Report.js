@@ -19,6 +19,7 @@ import {
 } from 'chart.js';
 import * as XLSX from 'xlsx';
 import Footer from '../../../components/Footer.jsx';
+import { getStoredUser } from '../../../utils/auth';
 
 ChartJS.register(
   CategoryScale,
@@ -64,7 +65,7 @@ export default function Report() {
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const USERS_ENDPOINT = `${API_BASE}/api/users`;
-  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const user = useMemo(() => getStoredUser(), []);
   const abortRef = useRef(null);
 
   const LOAD_MIN_MS = 450;

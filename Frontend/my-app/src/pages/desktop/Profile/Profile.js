@@ -5,9 +5,10 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import { getStoredUser, storeUser } from '../../../utils/auth';
 
 export default function Profile() {
-  const stored = useMemo(() => JSON.parse(localStorage.getItem('user') || '{}'), []);
+  const stored = useMemo(() => getStoredUser() || {}, []);
   const [user, setUser] = useState(stored);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
@@ -165,7 +166,7 @@ export default function Profile() {
         last_name: updated.last_name || '',
         email: updated.email || ''
       });
-      localStorage.setItem('user', JSON.stringify(updated));
+      storeUser(updated);
     } catch {
       showBanner('danger', 'تعذر تحديث بيانات الحساب الآن.');
     } finally {
@@ -247,7 +248,7 @@ export default function Profile() {
       if (res.ok) {
         const updated = { ...user, ...form };
         setUser(updated);
-        localStorage.setItem('user', JSON.stringify(updated));
+        storeUser(updated);
         showBanner('success', 'تم تحديث البيانات بنجاح.');
 
         // Refresh users cache

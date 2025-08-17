@@ -9,6 +9,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
 import * as XLSX from 'xlsx';
 import DeleteModal from '../../../components/DeleteModal.jsx';
+import { getStoredUser } from '../../../utils/auth';
 
 export default function Users() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -24,7 +25,7 @@ export default function Users() {
   const [deleteId, setDeleteId] = useState(null);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const user = useMemo(() => getStoredUser(), []);
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
 

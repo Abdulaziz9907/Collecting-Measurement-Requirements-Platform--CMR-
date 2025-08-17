@@ -10,12 +10,13 @@ import {
   faHome,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
+import { getStoredUser } from '../utils/auth';
 
 export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const location = useLocation();
 
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = getStoredUser();
   const role = user?.role?.trim().toLowerCase();
   let navItems = [];
 
