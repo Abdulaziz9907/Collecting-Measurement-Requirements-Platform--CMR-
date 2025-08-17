@@ -913,13 +913,6 @@ const SkeletonRow = ({ idx }) => (
                                     <i className="fas fa-file-excel ms-1" /> تصدير Excel
                                   </button>
 
-                                  <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handleExcelImport(e.target.files?.[0])}
-                                  />
                                   <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
                                     {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
                                   </button>
@@ -1234,11 +1227,18 @@ const SkeletonRow = ({ idx }) => (
       </div>
 
       {/* Hidden input for import (works for mobile actions too) */}
+      {/* Visually-hidden file input (no display:none for mobile compatibility) */}
       <input
         ref={fileInputRef}
         type="file"
         accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-        style={{ display: 'none' }}
+        style={{
+          position: 'absolute',
+          width: 0,
+          height: 0,
+          opacity: 0,
+          pointerEvents: 'none'
+        }}
         onChange={(e) => handleExcelImport(e.target.files?.[0])}
       />
 
