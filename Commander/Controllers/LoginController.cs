@@ -272,7 +272,11 @@ namespace Commander.Controllers
                 return BadRequest(new { message = "Incomplete payload." });
 
             if (!_emailCurrentStore.TryGetValue(dto.UserId, out var entry))
+            {
+                if (_emailCurrentVerified.TryGetValue(dto.UserId, out var already) && DateTimeOffset.UtcNow <= already)
+                    return Ok(new { valid = true });
                 return NotFound(new { message = "No verification request found." });
+            }
 
             if (DateTimeOffset.UtcNow > entry.ExpiresAt)
             {
