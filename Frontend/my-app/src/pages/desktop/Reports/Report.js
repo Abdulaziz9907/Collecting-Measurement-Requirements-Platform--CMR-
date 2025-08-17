@@ -39,7 +39,7 @@ export default function Report() {
   const [deptStats, setDeptStats] = useState([]);
   const [monthlyProgress, setMonthlyProgress] = useState([]);
   const [users, setUsers] = useState([]);
-  const [standardsRaw, setStandardsRaw] = useState([]); // raw standards for detailed export
+  const [standardsRaw, setStandardsRaw] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -47,7 +47,6 @@ export default function Report() {
   const [deptSearch, setDeptSearch] = useState('');
   const [selectedDepartments, setSelectedDepartments] = useState([]);
 
-  // 'approvedOnly' | 'completedPlusApproved'
   const [progressMode, setProgressMode] = useState('completedPlusApproved');
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -68,11 +67,9 @@ export default function Report() {
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const abortRef = useRef(null);
 
-  // ====== Skeleton control (no flicker + race-safe) ======
   const LOAD_MIN_MS = 450;
   const loadSeqRef = useRef(0);
 
-  /* ================= theme & styles ================ */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -88,23 +85,12 @@ export default function Report() {
         --skeleton-sheen: rgba(255,255,255,.6);
         --skeleton-speed: 1.2s;
       }
-      .surface {
-        background: var(--surface);
-        border: 1px solid var(--stroke);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
+      .surface { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
       .surface.allow-overflow { overflow: visible; }
       .head-flat {
-        padding: 12px 16px;
-        background: var(--surface-muted);
-        border-bottom: 1px solid var(--stroke);
-        color: var(--text);
-        font-weight: 700;
-        display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-        border-top-left-radius: var(--radius);
-        border-top-right-radius: var(--radius);
+        padding: 12px 16px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke);
+        color: var(--text); font-weight: 700; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+        border-top-left-radius: var(--radius); border-top-right-radius: var(--radius);
       }
       .head-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
       .body-flat { padding: 16px; }
@@ -117,19 +103,16 @@ export default function Report() {
       .stat-value { margin:0 0 4px; font-weight:800; font-size:1.35rem; letter-spacing:.2px; }
       .stat-title { font-size:.9rem; opacity:.95; }
 
-      /* skeletons */
       .skeleton { position:relative; overflow:hidden; background:var(--skeleton-bg); border-radius: calc(var(--radius) - 2px); }
       .skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
-      @media (prefers-reduced-motion: reduce) {
-        .skeleton::after { animation: none; }
-      }
+      @media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
       .skeleton-card { height:92px; }
       .skeleton-block { height: 280px; }
-      .skeleton-table-row { height: 44px; margin-bottom: 8px; border-radius: 8px; }
 
       .chart-wrap-md { height: 280px; }
       .chart-wrap-lg { height: 300px; }
+      .chart-wrap-taller { height: 340px; } /* taller for pie/users cards */
 
       .legend-inline { position:absolute; top:8px; inset-inline-start:12px; display:flex; gap:8px; flex-wrap:wrap; }
       .legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; color: var(--text); }
@@ -140,36 +123,21 @@ export default function Report() {
       .mini-stat { border:1px solid var(--stroke); border-radius:12px; padding:12px; background:#fff; display:flex; align-items:center; gap:10px; height:100%; }
       .mini-icon { width:36px; height:36px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#0b2440; }
 
-      /* table */
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
       .table-card .head { padding:12px 16px; border-bottom:1px solid var(--stroke); background: var(--surface-muted); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
-      .table-card .body { padding: 16px 16px 0; } /* bottom flush */
+      .table-card .body { padding: 16px 16px 0; }
       .table thead th { cursor: pointer; white-space: nowrap; }
 
       .dropdown-menu { --bs-dropdown-link-hover-bg: #f1f5f9; --bs-dropdown-link-active-bg: #e2e8f0; }
       .dropdown-item { color: var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color: var(--text) !important; }
 
-      /* pretty popovers */
-      .popover {
-        border-radius: 14px;
-        border: 1px solid var(--stroke);
-        box-shadow: 0 14px 32px rgba(16,24,40,.14);
-        max-width: 320px;
-      }
-      .popover-header {
-        background: linear-gradient(180deg, #fbfdff 0%, #f6f8fb 100%);
-        border-bottom: 1px solid var(--stroke);
-        font-weight: 800;
-        color: var(--text);
-      }
-      .popover-body {
-        color: var(--text);
-      }
+      .popover { border-radius: 14px; border: 1px solid var(--stroke); box-shadow: 0 14px 32px rgba(16,24,40,.14); max-width: 320px; }
+      .popover-header { background: linear-gradient(180deg, #fbfdff 0%, #f6f8fb 100%); border-bottom: 1px solid var(--stroke); font-weight: 800; color: var(--text); }
+      .popover-body { color: var(--text); }
     `}</style>
   );
 
-  /* --------- helpers --------- */
   const normalizeStr = (v) => (v ?? '').toString().trim().toLowerCase();
   const statusToKey = (raw) => {
     const s = normalizeStr(raw);
@@ -229,7 +197,6 @@ export default function Report() {
   const isManagementAccount = (u) => getRole(u).toLowerCase() === 'management';
   const isUserAccount = (u) => getRole(u).toLowerCase() === 'user';
 
-  /* --------- data load --------- */
   const loadData = async () => {
     loadSeqRef.current += 1;
     const seq = loadSeqRef.current;
@@ -261,7 +228,7 @@ export default function Report() {
           ? Number(s.assigned_department_id) === Number(user.department_id)
           : true
       );
-      setStandardsRaw(filtered); // store for export
+      setStandardsRaw(filtered);
 
       const totalCounts = { approved: 0, rejected: 0, completed: 0, underWork: 0, notStarted: 0 };
 
@@ -327,7 +294,6 @@ export default function Report() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE, progressMode]);
 
-  /* --------- filtering/sorting --------- */
   const visibleDeptList = useMemo(() => {
     const q = deptSearch.trim().toLowerCase();
     const base = (departments || []).map((d) => d.department_name);
@@ -357,7 +323,6 @@ export default function Report() {
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  /* --------- derived visuals --------- */
   const summaryData = useMemo(() => {
     if (selectedDepartments.length === 0) {
       return [
@@ -415,7 +380,6 @@ export default function Report() {
     datasets: [{ label: 'المعايير المُضافة شهرياً', data: monthlyProgress.map((p) => p.count), fill: true, borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.12)', tension: 0.35 }],
   };
 
-  /* --------- users & departments stats --------- */
   const usersByDept = useMemo(() => {
     const map = new Map();
     for (const u of users || []) {
@@ -431,9 +395,7 @@ export default function Report() {
   const managementAccountsCount = (users || []).filter(isManagementAccount).length;
   const usersAccountsCount = (users || []).filter(isUserAccount).length;
 
-  /* ----------------- ADVANCED EXPORT ----------------- */
   const excelCol = (n) => {
-    // 0->A
     let s = '';
     n++;
     while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
@@ -453,13 +415,14 @@ export default function Report() {
   };
 
   const exportToExcel = () => {
+    if (loading) return;
+
     const now = riyadhNow();
     const gDate = formatGregorian(now);
     const hDate = hijriFormat(now);
     const selectedDeptsLabel = selectedDepartments.length === 0 ? 'كل الإدارات' : selectedDepartments.join(', ');
     const progressModeLabel = progressMode === 'approvedOnly' ? 'معتمد فقط' : 'مكتمل + معتمد';
 
-    // 0) Workbook + props
     const wb = XLSX.utils.book_new();
     wb.Props = {
       Title: 'تقرير الإدارات',
@@ -468,7 +431,6 @@ export default function Report() {
       CreatedDate: now
     };
 
-    // 1) Metadata sheet
     const metaAOA = [
       ['تقرير الإدارات'],
       ['تاريخ ووقت التصدير (ميلادي)', gDate],
@@ -484,15 +446,14 @@ export default function Report() {
       ['غير معتمد', totals.rejected],
     ];
     const wsMeta = XLSX.utils.aoa_to_sheet(metaAOA);
-    wsMeta['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }]; // merge title
+    wsMeta['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
     wsMeta['!cols'] = [{ wch: 28 }, { wch: 50 }];
     XLSX.utils.book_append_sheet(wb, wsMeta, 'تفاصيل التصدير');
 
-    // 2) Departments (with formulas)
     const deptHeader = ['الإدارة','المجموع','مكتمل','معتمد','تحت العمل','لم يبدأ','غير معتمد','المتبقي','نسبة التقدم (%)'];
     const deptAOA = [deptHeader];
     sortedStats.forEach((d, i) => {
-      const r = i + 2; // row number in Excel (1-based, header at 1)
+      const r = i + 2;
       deptAOA.push([
         d.department,
         d.total,
@@ -500,7 +461,6 @@ export default function Report() {
         d.approved,
         d.underWork,
         d.notStarted,
-        d.rejected,
         { f: `MAX(0,B${r}-(C${r}+D${r}))`, t: 'n' },
         { f: `IF(B${r}=0,0,ROUND(((C${r}+D${r})/B${r})*100,0))`, t: 'n' },
       ]);
@@ -510,19 +470,9 @@ export default function Report() {
     wsDept['!autofilter'] = { ref: `A1:${excelCol(deptHeader.length - 1)}${deptAOA.length}` };
     XLSX.utils.book_append_sheet(wb, wsDept, 'الإدارات (تفصيلي)');
 
-    // 3) Standards details (respect selected departments)
     const headersStd = [
-      'ID',
-      'العنوان/الاسم',
-      'الحالة (أصلي)',
-      'الحالة (موحدة)',
-      'الإدارة (ID)',
-      'الإدارة',
-      'تاريخ الإنشاء (UTC)',
-      'تاريخ الإنشاء (الرياض)',
-      'آخر تحديث (UTC)',
-      'آخر تحديث (الرياض)',
-      'الوصف'
+      'ID','العنوان/الاسم','الحالة (أصلي)','الحالة (موحدة)','الإدارة (ID)','الإدارة',
+      'تاريخ الإنشاء (UTC)','تاريخ الإنشاء (الرياض)','آخر تحديث (UTC)','آخر تحديث (الرياض)','الوصف'
     ];
     const isDeptSelected = selectedDepartments.length > 0;
     const stdRows = [];
@@ -543,12 +493,7 @@ export default function Report() {
       const desc = s.description ?? s.notes ?? '';
 
       stdRows.push([
-        id,
-        title,
-        statusOriginal,
-        statusUnified,
-        depId,
-        depName,
+        id, title, statusOriginal, statusUnified, depId, depName,
         createdUTC ? new Date(createdUTC).toISOString() : '',
         createdRiyadh,
         updatedUTC ? new Date(updatedUTC).toISOString() : '',
@@ -564,7 +509,6 @@ export default function Report() {
     wsStd['!autofilter'] = { ref: `A1:${excelCol(headersStd.length - 1)}${stdRows.length + 1}` };
     XLSX.utils.book_append_sheet(wb, wsStd, 'المعايير (كاملة)');
 
-    // 4) Users details
     const headersUsers = ['ID','الاسم','اسم المستخدم','البريد','الدور','الإدارة (ID)','الإدارة'];
     const userRows = (users || []).map((u) => {
       const depId = Number(u?.department_id ?? u?.dept_id ?? u?.departmentId ?? -1);
@@ -584,7 +528,6 @@ export default function Report() {
     wsUsers['!autofilter'] = { ref: `A1:${excelCol(headersUsers.length - 1)}${userRows.length + 1}` };
     XLSX.utils.book_append_sheet(wb, wsUsers, 'المستخدمون (كامل)');
 
-    // 5) Monthly chart data
     const headersMonthly = ['الشهر (YYYY-MM)', 'عدد المعايير المُضافة'];
     const monthlyRows = (monthlyProgress || []).map((m) => [m.month, m.count]);
     const wsMonthly = XLSX.utils.aoa_to_sheet([headersMonthly, ...monthlyRows]);
@@ -592,12 +535,10 @@ export default function Report() {
     wsMonthly['!autofilter'] = { ref: `A1:${excelCol(headersMonthly.length - 1)}${monthlyRows.length + 1}` };
     XLSX.utils.book_append_sheet(wb, wsMonthly, 'الزمن الشهري');
 
-    // Save with Riyadh timestamp in name
     const fileTs = formatGregorianFile(now);
     XLSX.writeFile(wb, `تقرير_الإدارات_${fileTs}.xlsx`);
   };
 
-  /* ----------------- HOVER EXPLANATIONS ----------------- */
   const popApprovedOnly = (
     <Popover id="pop-approved-only" dir="rtl">
       <Popover.Header as="h6">وضع “معتمد فقط”</Popover.Header>
@@ -608,8 +549,7 @@ export default function Report() {
         <ul className="mb-0 ps-3">
           <li>يُحتسب فقط ما تم اعتماده رسميًا.</li>
           <li>المعايير المكتملة لا تُحتسب ضمن النسبة.</li>
-          <li>مفيد لرصد الإنجاز الفعلي   .</li>
-
+          <li>مفيد لرصد الإنجاز الفعلي.</li>
         </ul>
       </Popover.Body>
     </Popover>
@@ -642,14 +582,12 @@ export default function Report() {
             <div id="content" className="flex-grow-1">
               <div className="container-fluid">
 
-                {/* Breadcrumbs */}
                 <div className="row p-4">
                   <div className="col-12">
                     <Breadcrumbs />
                   </div>
                 </div>
 
-                {/* Header card */}
                 <div className="row justify-content-center">
                   <div className="col-12 col-xl-10">
                     <div className="surface allow-overflow mb-4" aria-busy={loading}>
@@ -662,7 +600,6 @@ export default function Report() {
                         </div>
 
                         <div className="head-actions">
-                          {/* Departments dropdown */}
                           <Dropdown autoClose="outside" align="end" flip={false}>
                             <Dropdown.Toggle variant="outline-secondary" size="sm">
                               {selectedDepartments.length === 0
@@ -712,7 +649,6 @@ export default function Report() {
                             </Dropdown.Menu>
                           </Dropdown>
 
-                          {/* Progress mode toggles with fancy hover popovers */}
                           <div className="d-inline-flex align-items-center gap-2">
                             <OverlayTrigger placement="bottom" delay={{ show: 120, hide: 80 }} overlay={popApprovedOnly}>
                               <button
@@ -734,9 +670,14 @@ export default function Report() {
                             </OverlayTrigger>
                           </div>
 
-                          {/* Export + Refresh */}
                           {['admin', 'administrator'].includes(user?.role?.toLowerCase?.()) && (
-                            <button className="btn btn-success btn-sm" onClick={exportToExcel} title="تصدير Excel (XLSX)">
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={exportToExcel}
+                              title="تصدير Excel (XLSX)"
+                              disabled={loading}
+                              aria-disabled={loading}
+                            >
                               <i className="fas fa-file-excel ms-1" /> تصدير Excel
                             </button>
                           )}
@@ -758,7 +699,6 @@ export default function Report() {
                       </div>
 
                       <div className="body-flat">
-                        {/* KPIs */}
                         {loading ? (
                           <div className="grid-cards mb-3" aria-hidden={!loading}>
                             {Array.from({ length: 6 }).map((_, i) => (
@@ -780,7 +720,6 @@ export default function Report() {
                   </div>
                 </div>
 
-                {/* Charts Row 1 */}
                 <div className="row justify-content-center g-4">
                   <div className="col-12 col-xl-5">
                     <div className="surface" aria-busy={loading}>
@@ -851,7 +790,6 @@ export default function Report() {
                   </div>
                 </div>
 
-                {/* Charts Row 2 */}
                 <div className="row justify-content-center g-4 mt-1">
                   <div className="col-12 col-xl-10">
                     <div className="surface" aria-busy={loading}>
@@ -879,18 +817,17 @@ export default function Report() {
                   </div>
                 </div>
 
-                {/* Row 3 */}
                 <div className="row justify-content-center g-4 mt-1">
                   <div className="col-12 col-xl-5">
                     <div className="surface" aria-busy={loading}>
                       <div className="head-flat">توزيع حالات المعايير</div>
                       <div className="body-flat">
                         {loading ? (
-                          <div className="skeleton skeleton-block" style={{ height: 300 }} />
+                          <div className="skeleton skeleton-block" style={{ height: 340 }} />
                         ) : error ? (
                           <div className="text-center py-4 text-danger">{error}</div>
                         ) : (
-                          <div className="chart-wrap-md">
+                          <div className="chart-wrap-md chart-wrap-taller">
                             <Pie
                               data={statusPieData}
                               options={{
@@ -910,9 +847,9 @@ export default function Report() {
                       <div className="head-flat">إحصائيات المستخدمين والإدارات</div>
                       <div className="body-flat">
                         {loading ? (
-                          <div className="skeleton skeleton-block" />
+                          <div className="skeleton skeleton-block" style={{ height: 340 }} />
                         ) : (
-                          <div className="chart-wrap-md d-flex align-items-center">
+                          <div className="chart-wrap-md chart-wrap-taller d-flex align-items-center">
                             <div className="w-100">
                               <div className="stats-grid">
                                 <div className="mini-stat">
@@ -940,9 +877,7 @@ export default function Report() {
                                   <div className="mini-icon"><i className="fas fa-crown" /></div>
                                   <div>
                                     <div className="fw-bold">إجمالي حسابات الإدارة العليا</div>
-                                    <div className="text-muted">
-                                      {fmt(managementAccountsCount)}
-                                    </div>
+                                    <div className="text-muted">{fmt(managementAccountsCount)}</div>
                                   </div>
                                 </div>
                               </div>
@@ -957,7 +892,6 @@ export default function Report() {
                   </div>
                 </div>
 
-                {/* Table */}
                 <div className="row justify-content-center g-4 mt-1 mb-5">
                   <div className="col-12 col-xl-10">
                     <div className="table-card" aria-busy={loading}>

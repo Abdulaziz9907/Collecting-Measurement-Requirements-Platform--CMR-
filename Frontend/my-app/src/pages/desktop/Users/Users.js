@@ -18,7 +18,7 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // نظهر السكيلتون أثناء كل تحميل
+  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -28,18 +28,44 @@ export default function Users() {
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
 
-  // نفس تجربة التصفح في الصفحات الأخرى
+  // Mobile detection (<=576px)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 576px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', update);
+      else mq.removeListener(update);
+    };
+  }, []);
+
+  // Pagination
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // حماية من الوميض + أمان التزامن
+  // Loading sync
   const LOAD_MIN_MS = 450;
-  const SPINNER_MIN_MS = 200; // موجود للتماثل فقط
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
-  /* ===== المظهر المحلي ===== */
+  // Sorting
+  const [sortKey, setSortKey] = useState(null);   // 'employee_id' | 'username' | 'first_name' | 'last_name' | 'role' | 'department'
+  const [sortDir, setSortDir] = useState('none'); // 'asc' | 'desc' | 'none'
+
+  const dropdownPopper = useMemo(() => ({
+    strategy: 'fixed',
+    modifiers: [
+      { name: 'offset', options: { offset: [0, 8] } },
+      { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
+      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
+    ],
+  }), []);
+
+  /* ========= Local Theme (match Standards' mobile button sizing, fix gaps, new card look) ========= */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -56,14 +82,65 @@ export default function Users() {
         --skeleton-speed: 1.2s;
       }
 
-      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
-      .head-flat {
-        padding: 12px 16px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke);
-        color: var(--text); font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      .table-card {
+        background: var(--surface);
+        border:1px solid var(--stroke);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow:hidden;
+        margin-bottom: 56px; /* space above footer */
       }
-      .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* عرض الأعمدة ثابت لثبات السكيلتون */
+      .head-flat {
+        padding: 10px 12px;
+        background: var(--surface-muted);
+        border-bottom: 1px solid var(--stroke);
+        color: var(--text);
+        font-weight:700;
+      }
+
+      /* Header layout */
+      .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+
+      .search-block { flex:1 1 320px; min-width:240px; }
+      .search-input { width:100%; max-width: 460px; margin:0 !important; }
+
+      .toolbar-block { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+      /* ===== Mobile header (exact idea from Standards; same button sizing via .m-btn) */
+      @media (max-width: 576px) {
+        .head-row { display:block; }
+        .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
+        .search-block { margin:0; padding:0; }
+        .search-input { max-width: 100%; height: 36px; line-height: 36px; }
+
+        .m-toolbar {
+          display:grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap:6px;
+          margin:0; padding:0; /* ✅ removes any blank gap under search */
+        }
+
+        /* === Sizing identical to Standards' mobile buttons === */
+        .m-btn.btn {
+          padding: 5px 8px;
+          min-height: 32px;
+          font-size: .85rem;
+          border-radius: 10px;
+          font-weight: 600;
+          width: 100%;
+        }
+
+        .m-menu { width: min(92vw, 360px); max-width: 92vw; }
+        .m-menu .dropdown-item { padding: 10px 12px; font-size: .95rem; }
+        .m-menu .dropdown-header { font-size: .9rem; }
+
+        .meta-row {
+          display:flex; align-items:center; justify-content:space-between; gap:8px;
+        }
+      }
+
+      /* Table columns (desktop) */
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-eid   { min-width: 120px; }
       .th-uname { min-width: 180px; }
@@ -74,12 +151,11 @@ export default function Users() {
       .th-icon  { width: 60px; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 140px; }
+      .page-spacer { height: 160px; } /* extra bottom spacing */
 
-      .table-card .table { margin: 0 !important; }
-      .table-card .table-responsive { margin: 0; }
+      .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
-      /* سكيلتون */
+      /* Skeletons */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -89,17 +165,59 @@ export default function Users() {
       .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
       .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
+      .skel-chip  { height: 32px; width: 100%; border-radius: 999px; }
 
-      /* صفوف الحشو */
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
+
+      /* ===== Mobile Cards (no right/left accent line) ===== */
+      .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .u-card {
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: var(--shadow);
+        padding: 10px 12px 12px 12px;
+      }
+
+      .u-head {
+        display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;
+      }
+      .u-ident {
+        display:flex; align-items:center; gap:10px;
+      }
+      .u-avatar {
+        width: 36px; height: 36px;
+        border-radius: 999px;
+        background: #edf3f6;
+        color: var(--brand);
+        font-weight: 800;
+        display:grid; place-items:center;
+        font-size: .9rem;
+      }
+      .u-title { font-weight: 800; color: var(--text); font-size: .95rem; line-height:1.2; }
+      .u-subtle { color: var(--text-muted); font-size: .8rem; margin-top:2px; }
+
+      .u-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
+      .u-chip {
+        display:inline-flex; align-items:center; gap:6px;
+        padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.78rem;
+        background: #f8fafc;
+        max-width: 70%;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      }
+
+      .u-actions {
+        display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px;
+      }
+      .u-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:700; }
+      .u-btn i { font-size: .85rem; }
     `}</style>
   );
 
-  // === نظهر السكيلتون أثناء كل refresh ===
   const refreshData = async () => {
     setUseSkeleton(true);
     setLoading(true);
@@ -144,7 +262,7 @@ export default function Users() {
   };
 
   useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, departmentFilter, pageSize]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, departmentFilter, pageSize, sortKey, sortDir]);
 
   const uniqueRoles = [...new Set(users.map(u => u?.role).filter(Boolean))];
   const uniqueDepartments = departments.map(d => d?.department_name).filter(Boolean);
@@ -153,57 +271,80 @@ export default function Users() {
     setFunc(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
   };
 
-  // تصفية
+  const deptNameById = useMemo(
+    () => new Map((departments || []).map(d => [d?.department_id, d?.department_name || ''])),
+    [departments]
+  );
+
   const filteredUsers = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
     return (users || []).filter(u => {
-      const depName = departments.find(d => d?.department_id === u?.department_id)?.department_name || '';
+      const depName = deptNameById.get(u?.department_id) || '';
       const txt = `${u?.employee_id ?? ''} ${u?.username ?? ''} ${u?.first_name ?? ''} ${u?.last_name ?? ''} ${u?.role ?? ''} ${depName}`.toLowerCase();
       const okSearch = !q || txt.includes(q);
       const okRole = roleFilter.length ? roleFilter.includes(u?.role) : true;
       const okDept = departmentFilter.length ? departmentFilter.includes(depName) : true;
       return okSearch && okRole && okDept;
     });
-  }, [users, departments, searchTerm, roleFilter, departmentFilter]);
+  }, [users, deptNameById, searchTerm, roleFilter, departmentFilter]);
 
+  const sortedUsers = useMemo(() => {
+    if (sortDir === 'none' || !sortKey) return filteredUsers;
+    const val = (u) => {
+      if (sortKey === 'employee_id') return String(u?.employee_id ?? '');
+      if (sortKey === 'username')    return String(u?.username ?? '').toLowerCase();
+      if (sortKey === 'first_name')  return String(u?.first_name ?? '').toLowerCase();
+      if (sortKey === 'last_name')   return String(u?.last_name ?? '').toLowerCase();
+      if (sortKey === 'role')        return String(u?.role ?? '').toLowerCase();
+      if (sortKey === 'department')  return String(deptNameById.get(u?.department_id) || '').toLowerCase();
+      return '';
+    };
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const copy = [...filteredUsers];
+    copy.sort((a, b) => {
+      const av = val(a), bv = val(b);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return  1 * dir;
+      return String(a?.employee_id ?? '').localeCompare(String(b?.employee_id ?? ''));
+    });
+    return copy;
+  }, [filteredUsers, sortKey, sortDir, deptNameById]);
+
+  const setSort = (key, dir='asc') => { setSortKey(key); setSortDir(dir); };
+
+  // Pagination
   const colCount = isViewer ? 6 : 8;
-
-  // ترقيم الصفحات
   const isAll = pageSize === 'all';
-  const numericPageSize = isAll ? (filteredUsers.length || 0) : Number(pageSize);
-  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(filteredUsers.length / numericPageSize));
-  const paginatedUsers = isAll
-    ? filteredUsers
-    : filteredUsers.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
-
+  const numericPageSize = isAll ? (sortedUsers.length || 0) : Number(pageSize);
+  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(sortedUsers.length / numericPageSize));
+  const paginatedUsers = isAll ? sortedUsers : sortedUsers.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedUsers.length > 0;
 
-  // وضع السكيلتون + العدّ
+  // Skeleton state
   const skeletonMode = loading && useSkeleton;
   const skeletonCount = isAll ? 15 : Number(pageSize);
 
-  // صفوف الحشو عند عدم التحميل (للمحافظة على الارتفاع الثابت)
-  const baseRowsCount = hasPageData ? paginatedUsers.length : 1; // صف "لا توجد نتائج" إن كانت فارغة
+  // Filler rows for stable height (desktop)
+  const baseRowsCount = hasPageData ? paginatedUsers.length : 1;
   const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
 
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  // صف سكيلتون مطابق للأعمدة
+  // Skeleton row (desktop)
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
-      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>  {/* رقم الموظف */}
-      <td><span className="skel skel-line" style={{ width: '80%' }} /></td>  {/* اسم المستخدم */}
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>  {/* الاسم الأول */}
-      <td><span className="skel skel-line" style={{ width: '65%' }} /></td>  {/* الاسم الأخير */}
-      <td><span className="skel skel-badge" /></td>                          {/* الدور */}
-      <td><span className="skel skel-line" style={{ width: '75%' }} /></td>  {/* الإدارة */}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* تعديل */}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}            {/* حذف */}
+      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '80%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '65%' }} /></td>
+      <td><span className="skel skel-badge" /></td>
+      <td><span className="skel skel-line" style={{ width: '75%' }} /></td>
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
     </tr>
   );
 
-  // صفوف الحشو
   const renderFillerRows = (count) =>
     Array.from({ length: count }).map((_, r) => (
       <tr key={`filler-${r}`} className="table-empty-row">
@@ -211,15 +352,12 @@ export default function Users() {
       </tr>
     ));
 
-  // ==== التعديلات المطلوبة فقط ====
-
-  // 1) منع التصدير أثناء التحميل/السكيلتون/لا توجد نتائج
-  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || filteredUsers.length === 0;
+  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || sortedUsers.length === 0;
 
   const exportToExcel = () => {
-    if (exportDisabled) return; // حارس
-    const exportData = filteredUsers.map(u => {
-      const dep = departments.find(d => d?.department_id === u?.department_id)?.department_name || '';
+    if (exportDisabled) return;
+    const exportData = sortedUsers.map(u => {
+      const dep = deptNameById.get(u?.department_id) || '';
       return {
         'رقم الموظف': u?.employee_id,
         'اسم المستخدم': u?.username,
@@ -235,7 +373,6 @@ export default function Users() {
     XLSX.writeFile(wb, 'المستخدمون.xlsx');
   };
 
-  // 2) منع حذف مستخدم بدور Admin
   const isAdminRole = (role) => String(role || '').toLowerCase() === 'admin';
 
   const confirmDelete = async () => {
@@ -245,7 +382,7 @@ export default function Users() {
     try {
       await fetch(`${API_BASE}/api/users/${deleteId}`, { method: 'DELETE' });
       setShowDelete(false);
-      await refreshData(); // سكيلتون بعد الحذف
+      await refreshData();
     } catch {}
   };
 
@@ -256,182 +393,434 @@ export default function Users() {
     setShowDelete(true);
   };
 
+  /* ===== Mobile Card pieces ===== */
+  const initials = (first = '', last = '') => {
+    const a = String(first).trim()[0] || '';
+    const b = String(last).trim()[0] || '';
+    return (a + b || '؟').toUpperCase();
+  };
+
+  const MobileCard = ({ u }) => {
+    const depName = deptNameById.get(u?.department_id) || '';
+    const isAdmin = isAdminRole(u?.role);
+    return (
+      <div className="u-card" key={u?.employee_id}>
+        <div className="u-head">
+          <div className="u-ident">
+            <div className="u-avatar">{initials(u?.first_name, u?.last_name)}</div>
+            <div>
+              <div className="u-title">{u?.username}</div>
+              {/* ✅ Show clearly: Employee Number */}
+              <div className="u-subtle">رقم الموظف: {u?.employee_id}</div>
+            </div>
+          </div>
+          {/* ✅ No badge/state look for role */}
+        </div>
+
+        <div className="u-row">
+          <span className="u-subtle">الاسم</span>
+          <span className="u-chip" title={`${u?.first_name} ${u?.last_name}`}>{u?.first_name} {u?.last_name}</span>
+        </div>
+
+        <div className="u-row">
+          <span className="u-subtle">الإدارة</span>
+          <span className="u-chip" title={depName}>{depName || '—'}</span>
+        </div>
+
+        <div className="u-row">
+          <span className="u-subtle">الدور</span>
+          <span className="u-chip" title={u?.role || '—'}>{u?.role || '—'}</span>
+        </div>
+
+        {!isViewer && (
+          <div className="u-actions">
+            <button
+              className="btn btn-primary u-btn"
+              onClick={() => navigate(`/users_edit/${u?.employee_id}`)}
+              title="تعديل"
+              aria-label="تعديل"
+            >
+              <i className="fas fa-pen ms-1" />
+              تعديل
+            </button>
+            <button
+              className="btn btn-outline-danger u-btn"
+              onClick={() => !isAdmin && handleDeleteClick(u?.employee_id)}
+              disabled={isAdmin}
+              title={isAdmin ? 'لا يمكن حذف مستخدم Admin' : 'حذف'}
+              aria-label="حذف"
+            >
+              <i className={`fas ${isAdmin ? 'fa-lock' : 'fa-times'} ms-1`} />
+              حذف
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const SkeletonCard = ({ idx }) => (
+    <div className="u-card" key={`usc-${idx}`}>
+      <div className="u-head">
+        <div className="u-ident" style={{ width:'70%' }}>
+          <span className="skel" style={{ width:36, height:36, borderRadius:'999px' }} />
+          <div style={{ flex:1 }}>
+            <div className="skel skel-line" style={{ width:'60%' }} />
+            <div className="skel skel-line" style={{ width:'40%', marginTop:6 }} />
+          </div>
+        </div>
+      </div>
+      <div className="u-row">
+        <span className="u-subtle">الاسم</span>
+        <span className="skel skel-line" style={{ width:'40%' }} />
+      </div>
+      <div className="u-row">
+        <span className="u-subtle">الإدارة</span>
+        <span className="skel skel-line" style={{ width:'30%' }} />
+      </div>
+      <div className="u-row">
+        <span className="u-subtle">الدور</span>
+        <span className="skel skel-line" style={{ width:'25%' }} />
+      </div>
+      {!isViewer && (
+        <div className="u-actions">
+          <span className="skel skel-chip" />
+          <span className="skel skel-chip" />
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <LocalTheme />
       <div
         dir="rtl"
+        className="min-vh-100 d-flex flex-column"
         style={{
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-          backgroundColor: '#f6f8fb',
-          minHeight: '100vh'
+          backgroundColor: '#f6f8fb'
         }}
       >
         <Header />
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1">
-              <div className="container-fluid">
+          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+            <div id="content" className="flex-grow-1 d-flex">
+              <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
                   <div className="col-12"><Breadcrumbs /></div>
                 </div>
 
-                <div className="row justify-content-center">
-                  <div className="col-12 col-xl-11">
-                    <div className="table-card" aria-busy={loading}>
-                      {/* Header */}
+                <div className="row justify-content-center flex-grow-1">
+                  <div className="col-12 col-xl-11 d-flex flex-column">
+                    <div className="table-card flex-grow-0" aria-busy={loading}>
+                      {/* ===== Header ===== */}
                       <div className="head-flat">
-                        <div className="controls-inline">
-                          <input
-                            className="form-control form-control-sm"
-                            style={{ width: 200 }}
-                            type="search"
-                            placeholder="بحث..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
+                        {/* Desktop header */}
+                        {!isMobile && (
+                          <div className="head-row">
+                            <div className="search-block">
+                              <input
+                                className="form-control form-control-sm search-input"
+                                type="search"
+                                placeholder="بحث..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                              />
+                            </div>
 
-                          {!isViewer && (
-                            <>
-                              <Dropdown autoClose="outside" align="end" flip={false}>
-                                <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
-                                  {uniqueRoles.map((r, idx) => (
-                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input
-                                        type="checkbox"
-                                        className="form-check-input m-0"
-                                        checked={roleFilter.includes(r)}
-                                        onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)}
-                                      />
-                                      <span className="form-check-label">{r}</span>
-                                    </label>
-                                  ))}
-                                </Dropdown.Menu>
-                              </Dropdown>
+                            <div className="toolbar-block">
+                              {!isViewer && (
+                                <>
+                                  <Dropdown autoClose="outside" align="end">
+                                    <Dropdown.Toggle size="sm" variant="outline-secondary">الدور</Dropdown.Toggle>
+                                    <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
+                                      {uniqueRoles.map((r, idx) => (
+                                        <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="checkbox"
+                                            className="form-check-input m-0"
+                                            checked={roleFilter.includes(r)}
+                                            onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)}
+                                          />
+                                          <span className="form-check-label">{r}</span>
+                                        </label>
+                                      ))}
+                                    </Dropdown.Menu>
+                                  </Dropdown>
 
-                              <Dropdown autoClose="outside" align="end" flip={false}>
-                                <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
-                                <Dropdown.Menu style={{ maxHeight: 320, overflowY: 'auto' }} renderOnMount popperConfig={{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }, { name: 'flip', enabled: false }] }}>
-                                  {uniqueDepartments.map((dep, idx) => (
-                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input
-                                        type="checkbox"
-                                        className="form-check-input m-0"
-                                        checked={departmentFilter.includes(dep)}
-                                        onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
-                                      />
-                                      <span className="form-check-label">{dep}</span>
-                                    </label>
-                                  ))}
-                                </Dropdown.Menu>
-                              </Dropdown>
+                                  <Dropdown autoClose="outside" align="end">
+                                    <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
+                                    <Dropdown.Menu style={{ maxHeight: 320, overflowY: 'auto' }} renderOnMount popperConfig={dropdownPopper}>
+                                      {uniqueDepartments.map((dep, idx) => (
+                                        <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="checkbox"
+                                            className="form-check-input m-0"
+                                            checked={departmentFilter.includes(dep)}
+                                            onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                                          />
+                                          <span className="form-check-label">{dep}</span>
+                                        </label>
+                                      ))}
+                                    </Dropdown.Menu>
+                                  </Dropdown>
 
-                              <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
+                                  <Dropdown align="end">
+                                    <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
+                                    <Dropdown.Menu renderOnMount>
+                                      <Dropdown.Header>الهوية</Dropdown.Header>
+                                      <Dropdown.Item onClick={() => setSort('employee_id','asc')}  active={sortKey==='employee_id' && sortDir==='asc'}>رقم الموظف (تصاعدي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('employee_id','desc')} active={sortKey==='employee_id' && sortDir==='desc'}>رقم الموظف (تنازلي)</Dropdown.Item>
+                                      <Dropdown.Divider />
+                                      <Dropdown.Header>الاسم</Dropdown.Header>
+                                      <Dropdown.Item onClick={() => setSort('username','asc')}  active={sortKey==='username' && sortDir==='asc'}>اسم المستخدم (أ-ي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('username','desc')} active={sortKey==='username' && sortDir==='desc'}>اسم المستخدم (ي-أ)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('first_name','asc')}  active={sortKey==='first_name' && sortDir==='asc'}>الاسم الأول (أ-ي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('first_name','desc')} active={sortKey==='first_name' && sortDir==='desc'}>الاسم الأول (ي-أ)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('last_name','asc')}  active={sortKey==='last_name' && sortDir==='asc'}>الاسم الأخير (أ-ي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('last_name','desc')} active={sortKey==='last_name' && sortDir==='desc'}>الاسم الأخير (ي-أ)</Dropdown.Item>
+                                      <Dropdown.Divider />
+                                      <Dropdown.Header>حقول أخرى</Dropdown.Header>
+                                      <Dropdown.Item onClick={() => setSort('role','asc')}  active={sortKey==='role' && sortDir==='asc'}>الدور (أ-ي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('role','desc')} active={sortKey==='role' && sortDir==='desc'}>الدور (ي-أ)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('department','asc')}  active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => setSort('department','desc')} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
+                                    </Dropdown.Menu>
+                                  </Dropdown>
 
-                              {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={exportToExcel}
-                                  disabled={exportDisabled}         /* ✅ منع التصدير أثناء التحميل */
-                                  title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'}
-                                >
-                                  <i className="fas fa-file-excel ms-1" /> تصدير Excel
-                                </button>
+                                  <Link className="btn btn-outline-success btn-sm" to="/users_create">إضافة مستخدم</Link>
+
+                                  {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                    <button
+                                      className="btn btn-success btn-sm"
+                                      onClick={exportToExcel}
+                                      disabled={exportDisabled}
+                                      title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'}
+                                    >
+                                      <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                    </button>
+                                  )}
+                                </>
                               )}
-                            </>
-                          )}
-                        </div>
 
-                        <div className="d-flex align-items-center gap-2">
-                          {!skeletonMode && (
-                            <small className="text-muted">النتائج: {filteredUsers.length.toLocaleString('ar-SA')}</small>
-                          )}
-                          <button
-                            className="btn btn-outline-primary btn-sm btn-update"
-                            onClick={refreshData}
-                            title="تحديث"
-                            disabled={loading}
-                            aria-busy={loading}
-                          >
-                            {loading ? (
-                              <span className="spinner-border spinner-border-sm ms-1" />
-                            ) : (
-                              <i className="fas fa-rotate-right" />
-                            )}
-                            تحديث
-                          </button>
-                        </div>
+                              <div className="d-flex align-items-center gap-2 ms-2">
+                                {!skeletonMode && (
+                                  <small className="text-muted">النتائج: {sortedUsers.length.toLocaleString('ar-SA')}</small>
+                                )}
+                                <button
+                                  className="btn btn-outline-primary btn-sm"
+                                  onClick={refreshData}
+                                  title="تحديث"
+                                  disabled={loading}
+                                  aria-busy={loading}
+                                >
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                                  تحديث
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mobile header (same button sizing as Standards via .m-btn) */}
+                        {isMobile && (
+                          <div className="m-stack">
+                            <div className="search-block">
+                              <input
+                                className="form-control form-control-sm search-input"
+                                type="search"
+                                placeholder="بحث..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                              />
+                            </div>
+
+                            <div className="m-toolbar">
+                              {/* فرز */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-sort ms-1" /> فرز
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount className="m-menu">
+                                  <Dropdown.Header>الهوية</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('employee_id','asc')}  active={sortKey==='employee_id' && sortDir==='asc'}>رقم الموظف (تصاعدي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('employee_id','desc')} active={sortKey==='employee_id' && sortDir==='desc'}>رقم الموظف (تنازلي)</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>الاسم</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('username','asc')}  active={sortKey==='username' && sortDir==='asc'}>اسم المستخدم (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('username','desc')} active={sortKey==='username' && sortDir==='desc'}>اسم المستخدم (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('first_name','asc')}  active={sortKey==='first_name' && sortDir==='asc'}>الأول (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('first_name','desc')} active={sortKey==='first_name' && sortDir==='desc'}>الأول (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('last_name','asc')}  active={sortKey==='last_name' && sortDir==='asc'}>الأخير (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('last_name','desc')} active={sortKey==='last_name' && sortDir==='desc'}>الأخير (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>حقول أخرى</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('role','asc')}  active={sortKey==='role' && sortDir==='asc'}>الدور (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('role','desc')} active={sortKey==='role' && sortDir==='desc'}>الدور (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','asc')}  active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','desc')} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* تصفية */}
+                              {!isViewer ? (
+                                <Dropdown autoClose="outside" align="start">
+                                  <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                    <i className="fas fa-filter ms-1" /> تصفية
+                                  </Dropdown.Toggle>
+                                  <Dropdown.Menu renderOnMount className="m-menu">
+                                    <Dropdown.Header>الدور</Dropdown.Header>
+                                    <div className="px-2 pb-2">
+                                      {uniqueRoles.map((r, idx) => (
+                                        <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="checkbox"
+                                            className="form-check-input m-0"
+                                            checked={roleFilter.includes(r)}
+                                            onChange={() => handleCheckboxFilter(r, roleFilter, setRoleFilter)}
+                                          />
+                                          <span className="form-check-label">{r}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                    <Dropdown.Divider />
+                                    <Dropdown.Header>الإدارة</Dropdown.Header>
+                                    <div className="px-2" style={{ maxHeight: '48vh', overflowY: 'auto' }}>
+                                      {uniqueDepartments.map((dep, idx) => (
+                                        <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="checkbox"
+                                            className="form-check-input m-0"
+                                            checked={departmentFilter.includes(dep)}
+                                            onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                                          />
+                                          <span className="form-check-label">{dep}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                              ) : <div />}
+
+                              {/* إجراءات */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount className="m-menu">
+                                  {!isViewer && (
+                                    <Dropdown.Item as={Link} to="/users_create">
+                                      <i className="fas fa-user-plus ms-1" /> إضافة مستخدم
+                                    </Dropdown.Item>
+                                  )}
+                                  {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                    <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}>
+                                      <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                    </Dropdown.Item>
+                                  )}
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </div>
+
+                            <div className="meta-row">
+                              {(!loading || !useSkeleton) ? (
+                                <small className="text-muted">النتائج: {sortedUsers.length.toLocaleString('ar-SA')}</small>
+                              ) : <span className="skel skel-line" style={{ width: 80 }} />}
+                              <button
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={refreshData}
+                                title="تحديث"
+                                disabled={loading}
+                                aria-busy={loading}
+                              >
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                                تحديث
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Table */}
-                      <div className="table-responsive">
-                        <table className="table table-hover text-center align-middle">
-                          <thead>
-                            <tr>
-                              <th className="th-eid">رقم الموظف</th>
-                              <th className="th-uname">اسم المستخدم</th>
-                              <th className="th-fname">الاسم الأول</th>
-                              <th className="th-lname">الاسم الأخير</th>
-                              <th className="th-role">الدور</th>
-                              <th className="th-dept">الإدارة</th>
-                              {!isViewer && <th className="th-icon">تعديل</th>}
-                              {!isViewer && <th className="th-icon">حذف</th>}
-                            </tr>
-                          </thead>
-
-                          <tbody>
-                            {skeletonMode ? (
-                              Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
-                            ) : hasPageData ? (
-                              paginatedUsers.map(u => {
-                                const depName = departments.find(d => d?.department_id === u?.department_id)?.department_name;
-                                const isAdmin = isAdminRole(u?.role); // ✅ منع حذف Admin + تبديل الأيقونة
-                                return (
-                                  <tr key={u?.employee_id}>
-                                    <td>{u?.employee_id}</td>
-                                    <td className="text-primary">{u?.username}</td>
-                                    <td>{u?.first_name}</td>
-                                    <td>{u?.last_name}</td>
-                                    <td>{u?.role}</td>
-                                    <td>{depName}</td>
-                                    {!isViewer && (
-                                      <>
-                                        <td>
-                                          <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/users_edit/${u?.employee_id}`)}>
-                                            <i className="fas fa-pen" />
-                                          </button>
-                                        </td>
-                                        <td>
-                                          <button
-                                            className="btn btn-link p-0 text-danger"
-                                            onClick={() => !isAdmin && handleDeleteClick(u?.employee_id)}
-                                            disabled={isAdmin}            /* ✅ زر حذف معطّل إن كان Admin */
-                                            title={isAdmin ? 'لا يمكن حذف مستخدم Admin' : 'حذف'}
-                                          >
-                                            <i className={`fas ${isAdmin ? 'fa-lock' : 'fa-times'}`} />
-                                          </button>
-                                        </td>
-                                      </>
-                                    )}
-                                  </tr>
-                                );
-                              })
-                            ) : (
-                              <tr className="table-empty-row">
-                                <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                      {/* ===== CONTENT: Cards on mobile, table on desktop ===== */}
+                      {isMobile ? (
+                        <div className="mobile-list">
+                          {skeletonMode ? (
+                            Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
+                          ) : hasPageData ? (
+                            paginatedUsers.map(u => <MobileCard key={u?.employee_id} u={u} />)
+                          ) : (
+                            <div className="text-muted text-center py-3">لا توجد نتائج</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table table-hover text-center align-middle">
+                            <thead>
+                              <tr>
+                                <th className="th-eid">رقم الموظف</th>
+                                <th className="th-uname">اسم المستخدم</th>
+                                <th className="th-fname">الاسم الأول</th>
+                                <th className="th-lname">الاسم الأخير</th>
+                                <th className="th-role">الدور</th>
+                                <th className="th-dept">الإدارة</th>
+                                {!isViewer && <th className="th-icon">تعديل</th>}
+                                {!isViewer && <th className="th-icon">حذف</th>}
                               </tr>
-                            )}
+                            </thead>
 
-                            {/* صفوف الحشو لإبقاء الارتفاع ثابتًا بعد التحميل */}
-                            {!skeletonMode && renderFillerRows(fillerCount)}
-                          </tbody>
-                        </table>
-                      </div>
+                            <tbody>
+                              {skeletonMode ? (
+                                Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                              ) : hasPageData ? (
+                                paginatedUsers.map(u => {
+                                  const depName = deptNameById.get(u?.department_id) || '';
+                                  const isAdmin = isAdminRole(u?.role);
+                                  return (
+                                    <tr key={u?.employee_id}>
+                                      <td>{u?.employee_id}</td>
+                                      <td className="text-primary">{u?.username}</td>
+                                      <td>{u?.first_name}</td>
+                                      <td>{u?.last_name}</td>
+                                      <td>{u?.role}</td>
+                                      <td>{depName}</td>
+                                      {!isViewer && (
+                                        <>
+                                          <td>
+                                            <button className="btn btn-link p-0 text-success" onClick={() => navigate(`/users_edit/${u?.employee_id}`)}>
+                                              <i className="fas fa-pen" />
+                                            </button>
+                                          </td>
+                                          <td>
+                                            <button
+                                              className="btn btn-link p-0 text-danger"
+                                              onClick={() => !isAdmin && handleDeleteClick(u?.employee_id)}
+                                              disabled={isAdmin}
+                                              title={isAdmin ? 'لا يمكن حذف مستخدم Admin' : 'حذف'}
+                                            >
+                                              <i className={`fas ${isAdmin ? 'fa-lock' : 'fa-times'}`} />
+                                            </button>
+                                          </td>
+                                        </>
+                                      )}
+                                    </tr>
+                                  );
+                                })
+                              ) : (
+                                <tr className="table-empty-row">
+                                  <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                                </tr>
+                              )}
 
-                      {/* Footer: page size + pagination */}
+                              {!skeletonMode && renderFillerRows(fillerCount)}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Footer */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start">
@@ -454,7 +843,7 @@ export default function Users() {
                         </div>
 
                         {isAll ? (
-                          <div className="text-muted small">عرض {filteredUsers.length} صف</div>
+                          <div className="text-muted small">عرض {sortedUsers.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
                             <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
@@ -470,10 +859,13 @@ export default function Users() {
                 <div className="page-spacer" />
               </div>
             </div>
-            <Footer />
+            <div className="mt-auto">
+              <Footer />
+            </div>
           </div>
         </div>
       </div>
+
       <DeleteModal show={showDelete} onHide={() => setShowDelete(false)} onConfirm={confirmDelete} />
     </>
   );

@@ -31,13 +31,22 @@ export default function Login({ onLogin }) {
       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+  // mark <html> as iOS for targeted CSS
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isIOS) {
+      document.documentElement.classList.add('ios');
+      return () => document.documentElement.classList.remove('ios');
+    }
+  }, [isIOS]);
+
   // Smooth mount animation
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
 
-  // Prevent scrolling inside fields globally (wheel/touch over inputs) + PageUp/PageDown in fields
+  // Prevent scrolling inside fields globally (wheel/touch over inputs) + PageUp/PageDown
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -72,21 +81,16 @@ export default function Login({ onLogin }) {
     };
   }, []);
 
-  // EXTRA: Hard-lock input scroll even while selecting text (per-input handlers)
+  // Hard-lock input scroll even while selecting text (per-input handlers)
   useEffect(() => {
     const els = [usernameRef.current, passwordRef.current].filter(Boolean);
     const disposers = els.map((el) => {
-      const keep = () => {
-        // Keep the field anchored; block any horizontal/vertical offset
-        el.scrollLeft = 0;
-        el.scrollTop = 0;
-      };
+      const keep = () => { el.scrollLeft = 0; el.scrollTop = 0; };
       const wheel = (e) => { e.preventDefault(); keep(); };
       const touch = (e) => { e.preventDefault(); keep(); };
       const sc = () => keep();
       const kd = () => requestAnimationFrame(keep);
       const inp = () => keep();
-      // Listen on the element itself to catch selection-driven scroll
       el.addEventListener('wheel', wheel, { passive: false });
       el.addEventListener('touchmove', touch, { passive: false });
       el.addEventListener('scroll', sc);
@@ -143,13 +147,12 @@ export default function Login({ onLogin }) {
     };
   }, [isIOS]);
 
-  // ===== CapsLock tracking (keydown-only to avoid flicker) =====
+  // CapsLock tracking for physical keyboards
   useEffect(() => {
-    let current = capsLockOn; // persist within closure
-
+    let current = capsLockOn;
     const onKeyDown = (e) => {
       if (e.key === 'CapsLock' || e.code === 'CapsLock') {
-        current = !current; // manual toggle on CapsLock key
+        current = !current;
         setCapsLockOn(current);
         setShowCapsWarning(pwdFocused && !showPassword && current);
         return;
@@ -163,26 +166,40 @@ export default function Login({ onLogin }) {
         if (pwdFocused && !showPassword) setShowCapsWarning(on);
       }
     };
-
     window.addEventListener('keydown', onKeyDown, { passive: true });
     return () => window.removeEventListener('keydown', onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pwdFocused, showPassword]);
 
-  // Mobile heuristic for Caps/Shift lock
+  // ===== Mobile heuristic (catches single uppercase keystroke too) =====
   const prevPasswordRef = useRef('');
   const mobileCapsHeuristic = (val) => {
+    const prev = prevPasswordRef.current || '';
     const letters = (val || '').replace(/[^A-Za-z]/g, '');
     const upper = (letters.match(/[A-Z]/g) || []).length;
     const lower = (letters.match(/[a-z]/g) || []).length;
-    const warn = letters.length >= 2 && upper >= 2 && lower === 0;
+
+    let warn = false;
+
+    // Rule A: ≥2 uppercase, 0 lowercase
+    if (letters.length >= 2 && upper >= 2 && lower === 0) {
+      warn = true;
+    } else {
+      // Rule B: single new uppercase typed, still 0 lowercase
+      const addedOne = val.length === prev.length + 1 && val.startsWith(prev);
+      const lastChar = val.slice(-1);
+      if ((val.length === 1 || addedOne) && /[A-Z]/.test(lastChar) && lower === 0) {
+        warn = true;
+      }
+    }
+
     setShowCapsWarning(pwdFocused && !showPassword && warn);
     prevPasswordRef.current = val;
   };
 
   const normalizeDigits = (s) => {
     const m = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
-                '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+                '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'7','۹':'9' };
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
   };
 
@@ -294,7 +311,6 @@ export default function Login({ onLogin }) {
           direction: rtl; text-align: right;
           -webkit-text-size-adjust: 100%;
 
-          /* Keep inputs tidy; avoid inner scrolling bars (visual) */
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -305,7 +321,7 @@ export default function Login({ onLogin }) {
         }
         .floating-label input::-webkit-scrollbar { display: none; }
 
-        /* right-side field icon (Font Awesome) */
+        /* right-side field icon */
         .floating-label i.field-icon {
           position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
           color: var(--primary-color); transition: color .3s ease;
@@ -317,6 +333,29 @@ export default function Login({ onLogin }) {
           background: transparent; border: none; padding: 0; cursor: pointer; line-height: 0;
         }
         .toggle-password i { color: var(--primary-color); }
+
+        /* Password input visual tweaks */
+        .password-input { font-weight: 400; } /* keep bullets less chunky */
+
+        /* Only mask via -webkit-text-security while hidden */
+        @supports (-webkit-text-security: disc) {
+          .password-input.masked { -webkit-text-security: disc; }
+        }
+
+        /* Mobile: smaller-looking password dots */
+        @media (max-width: 576.98px) {
+          /* Most mobile browsers (Android etc.): reduce font-size */
+          .password-input {
+            font-size: 15px;
+            line-height: 1.1;
+          }
+          /* iOS: keep 16px to avoid auto-zoom, shrink glyphs only when masked */
+          .ios .password-input { font-size: 16px; }
+          .ios .password-input.masked {
+            transform: scaleY(0.9);
+            transform-origin: right center; /* RTL-friendly */
+          }
+        }
 
         .caps-warning {
           background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px;
@@ -415,7 +454,7 @@ export default function Login({ onLogin }) {
                               required
                               disabled={isLoading}
                             />
-                            <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-user'} field-icon`}></i>
+                            <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-user'} field-icon`} />
                           </div>
                         </div>
 
@@ -424,16 +463,21 @@ export default function Login({ onLogin }) {
                           <div className="floating-label">
                             <input
                               ref={passwordRef}
+                              className={`password-input ${!showPassword ? 'masked' : ''}`}
                               type={showPassword ? 'text' : 'password'}
                               placeholder="كلمة المرور"
                               value={password}
                               onChange={(e) => {
-                                setPassword(e.target.value);
-                                if (isMobile) mobileCapsHeuristic(e.target.value);
+                                const v = e.target.value;
+                                setPassword(v);
+                                if (isMobile) mobileCapsHeuristic(v);
                               }}
                               onFocus={() => {
                                 setPwdFocused(true);
-                                setShowCapsWarning(!showPassword && capsLockOn);
+                                if (!showPassword) {
+                                  if (isMobile) mobileCapsHeuristic(password);
+                                  setShowCapsWarning(capsLockOn || showCapsWarning);
+                                }
                               }}
                               onBlur={() => {
                                 setPwdFocused(false);
@@ -448,7 +492,7 @@ export default function Login({ onLogin }) {
                               required
                               disabled={isLoading}
                             />
-                            <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'} field-icon`}></i>
+                            <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'} field-icon`} />
 
                             {/* Toggle password visibility */}
                             <button
@@ -458,21 +502,27 @@ export default function Login({ onLogin }) {
                               onClick={() =>
                                 setShowPassword((prev) => {
                                   const next = !prev;
-                                  setShowCapsWarning(pwdFocused && !next && capsLockOn);
+                                  // if re-hiding while focused, re-evaluate warning
+                                  if (!next && pwdFocused) {
+                                    if (isMobile) mobileCapsHeuristic(password);
+                                    setShowCapsWarning(capsLockOn || showCapsWarning);
+                                  } else {
+                                    setShowCapsWarning(false);
+                                  }
                                   return next;
                                 })
                               }
                               disabled={isLoading}
                               tabIndex={-1}
                             >
-                              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
                             </button>
                           </div>
 
                           {showCapsWarning && (
                             <div className="caps-warning" role="status" aria-live="polite">
                               <i className="fas fa-exclamation-triangle"></i>
-                              <span>تحذير: مفتاح (Caps) مفعل</span>
+                              <span>تحذير: مفتاح (Caps) مفعل أو تم إدخال حرف كبير</span>
                             </div>
                           )}
                         </div>

@@ -484,11 +484,11 @@ export default function Profile() {
                                 <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
                               </div>
                               <div className="col-12 col-md-6">
-                                <label className="form-label">الاسم الأول</label>
+                                <label className="form-label">الإسم الأول</label>
                                 <input type="text" className="form-control" name="first_name" value={form.first_name} onChange={handleChange} />
                               </div>
                               <div className="col-12 col-md-6">
-                                <label className="form-label">اسم العائلة</label>
+                                <label className="form-label">الإسم الأخير</label>
                                 <input type="text" className="form-control" name="last_name" value={form.last_name} onChange={handleChange} />
                               </div>
                             </div>

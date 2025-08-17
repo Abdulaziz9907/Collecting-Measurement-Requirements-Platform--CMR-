@@ -285,7 +285,7 @@ export default function StandardsCreate() {
                 <div className="col-12 col-xl-10">
                   <div className="surface" aria-busy={isSubmitting}>
                     <div className="head-flat head-match">
-                      <h5 className="m-0">إنشاء بطاقة معيار</h5>
+                      <h5 className="m-0">إضافة معيار جديد</h5>
                     </div>
 
                     <div className="body-flat">

@@ -16,10 +16,9 @@ export default function Departments() {
   const [buildingFilter, setBuildingFilter] = useState([]); // store building numbers as strings
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // always show skeleton while loading
+  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // NEW: detect mobile to adjust dropdown behavior like Standards page
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
@@ -33,12 +32,13 @@ export default function Departments() {
     };
   }, []);
 
-  // Delete modal state
+  const [sortKey, setSortKey] = useState(null); // 'name' | 'building'
+  const [sortDir, setSortDir] = useState('none');
+
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [deleteName, setDeleteName] = useState(''); // name to type for confirmation
+  const [deleteName, setDeleteName] = useState('');
 
-  // Import state + banner
   const [importing, setImporting] = useState(false);
   const [banner, setBanner] = useState({ type: null, text: '' });
   const fileInputRef = useRef(null);
@@ -48,17 +48,24 @@ export default function Departments() {
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
 
-  // Paging like other pages
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Anti-flicker + concurrency safety
   const LOAD_MIN_MS = 450;
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
-  /* ========== Local theme to match Standards/Users ========== */
+  const dropdownPopper = useMemo(() => ({
+    strategy: 'fixed',
+    modifiers: [
+      { name: 'offset', options: { offset: [0, 8] } },
+      { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
+      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
+    ],
+  }), []);
+
+  /* ========== Local Theme (aligned with Users/Standards) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -75,12 +82,12 @@ export default function Departments() {
         --skeleton-speed: 1.2s;
       }
 
-      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
-      .head-flat {
-        padding: 12px 16px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke);
-        color: var(--text); font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      }
+      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
+      .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
+      .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .search-block { flex:1 1 320px; min-width:240px; }
+      .search-input { width:100%; max-width: 460px; margin:0 !important; }
 
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-name  { min-width: 280px; }
@@ -88,10 +95,9 @@ export default function Departments() {
       .th-icon  { width: 60px; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 140px; }
+      .page-spacer { height: 160px; }
 
-      .table-card .table { margin: 0 !important; }
-      .table-card .table-responsive { margin: 0; }
+      .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
@@ -99,25 +105,38 @@ export default function Departments() {
       @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
 
       .skel-line  { height: 12px; }
-      .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
-      .skel-link  { height: 12px; width: 48px; }
-      .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
+      .skel-chip  { height: 28px; width: 100%; border-radius: 999px; }
 
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
+      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; max-height: 50vh; overflow:auto; min-width: 220px; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
 
-      /* --- Mobile-friendly dropdown sizing like Standards --- */
-      .dropdown-menu { max-height: 50vh; overflow:auto; min-width: 220px; }
+      /* ===== Mobile unified header/control sizing ===== */
       @media (max-width: 576px) {
-        .dropdown-menu { max-width: calc(100vw - 2rem); min-width: auto; }
+        .head-row { display:none; }
+        .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
+        .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
+        .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
+        .search-input { max-width: 100%; height: 36px; line-height: 36px; }
+        .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
       }
+
+      /* ===== Mobile cards ===== */
+      .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .d-card { border: 1px solid var(--stroke); border-radius: 12px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px; }
+      .d-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+      .d-title { font-weight:700; color: var(--text); font-size: .95rem; }
+      .d-subtle { color: var(--text-muted); font-size: .8rem; }
+      .d-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
+      .d-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.78rem; background: #f8fafc; }
+      .d-actions { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px; }
+      .d-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:600; }
+      .d-btn i { font-size: .85rem; }
     `}</style>
   );
 
-  /* ===== Popover: تعليمات استخدام قالب الجهات ===== */
   const popTemplateHelp = (
     <Popover id="pop-dept-template" dir="rtl">
       <Popover.Header as="h6">طريقة استخدام قالب الجهات</Popover.Header>
@@ -136,24 +155,12 @@ export default function Departments() {
     </Popover>
   );
 
-  // Popper config shared with Standards (prevents overflow + allows flip)
-  const dropdownPopper = useMemo(() => ({
-    strategy: 'fixed',
-    modifiers: [
-      { name: 'offset', options: { offset: [0, 8] } },
-      { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
-      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
-    ],
-  }), []);
-
-  // Auto-hide banner after 5s
   useEffect(() => {
     if (!banner.type) return;
-    const t = setTimeout(() => setBanner({ type: null, text: '' }), 5000);
+    const t = setTimeout(() => setBanner({ type: null, text: '' }), 6000);
     return () => clearTimeout(t);
   }, [banner.type]);
 
-  // === Always show skeleton during refresh ===
   const refreshData = async () => {
     setUseSkeleton(true);
     setLoading(true);
@@ -190,59 +197,22 @@ export default function Departments() {
     }
   };
 
-  useEffect(() => {
-    refreshData();
-    return () => abortRef.current?.abort();
-    // eslint-disable-next-line
-  }, [API_BASE]);
+  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, buildingFilter, pageSize, sortKey, sortDir]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, buildingFilter, pageSize]);
-
-  // Build unique buildings list as strings
   const uniqueBuildings = [...new Set((data || []).map(d => String(d?.building_number ?? '')).filter(Boolean))];
 
   const handleCheckboxFilter = (value) => {
-    setBuildingFilter(prev =>
-      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
-    );
-  };
-
-  // Normalize Arabic/Persian digits to ASCII and parse int
-  const normalizeInt = (val) => {
-    if (val === null || val === undefined) return NaN;
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
-    const s = String(val).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch).replace(/[^\d-]+/g, '');
-    const n = parseInt(s, 10);
-    return Number.isFinite(n) ? n : NaN;
-  };
-
-  // Normalize department name for duplicate checks
-  const normalizeName = (name = '') => {
-    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g; // Arabic diacritics
-    const tatweel = /\u0640/g; // Tatweel
-    return String(name)
-      .replace(diacritics, '')
-      .replace(tatweel, '')
-      .replace(/\u200f|\u200e|\ufeff/g, '')
-      .replace(/\u00A0/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    setBuildingFilter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   };
 
   const stripHidden = (s='') =>
-    String(s)
-      .replace(/\u200f|\u200e|\ufeff/g, '')
-      .replace(/\u00A0/g, ' ')
-      .trim();
-
+    String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
   const normalizeHeaderKey = (k='') => stripHidden(k);
-
   const HEADER_ALIASES = {
     'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
     'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
   };
-
   const buildHeaderMap = (firstRowObj) => {
     const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
     const originalKeys = Object.keys(firstRowObj || {});
@@ -250,22 +220,17 @@ export default function Departments() {
     for (const canon in HEADER_ALIASES) {
       const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
       let foundIndex = -1;
-      for (let i=0; i<keys.length && foundIndex === -1; i++) {
-        if (candidates.includes(keys[i])) foundIndex = i;
-      }
-      if (foundIndex !== -1) {
-        lookup.set(canon, originalKeys[foundIndex]);
-      }
+      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
+      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
     }
     return lookup;
   };
-
   const getCell = (row, headerMap, canonKey) => {
     const actual = headerMap.get(canonKey);
     return stripHidden(row[actual] ?? '');
   };
 
-  // Filtering
+  // Filter
   const filteredData = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
     return (data || []).filter(item => {
@@ -278,39 +243,54 @@ export default function Departments() {
     });
   }, [data, searchTerm, buildingFilter]);
 
-  // Pagination like other pages
+  // Sort
+  const sortedData = useMemo(() => {
+    if (sortDir === 'none' || !sortKey) return filteredData;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const copy = [...filteredData];
+    copy.sort((a, b) => {
+      const aName = (a?.department_name || '').toLowerCase();
+      const bName = (b?.department_name || '').toLowerCase();
+      const aB = Number(a?.building_number ?? 0);
+      const bB = Number(b?.building_number ?? 0);
+      let av = '', bv = '';
+      if (sortKey === 'name') { av = aName; bv = bName; }
+      if (sortKey === 'building') { av = aB; bv = bB; }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return  1 * dir;
+      return 0;
+    });
+    return copy;
+  }, [filteredData, sortKey, sortDir]);
+
+  const setSort = (key, dir='asc') => { setSortKey(key); setSortDir(dir); };
+
+  // Pagination
   const colCount = isViewer ? 2 : 4;
   const isAll = pageSize === 'all';
-  const numericPageSize = isAll ? (filteredData.length || 0) : Number(pageSize);
-  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(filteredData.length / numericPageSize));
-  const paginatedData = isAll
-    ? filteredData
-    : filteredData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
-
+  const numericPageSize = isAll ? (sortedData.length || 0) : Number(pageSize);
+  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(sortedData.length / numericPageSize));
+  const paginatedData = isAll ? sortedData : sortedData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedData.length > 0;
 
-  // Skeleton control: during loading, always show exactly pageSize rows (or 15 if "all")
   const skeletonMode = loading && useSkeleton;
   const skeletonCount = isAll ? 15 : Number(pageSize);
 
-  // Filler rows when NOT loading (to keep exact height = pageSize)
-  const baseRowsCount = hasPageData ? paginatedData.length : 1; // one for "no results"
+  const baseRowsCount = hasPageData ? paginatedData.length : 1;
   const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
 
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  // Skeleton rows aligned with columns
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
       <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
       <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
+      {!isViewer && <td><span className="skel skel-line" style={{ width: '28px' }} /></td>}
+      {!isViewer && <td><span className="skel skel-line" style={{ width: '28px' }} /></td>}
     </tr>
   );
 
-  // Render filler rows to keep table height consistent
   const renderFillerRows = (count) =>
     Array.from({ length: count }).map((_, r) => (
       <tr key={`filler-${r}`} className="table-empty-row">
@@ -318,29 +298,34 @@ export default function Departments() {
       </tr>
     ));
 
-  // --- Check if department has Admin users linked (prevents delete) ---
+  /* ===== Only block delete if an Admin is in THIS department ===== */
   const hasAdminInDepartment = async (departmentId) => {
+    const idNum = Number(departmentId);
     try {
-      let res = await fetch(`${API_BASE}/api/users?departmentId=${departmentId}&role=admin`);
-      if (!res.ok) res = await fetch(`${API_BASE}/api/users?departmentId=${departmentId}`);
+      let res = await fetch(`${API_BASE}/api/users?department_id=${idNum}`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/users?departmentId=${idNum}`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/users`);
       if (!res.ok) return false;
 
       const users = await res.json();
       if (!Array.isArray(users)) return false;
 
-      return users.some(u => String(u?.role || '').toLowerCase() === 'admin' || String(u?.role || '').toLowerCase() === 'administrator');
+      return users.some(u => {
+        const sameDept = Number(u?.department_id) === idNum;
+        const role = String(u?.role || '').trim().toLowerCase();
+        return sameDept && (role === 'admin' || role === 'administrator');
+      });
     } catch {
-      return false;
+      return false; // don't block on fetch error
     }
   };
 
-  // Delete handlers
   const handleDeleteClick = async (id, name) => {
     const blocked = await hasAdminInDepartment(id);
     if (blocked) {
       setBanner({
         type: 'danger',
-        text: 'لا يمكن حذف الجهة لأنها مرتبطة بمستخدم لديه دور "Admin". يرجى  نقل المستخدم أولاً.'
+        text: 'لا يمكن حذف الجهة لأنها مرتبطة بمستخدم لديه دور "Admin". يرجى نقل المستخدم أولاً.'
       });
       return;
     }
@@ -356,14 +341,11 @@ export default function Departments() {
         setShowDelete(false);
         setDeleteId(null);
         setDeleteName('');
-        await refreshData(); // skeleton on refresh
+        await refreshData();
       } else {
-        if (res.status === 409 || res.status === 400 || res.status === 422) {
+        if ([409,400,422].includes(res.status)) {
           setShowDelete(false);
-          setBanner({
-            type: 'danger',
-            text: 'تعذّر الحذف: الجهة مرتبطة بمستخدم لديه دور "Admin".'
-          });
+          setBanner({ type: 'danger', text: 'تعذّر الحذف: الجهة مرتبطة بمستخدم لديه دور "Admin".' });
         } else {
           setShowDelete(false);
           setBanner({ type: 'danger', text: 'تعذّر الحذف حالياً. حاول لاحقاً.' });
@@ -375,9 +357,11 @@ export default function Departments() {
     }
   };
 
-  // Export to Excel (admins) — disabled while loading/not ready/no rows
+  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || !sortedData.length;
+
   const exportToExcel = () => {
-    const exportData = filteredData.map(item => ({
+    if (exportDisabled) return;
+    const exportData = sortedData.map(item => ({
       'اسم الجهة': item?.department_name || '',
       'رقم المبنى': item?.building_number ?? '',
     }));
@@ -387,7 +371,6 @@ export default function Departments() {
     XLSX.writeFile(wb, 'الجهات.xlsx');
   };
 
-  // Download template
   const downloadTemplateExcel = () => {
     const ws = XLSX.utils.aoa_to_sheet([['اسم الجهة', 'رقم المبنى']]);
     ws['!cols'] = [{ wch: 30 }, { wch: 12 }];
@@ -396,7 +379,6 @@ export default function Departments() {
     XLSX.writeFile(wb, 'قالب_الجهات.xlsx');
   };
 
-  // Import Excel with duplicate-name protection + robust header mapping + counts
   const handleExcelImport = async (file) => {
     if (!file) return;
     setImporting(true);
@@ -408,21 +390,27 @@ export default function Departments() {
       const firstSheet = wb.SheetNames[0];
       const ws = wb.Sheets[firstSheet];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
-
-      if (!rows.length) {
-        setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' });
-        return;
-      }
+      if (!rows.length) { setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' }); return; }
 
       const headerMap = buildHeaderMap(rows[0]);
       const missing = ['اسم الجهة','رقم المبنى'].filter(k => !headerMap.get(k));
       if (missing.length) {
-        setBanner({
-          type: 'danger',
-          text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}. تأكد من صحة العناوين أو استخدم "تحميل القالب".`
-        });
+        setBanner({ type: 'danger', text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}.` });
         return;
       }
+
+      const normalizeInt = (val) => {
+        if (val === null || val === undefined) return NaN;
+        const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+        const s = String(val).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch).replace(/[^\d-]+/g, '');
+        const n = parseInt(s, 10);
+        return Number.isFinite(n) ? n : NaN;
+      };
+      const normalizeName = (name = '') => {
+        const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
+        const tatweel = /\u0640/g;
+        return String(name).replace(diacritics,'').replace(tatweel,'').replace(/\u200f|\u200e|\ufeff/g,'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+      };
 
       const existingNames = new Set((data || []).map(d => normalizeName(d?.department_name)));
       const batchSeen = new Set();
@@ -432,22 +420,12 @@ export default function Departments() {
       for (const r of rows) {
         const nameRaw = getCell(r, headerMap, 'اسم الجهة');
         const bnumRaw = getCell(r, headerMap, 'رقم المبنى');
-
         const department_name = String(nameRaw).trim();
         const building_number = normalizeInt(bnumRaw);
-
-        if (!department_name || !Number.isFinite(building_number)) {
-          skipped++;
-          continue;
-        }
-
+        if (!department_name || !Number.isFinite(building_number)) { skipped++; continue; }
         const norm = normalizeName(department_name);
         if (!norm) { skipped++; continue; }
-
-        if (existingNames.has(norm) || batchSeen.has(norm)) {
-          dup++;
-          continue;
-        }
+        if (existingNames.has(norm) || batchSeen.has(norm)) { dup++; continue; }
 
         try {
           const res = await fetch(`${API_BASE}/api/departments`, {
@@ -455,254 +433,334 @@ export default function Departments() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ department_name, building_number }),
           });
-          if (res.ok) {
-            ok++;
-            batchSeen.add(norm);
-            existingNames.add(norm);
-          } else {
-            fail++;
-          }
-        } catch {
-          fail++;
-        }
+          if (res.ok) { ok++; batchSeen.add(norm); existingNames.add(norm); } else { fail++; }
+        } catch { fail++; }
       }
 
-      setBanner({
-        type: 'success',
-        text: `تمت المعالجة: ${ok} مضافة، ${dup} مكررة (تم تجاهلها)، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت.`
-      });
-      await refreshData(); // skeleton on refresh
-    } catch (e) {
-      setBanner({ type: 'danger', text: 'تعذر قراءة الملف. تأكد من البيانات وأن الأعمدة مسماة بشكل صحيح. جرّب "تحميل القالب".' });
+      setBanner({ type: 'success', text: `تمت المعالجة: ${ok} مضافة، ${dup} مكررة، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت.` });
+      await refreshData();
+    } catch {
+      setBanner({ type: 'danger', text: 'تعذر قراءة الملف. تأكد من صحة الأعمدة أو استخدم القالب.' });
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || !filteredData.length;
+  /* ===== Mobile card ===== */
+  const MobileCard = ({ item }) => (
+    <div className="d-card" key={item.department_id}>
+      <div className="d-head">
+        <div className="d-title" title={item.department_name}>{item.department_name}</div>
+      </div>
+      <div className="d-row">
+        <span className="d-subtle">رقم المبنى</span>
+        <span className="d-chip">{item.building_number ?? '—'}</span>
+      </div>
+      {!isViewer && (
+        <div className="d-actions">
+          <button className="btn btn-primary d-btn" onClick={() => navigate(`/departments_edit/${item.department_id}`)}>
+            <i className="fas fa-pen ms-1" /> تعديل
+          </button>
+          <button
+            className="btn btn-outline-danger d-btn"
+            onClick={() => handleDeleteClick(item.department_id, item.department_name)}
+            title="حذف"
+          >
+            <i className="fas fa-times ms-1" /> حذف
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const SkeletonCard = ({ idx }) => (
+    <div className="d-card" key={`dsk-${idx}`}>
+      <div className="d-head">
+        <span className="skel skel-line" style={{ width: '60%' }} />
+      </div>
+      <div className="d-row">
+        <span className="d-subtle">رقم المبنى</span>
+        <span className="skel skel-chip" style={{ width: '40%' }} />
+      </div>
+      {!isViewer && (
+        <div className="d-actions">
+          <span className="skel skel-chip" />
+          <span className="skel skel-chip" />
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }} className="min-vh-100 d-flex flex-column">
         <Header />
 
-        {/* Auto-hiding banner */}
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
 
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1">
-              <div className="container-fluid">
+            <div id="content" className="flex-grow-1 d-flex">
+              <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
                   <div className="col-12"><Breadcrumbs /></div>
                 </div>
 
-                <div className="row justify-content-center">
-                  <div className="col-12 col-xl-10">
+                <div className="row justify-content-center flex-grow-1">
+                  <div className="col-12 col-xl-10 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
-                      {/* Header */}
+                      {/* ===== Header ===== */}
                       <div className="head-flat">
-                        <div className="controls-inline">
-                          <input
-                            className="form-control form-control-sm"
-                            style={{ width: 200 }}
-                            type="search"
-                            placeholder="بحث..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
-
-                          {/* Building filter dropdown — now mobile-friendly like Standards */}
-                          <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
-                            <Dropdown.Toggle
-                              size="sm"
-                              variant="outline-secondary"
-                              data-bs-display="static"
-                            >
-                              المبنى
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu
-                              renderOnMount
-                              popperConfig={dropdownPopper}
-                              style={{
-                                maxHeight: isMobile ? '60vh' : 320,
-                                overflowY: 'auto',
-                                maxWidth: 'calc(100vw - 2rem)'
-                              }}
-                            >
-                              {uniqueBuildings.map((num, idx) => (
-                                <label
-                                  key={idx}
-                                  className="dropdown-item d-flex align-items-center gap-2 m-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    className="form-check-input m-0"
-                                    checked={buildingFilter.includes(num)}
-                                    onChange={() => handleCheckboxFilter(num)}
-                                  />
-                                  <span className="form-check-label">{num}</span>
-                                </label>
-                              ))}
-                              {!uniqueBuildings.length && (
-                                <div className="dropdown-item text-muted small">لا توجد أرقام مبانٍ</div>
-                              )}
-                            </Dropdown.Menu>
-                          </Dropdown>
-
-                          <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
-
-                          {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                            <>
-                              {/* Export Excel (disabled until fully loaded) */}
-                              <button
-                                className="btn btn-success btn-sm"
-                                onClick={exportToExcel}
-                                disabled={exportDisabled}
-                                aria-disabled={exportDisabled}
-                                title={exportDisabled ? 'انتظر اكتمال التحميل أو لا توجد بيانات' : 'تصدير Excel'}
-                              >
-                                <i className="fas fa-file-excel ms-1" /> تصدير Excel
-                              </button>
-
-                              {/* Import Excel */}
+                        {/* Desktop */}
+                        {!isMobile && (
+                          <div className="head-row">
+                            <div className="search-block">
                               <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleExcelImport(e.target.files?.[0])}
+                                className="form-control form-control-sm search-input"
+                                type="search"
+                                placeholder="بحث..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                               />
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={importing}
-                              >
-                                {importing ? (
-                                  <>
-                                    <span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد
-                                  </>
-                                ) : (
-                                  <>
-                                    <i className="fas fa-file-upload ms-1" /> استيراد Excel
-                                  </>
-                                )}
-                              </button>
+                            </div>
 
-                              {/* Download template + help popover — click on mobile, hover/focus on desktop */}
-                              <OverlayTrigger
-                                placement="bottom"
-                                delay={{ show: 200, hide: 100 }}
-                                overlay={popTemplateHelp}
-                                popperConfig={dropdownPopper}
-                                trigger={isMobile ? ['click'] : ['hover', 'focus']}
-                                rootClose
-                              >
-                                <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel} aria-label="تحميل القالب مع التعليمات">
-                                  <i className="fas fa-download ms-1" /> تحميل القالب
+                            <div className="controls-inline">
+                              {/* Sort */}
+                              <Dropdown align="end">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount>
+                                  <Dropdown.Header>الاسم</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('name','asc')}  active={sortKey==='name' && sortDir==='asc'}>اسم الجهة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('name','desc')} active={sortKey==='name' && sortDir==='desc'}>اسم الجهة (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>المبنى</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('building','asc')}  active={sortKey==='building' && sortDir==='asc'}>رقم المبنى (تصاعدي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('building','desc')} active={sortKey==='building' && sortDir==='desc'}>رقم المبنى (تنازلي)</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Filter building */}
+                              <Dropdown autoClose="outside" align="end">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 320, overflowY: 'auto' }}>
+                                  {uniqueBuildings.map((num, idx) => (
+                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={buildingFilter.includes(num)}
+                                        onChange={() => handleCheckboxFilter(num)}
+                                      />
+                                      <span className="form-check-label">{num}</span>
+                                    </label>
+                                  ))}
+                                  {!uniqueBuildings.length && <div className="dropdown-item text-muted small">لا توجد أرقام مبانٍ</div>}
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              <Link className="btn btn-outline-success btn-sm" to="/departments_create">إضافة جهة</Link>
+
+                              {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                <>
+                                  <button
+                                    className="btn btn-success btn-sm"
+                                    onClick={exportToExcel}
+                                    disabled={exportDisabled}
+                                    aria-disabled={exportDisabled}
+                                    title={exportDisabled ? 'انتظر اكتمال التحميل أو لا توجد بيانات' : 'تصدير Excel'}
+                                  >
+                                    <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                  </button>
+
+                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
+                                  </button>
+
+                                  <OverlayTrigger
+                                    placement="bottom"
+                                    delay={{ show: 200, hide: 100 }}
+                                    overlay={popTemplateHelp}
+                                    popperConfig={dropdownPopper}
+                                    trigger={['hover','focus']}
+                                  >
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
+                                      <i className="fas fa-download ms-1" /> تحميل القالب
+                                    </button>
+                                  </OverlayTrigger>
+                                </>
+                              )}
+
+                              <div className="d-flex align-items-center gap-2">
+                                {!skeletonMode && <small className="text-muted">النتائج: {sortedData.length.toLocaleString('ar-SA')}</small>}
+                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
                                 </button>
-                              </OverlayTrigger>
-                            </>
-                          )}
-                        </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                        <div className="d-flex align-items-center gap-2">
-                          {!skeletonMode && (
-                            <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>
-                          )}
-                          <button
-                            className="btn btn-outline-primary btn-sm btn-update"
-                            onClick={refreshData}
-                            title="تحديث"
-                            disabled={loading}
-                            aria-busy={loading}
-                          >
-                            {loading ? (
-                              <span className="spinner-border spinner-border-sm ms-1" />
-                            ) : (
-                              <i className="fas fa-rotate-right" />
-                            )}
-                            تحديث
-                          </button>
-                        </div>
-                      </div>
+                        {/* Mobile (same look as Standards/Users) */}
+                        {isMobile && (
+                          <div className="m-stack">
+                            <input
+                              className="form-control form-control-sm search-input"
+                              type="search"
+                              placeholder="بحث..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
 
-                      {/* Table */}
-                      <div className="table-responsive">
-                        <table className="table table-hover text-center align-middle">
-                          <thead>
-                            <tr>
-                              <th className="th-name">اسم الجهة</th>
-                              <th className="th-bnum">رقم المبنى</th>
-                              {!isViewer && <th className="th-icon">تعديل</th>}
-                              {!isViewer && <th className="th-icon">حذف</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {skeletonMode ? (
-                              Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
-                            ) : hasPageData ? (
-                              paginatedData.map((item) => (
-                                <tr key={item.department_id}>
-                                  <td className="text-primary">{item.department_name}</td>
-                                  <td>{item.building_number}</td>
-                                  {!isViewer && (
+                            <div className="m-toolbar">
+                              {/* Sort */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-sort ms-1" /> فرز
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Header>الاسم</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('name','asc')}  active={sortKey==='name' && sortDir==='asc'}>اسم الجهة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('name','desc')} active={sortKey==='name' && sortDir==='desc'}>اسم الجهة (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>المبنى</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('building','asc')}  active={sortKey==='building' && sortDir==='asc'}>رقم المبنى (تصاعدي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('building','desc')} active={sortKey==='building' && sortDir==='desc'}>رقم المبنى (تنازلي)</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Filter */}
+                              <Dropdown autoClose="outside" align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-filter ms-1" /> تصفية
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Header>رقم المبنى</Dropdown.Header>
+                                  {uniqueBuildings.map((num, idx) => (
+                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={buildingFilter.includes(num)}
+                                        onChange={() => handleCheckboxFilter(num)}
+                                      />
+                                      <span className="form-check-label">{num}</span>
+                                    </label>
+                                  ))}
+                                  {!uniqueBuildings.length && <div className="dropdown-item text-muted small">لا توجد أرقام مبانٍ</div>}
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Actions */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Item as={Link} to="/departments_create"><i className="fas fa-building-circle-check ms-1" /> إضافة جهة</Dropdown.Item>
+                                  {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                     <>
-                                      <td>
-                                        <button
-                                          className="btn btn-link p-0 text-success"
-                                          onClick={() => navigate(`/departments_edit/${item.department_id}`)}
-                                        >
-                                          <i className="fas fa-pen" />
-                                        </button>
-                                      </td>
-                                      <td>
-                                        <button
-                                          className="btn btn-link p-0 text-danger"
-                                          onClick={() => handleDeleteClick(item.department_id, item.department_name)}
-                                          title="حذف"
-                                        >
-                                          <i className="fas fa-times" />
-                                        </button>
-                                      </td>
+                                      <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}><i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}</Dropdown.Item>
+                                      <Dropdown.Item onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</Dropdown.Item>
                                     </>
                                   )}
-                                </tr>
-                              ))
-                            ) : (
-                              <tr className="table-empty-row">
-                                <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
-                              </tr>
-                            )}
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </div>
 
-                            {/* keep height constant after load */}
-                            {!skeletonMode && renderFillerRows(fillerCount)}
-                          </tbody>
-                        </table>
+                            <div className="meta-row">
+                              {(!loading || !useSkeleton) ? (
+                                <small className="text-muted">النتائج: {sortedData.length.toLocaleString('ar-SA')}</small>
+                              ) : <span className="skel skel-line" style={{ width: 80 }} />}
+                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Footer: page size + pagination */}
+                      {/* ===== Content: Cards (mobile) / Table (desktop) ===== */}
+                      {isMobile ? (
+                        <div className="mobile-list">
+                          {skeletonMode ? (
+                            Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
+                          ) : hasPageData ? (
+                            paginatedData.map(item => <MobileCard key={item.department_id} item={item} />)
+                          ) : (
+                            <div className="text-muted text-center py-3">لا توجد نتائج</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table table-hover text-center align-middle">
+                            <thead>
+                              <tr>
+                                <th className="th-name">اسم الجهة</th>
+                                <th className="th-bnum">رقم المبنى</th>
+                                {!isViewer && <th className="th-icon">تعديل</th>}
+                                {!isViewer && <th className="th-icon">حذف</th>}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {skeletonMode ? (
+                                Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                              ) : hasPageData ? (
+                                paginatedData.map((item) => (
+                                  <tr key={item.department_id}>
+                                    <td className="text-primary">{item.department_name}</td>
+                                    <td>{item.building_number}</td>
+                                    {!isViewer && (
+                                      <>
+                                        <td>
+                                          <button
+                                            className="btn btn-link p-0 text-success"
+                                            onClick={() => navigate(`/departments_edit/${item.department_id}`)}
+                                          >
+                                            <i className="fas fa-pen" />
+                                          </button>
+                                        </td>
+                                        <td>
+                                          <button
+                                            className="btn btn-link p-0 text-danger"
+                                            onClick={() => handleDeleteClick(item.department_id, item.department_name)}
+                                            title="حذف"
+                                          >
+                                            <i className="fas fa-times" />
+                                          </button>
+                                        </td>
+                                      </>
+                                    )}
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr className="table-empty-row">
+                                  <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                                </tr>
+                              )}
+
+                              {!skeletonMode && renderFillerRows(fillerCount)}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Footer */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
-                          {/* Page size dropdown — now mobile-friendly like Standards */}
                           <Dropdown align="start" flip={isMobile}>
                             <Dropdown.Toggle size="sm" variant="outline-secondary" data-bs-display="static">
                               عدد الصفوف: {isAll ? 'الكل' : pageSize}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu
-                              renderOnMount
-                              popperConfig={dropdownPopper}
-                              style={{ maxWidth: 'calc(100vw - 2rem)' }}
-                            >
+                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item
                                   key={opt}
@@ -718,7 +776,7 @@ export default function Departments() {
                         </div>
 
                         {isAll ? (
-                          <div className="text-muted small">عرض {filteredData.length} صف</div>
+                          <div className="text-muted small">عرض {sortedData.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
                             <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
@@ -739,12 +797,21 @@ export default function Departments() {
         </div>
       </div>
 
+      {/* Hidden input for import (desktop/mobile) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        style={{ display: 'none' }}
+        onChange={(e) => handleExcelImport(e.target.files?.[0])}
+      />
+
       <DeleteModal
         show={showDelete}
         onHide={() => setShowDelete(false)}
         onConfirm={confirmDelete}
         subject={`«${deleteName || 'هذه الجهة'}»`}
-        cascadeNote="ملاحظة: لا يمكن حذف الجهة إذا كانت مرتبطة بمستخدم بدور Admin."
+cascadeNote="سيتم حذف جميع المعايير والمستخدمين المرتبطين بهذه الجهة "
         requireText={deleteName}
       />
     </>

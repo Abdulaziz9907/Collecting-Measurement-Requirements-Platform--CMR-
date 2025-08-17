@@ -31,6 +31,9 @@ export default function UsersEdit() {
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
+  // 👁 نفس سلوك الأيقونة في صفحة تسجيل الدخول
+  const [showPassword, setShowPassword] = useState(false);
+
   // Normalize Arabic/ASCII digits to ASCII
   const normalizeDigits = (str = '') => {
     const map = {
@@ -58,7 +61,19 @@ export default function UsersEdit() {
         --skeleton-sheen:rgba(255,255,255,.6);
         --skeleton-speed:1.2s;
       }
-      .page-bg { background:#f6f8fb; min-height:100vh; }
+
+      /* صفحة كاملة بمرونة عمودية لضمان التصاق الفوتر بأسفل الشاشة */
+      .page-shell { min-height: 100dvh; display: flex; flex-direction: column; background:#f6f8fb; }
+
+      /* الحاوية الرئيسية (السايدبار + المحتوى) تملأ المساحة المتبقية تحت الهيدر */
+      #wrapper { display:flex; flex-direction:row; flex: 1 1 auto; min-height:0; }
+
+      /* عمود المحتوى يمتد عموديًا ويمنع الانكماش */
+      #content-wrapper { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+
+      /* منطقة المحتوى تتمدد؛ لا نحتاج لأي spacer يدوي */
+      #content { flex: 1 1 auto; min-height:0; }
+
       .surface {
         background:var(--surface);
         border:1px solid var(--stroke);
@@ -75,7 +90,7 @@ export default function UsersEdit() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; }
+
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after {
         content:""; position:absolute; inset:0; transform:translateX(-100%);
@@ -87,6 +102,22 @@ export default function UsersEdit() {
       .skel-line  { height:14px; width:40%; }
       .skel-input { height:38px; width:100%; border-radius:8px; }
       .skel-btn   { height:38px; width:120px; border-radius:8px; }
+
+      /* === Password field icons (match Login) === */
+      .pwd-floating { position: relative; }
+      .pwd-floating input.form-control {
+        padding: .75rem 2.75rem; /* مساحة للأيقونتين يمين/يسار */
+        direction: rtl; text-align: right;
+      }
+      .pwd-floating i.field-icon {
+        position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
+        color: #667eea; pointer-events: none;
+      }
+      .pwd-floating .toggle-password {
+        position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
+        background: transparent; border: none; padding: 0; line-height: 0; cursor: pointer;
+      }
+      .pwd-floating .toggle-password i { color: #667eea; }
     `}</style>
   );
 
@@ -296,9 +327,10 @@ export default function UsersEdit() {
   const isAdminNow = ((user?.role || '').toLowerCase() === 'admin'); // for password visibility
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-shell">
       <LocalTheme />
       <Header />
+
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">تم تحديث المستخدم بنجاح</div>
@@ -310,7 +342,7 @@ export default function UsersEdit() {
         </div>
       )}
 
-      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+      <div id="wrapper">
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
@@ -326,7 +358,7 @@ export default function UsersEdit() {
                 <div className="col-12 col-xl-10">
                   <div className="surface" aria-busy={isLoading}>
                     <div className="head-flat head-match">
-                      <h5 className="م-0">تعديل مستخدم</h5>
+                      <h5 className="m-0">تعديل مستخدم</h5>
                     </div>
 
                     <div className="body-flat">
@@ -363,7 +395,6 @@ export default function UsersEdit() {
                               onChange={handleEmployeeIdChange}
                               aria-invalid={!!employeeIdError}
                               aria-describedby="employeeIdFeedback"
-                              // allow Arabic/ASCII digits; exact 7 is enforced via custom validity
                               pattern="[0-9\u0660-\u0669\u06F0-\u06F9]{7}"
                             />
                             <div id="employeeIdFeedback" className="invalid-feedback" aria-live="polite">
@@ -393,17 +424,34 @@ export default function UsersEdit() {
                           {!isAdminNow && (
                             <div className="mb-3">
                               <label className="form-label">كلمة المرور</label>
-                              <input
-                                type="password"
-                                className="form-control"
-                                name="password"
-                                style={{ textTransform: 'none' }}
-                                autoCapitalize="off"
-                                autoComplete="new-password"
-                                required
-                                defaultValue={user?.password || ''}
-                              />
-                              <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
+                              <div className="pwd-floating">
+                                <input
+                                  type={showPassword ? 'text' : 'password'}
+                                  className="form-control"
+                                  name="password"
+                                  style={{ textTransform: 'none' }}
+                                  autoCapitalize="off"
+                                  autoComplete="new-password"
+                                  required
+                                  defaultValue={user?.password || ''}
+                                  aria-label="حقل كلمة المرور"
+                                />
+                                {/* أيقونة القفل — يمين */}
+                                <i className="fas fa-lock field-icon" aria-hidden="true"></i>
+
+                                {/* زر إظهار/إخفاء — يسار */}
+                                <button
+                                  type="button"
+                                  className="toggle-password"
+                                  onClick={() => setShowPassword(s => !s)}
+                                  aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                                  title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                                >
+                                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </button>
+
+                                <div className="invalid-feedback">يرجى إدخال كلمة المرور</div>
+                              </div>
                             </div>
                           )}
 
@@ -440,7 +488,7 @@ export default function UsersEdit() {
                               <option value="Admin">Admin</option>
                             </select>
                             {isAdminOriginal && (
-                              <small className="text-muted d-block mt-1">لا يمكن تعديل دور المدير.</small>
+                              <small className="text-muted d-block mt-1">لا يمكن تعديل دور مدير النظام.</small>
                             )}
                             <div className="invalid-feedback">يرجى تحديد الدور</div>
                           </div>
@@ -491,12 +539,12 @@ export default function UsersEdit() {
                 </div>
               </div>
 
-              <div className="page-spacer" />
             </div>
           </div>
-          <Footer />
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

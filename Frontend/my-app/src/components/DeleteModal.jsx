@@ -8,37 +8,49 @@ export default function DeleteModal({
   subject = 'هذا العنصر',
   cascadeNote,
   cascade = [],
-  requireText,     // (اختياري) نص يجب كتابته حرفيًا للتأكيد
-  requireCount,    // (اختياري) رقم (عدد العناصر) يجب كتابته للتأكيد – يدعم 123 و١٢٣
+  requireText,   // نص مطلوب كتابته حرفيًا (اختياري)
+  requireCount,  // عدد مطلوب كتابته (اختياري)
 }) {
   const hasCascade = (cascadeNote && cascadeNote.trim()) || (cascade && cascade.length > 0);
 
-  const clean = (s = '') =>
-    String(s)
-      .replace(/\u200f|\u200e|\ufeff/g, '')
-      .trim();
+  const clean = (s = '') => String(s).replace(/\u200f|\u200e|\ufeff/g, '').trim();
 
-  // تحويل أرقام عربية/فارسيّة إلى لاتينية
+  // تحويل أرقام عربية/فارسية إلى لاتينية
   const normalizeDigits = (str = '') => {
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+                  '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
 
   const [typed, setTyped] = useState('');
+  const [confirmChecked, setConfirmChecked] = useState(false);
+
   useEffect(() => {
-    if (show) setTyped('');
+    if (show) {
+      setTyped('');
+      setConfirmChecked(false);
+    }
   }, [show, requireText, requireCount]);
 
   const needsCount = Number.isFinite(requireCount) && requireCount > 0;
   const needsText  = typeof requireText === 'string' && requireText.trim().length > 0;
 
-  let canConfirm = true;
+  // تحقق من متطلبات الإدخال (إن وُجدت)
+  let textOk = true;
   if (needsCount) {
     const asNumber = Number(normalizeDigits(clean(typed)));
-    canConfirm = asNumber === Number(requireCount);
+    textOk = asNumber === Number(requireCount);
   } else if (needsText) {
-    canConfirm = clean(typed) === clean(requireText);
+    textOk = clean(typed) === clean(requireText);
   }
+
+  const canConfirm = textOk && confirmChecked;
+
+  const reasons = [];
+  if (!confirmChecked) reasons.push('أشّر للموافقة');
+  if (needsCount && !textOk) reasons.push('أدخل العدد');
+  if (needsText && !textOk) reasons.push('أدخل النص');
+  const buttonTitle = reasons.length ? reasons.join(' و ') : 'حذف';
 
   return (
     <Modal show={show} onHide={onHide} centered dir="rtl">
@@ -76,10 +88,7 @@ export default function DeleteModal({
         {(needsCount || needsText) && (
           <div className="mt-3">
             <div className="small text-muted mb-1">
-              {needsCount
-                ? <>للتأكيد، اكتب <strong>عدد العناصر</strong> المراد حذفها: <strong>{requireCount}</strong></>
-                : <>للتأكيد، اكتب النص التالي تمامًا كما يظهر:</>
-              }
+              {needsCount ? <>اكتب العدد: <strong>{requireCount}</strong></> : <>اكتب النص المطلوب</>}
             </div>
             <input
               className="form-control"
@@ -91,18 +100,30 @@ export default function DeleteModal({
             />
           </div>
         )}
+
+        <div
+          className="d-flex w-100 align-items-center gap-2 mt-3"
+          style={{ justifyContent: 'flex-start' }}  
+        >
+          <input
+            className="form-check-input m-0"
+            type="checkbox"
+            id="deleteConfirmCheck"
+            checked={confirmChecked}
+            onChange={(e) => setConfirmChecked(e.target.checked)}
+          />
+          <label className="mb-0" htmlFor="deleteConfirmCheck">تأكيد الحذف</label>
+        </div>
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          إلغاء
-        </Button>
+        <Button variant="secondary" onClick={onHide}>إلغاء</Button>
         <Button
           variant="danger"
           id="confirmDelete"
           onClick={onConfirm}
-          disabled={!(canConfirm)}
-          title={needsCount ? 'اكتب العدد الصحيح لتفعيل الحذف' : (needsText ? 'اكتب النص لتفعيل الحذف' : 'حذف')}
+          disabled={!canConfirm}
+          title={buttonTitle}
         >
           حذف
         </Button>

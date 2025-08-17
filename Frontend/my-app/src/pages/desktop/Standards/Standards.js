@@ -19,10 +19,10 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true); // ← نبقيه true في كل refresh
+  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // NEW: تحسّس عرض الشاشة لضبط سلوك القوائم على الجوال
+  // Mobile detection (to unify with Users/Departments look & feel)
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
@@ -36,19 +36,19 @@ export default function Standards() {
     };
   }, []);
 
-  // Modal (تفاصيل + سياسة رفع/حذف المرفقات)
+  // Modal
   const [showModal, setShowModal] = useState(false);
   const [modalItem, setModalItem] = useState(null);
 
-  // حذف جماعي فقط (تم إزالة الحذف الفردي)
+  // Bulk delete
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
 
-  // فرز
+  // Sorting
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('none');
 
-  // استيراد/تنزيل القالب + بانر
+  // Import/Export + banner
   const [importing, setImporting] = useState(false);
   const [banner, setBanner] = useState({ type: null, text: '' });
   const fileInputRef = useRef(null);
@@ -57,21 +57,21 @@ export default function Standards() {
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const navigate = useNavigate();
 
-  // الصفحة
+  // Pagination
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // حماية من الوميض + تزامن
+  // Anti-flicker + concurrency
   const LOAD_MIN_MS = 450;
-  const SPINNER_MIN_MS = 200; // محجوز لو احتجته لاحقًا
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
 
-  // اختيار صفحة + مدى Shift
+  // Header checkbox + shift-selection
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
+  /* ========== Local Theme (unified with Users/Departments) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -88,17 +88,16 @@ export default function Standards() {
         --skeleton-speed: 1.2s;
       }
 
-      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
-      .head-flat {
-        padding: 12px 16px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke);
-        color: var(--text); font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      }
+      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
+      .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
+      .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .search-block { flex:1 1 320px; min-width:240px; }
+      .search-input { width:100%; max-width: 460px; margin:0 !important; }
 
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-select { width: 42px; text-align:center; }
       .td-select { width: 42px; text-align:center; }
-
       .th-num    { min-width: 96px; }
       .th-name   { min-width: 220px; }
       .th-dept   { min-width: 160px; }
@@ -107,24 +106,15 @@ export default function Standards() {
       .th-date   { min-width: 140px; }
       .th-icon   { width: 60px; }
 
-      .table td, .table th { vertical-align: middle; }
-
-      .th-sort{
-        background:transparent;
-        border:0;
-        padding:0;
-        color:#6c757d;
-        font-weight:600;
-        cursor:pointer;
-      }
+      .th-sort { background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .th-sort:focus{ outline:none; text-decoration:underline; }
 
+      .table-card .table, .table-card .table-responsive { margin: 0 !important; }
+
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 140px; }
+      .page-spacer { height: 160px; }
 
-      .table-card .table { margin: 0 !important; }
-      .table-card .table-responsive { margin: 0; }
-
+      /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -134,31 +124,48 @@ export default function Standards() {
       .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
       .skel-link  { height: 12px; width: 48px; }
       .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
+      .skel-chip  { height: 28px; width: 100%; border-radius: 999px; }
 
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
+      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; max-height: 50vh; overflow:auto; min-width: 220px; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
 
-      .selection-bar{
-        border-top:1px dashed var(--stroke);
-        border-bottom:1px dashed var(--stroke);
-        background: linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%);
-        padding: 8px 12px;
-      }
+      /* Selection bar */
+      .selection-bar { border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background: linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding: 8px 12px; }
 
       .th-select .form-check-input,
-      .td-select .form-check-input {
-        float: none;
-        margin: 0;
-        position: static;
-        transform: none;
+      .td-select .form-check-input { float: none; margin: 0; position: static; transform: none; }
+
+      /* ===== Mobile unified header/control sizing ===== */
+      @media (max-width: 576px) {
+        .head-row { display:none; }
+        .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
+        .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
+        .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
+        .search-input { max-width: 100%; height: 36px; line-height: 36px; }
+        .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
       }
+
+      /* ===== Mobile cards ===== */
+      .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .mobile-card { border: 1px solid var(--stroke); border-radius: 12px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px; }
+      .mobile-card-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+      .mobile-title { font-weight: 700; color: var(--text); font-size: 0.95rem; line-height: 1.3; }
+      .mobile-subtle { color: var(--text-muted); font-size: .85rem; }
+      .mobile-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
+      .mobile-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.8rem; background: #f8fafc; }
+      .mobile-actions { display:flex; align-items:center; gap:12px; }
+      .btn-icon { border:0; background:transparent; padding:0; line-height: 1; }
+      .btn-icon i { font-size: 1rem; }
+
+      /* Slightly bigger checkbox in mobile, vertically centered with title */
+      .mobile-card .form-check-input { transform: scale(1.12); margin-top: 0; }
     `}</style>
   );
 
-  /* === Popover يشبه الأمثلة المطلوبة === */
+  /* === Popover help for template === */
   const popTemplateHelp = (
     <Popover id="pop-template-help" dir="rtl">
       <Popover.Header as="h6">طريقة استخدام قالب المعايير</Popover.Header>
@@ -177,14 +184,14 @@ export default function Standards() {
     </Popover>
   );
 
-  // إخفاء البانر تلقائيًا
+  // Auto hide banner
   useEffect(() => {
     if (!banner.type) return;
     const t = setTimeout(() => setBanner({ type: null, text: '' }), 10000);
     return () => clearTimeout(t);
   }, [banner.type]);
 
-  // Popper config للقوائم المنسدلة/Popover — يسمح بالـ flip ويمنع الخروج عن الشاشة
+  // Dropdown popper config
   const dropdownPopper = useMemo(() => ({
     strategy: 'fixed',
     modifiers: [
@@ -194,9 +201,9 @@ export default function Standards() {
     ],
   }), []);
 
-  // === refreshData: نظهر السكيلتون في كل refresh ===
-  const refreshData = async (mode = 'skeleton') => {
-    setUseSkeleton(true);          // نظهر السكيلتون دائمًا أثناء التحميل
+  // === Refresh data with skeleton every time ===
+  const refreshData = async () => {
+    setUseSkeleton(true);
     setLoading(true);
 
     if (abortRef.current) abortRef.current.abort();
@@ -234,27 +241,20 @@ export default function Standards() {
       }
     } finally {
       const elapsed = performance.now() - t0;
-      const minWait = LOAD_MIN_MS; 
       const finish = () => {
         if (seq === loadSeqRef.current) {
           setHasLoadedOnce(true);
           setLoading(false);
         }
       };
-      if (elapsed < minWait) setTimeout(finish, minWait - elapsed);
+      if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed);
       else finish();
     }
   };
 
-  useEffect(() => {
-    refreshData('skeleton');
-    return () => abortRef.current?.abort();
-    // eslint-disable-next-line
-  }, [API_BASE]);
+  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, departmentFilter, pageSize, sortKey, sortDir]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, departmentFilter, pageSize, sortKey, sortDir]);
 
   const uniqueStatuses = [...new Set(data.map(i => i?.status).filter(Boolean))];
   const uniqueDepartments = departments.map(d => d?.department_name).filter(Boolean);
@@ -275,10 +275,7 @@ export default function Standards() {
 
   /* ===== Helpers for import / validation ===== */
   const stripHidden = (s='') =>
-    String(s)
-      .replace(/\u200f|\u200e|\ufeff/g, '')
-      .replace(/\u00A0/g, ' ')
-      .trim();
+    String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
 
   const normalizeHeaderKey = (k='') => stripHidden(k);
 
@@ -301,9 +298,7 @@ export default function Standards() {
       for (let i=0; i<keys.length && foundIndex === -1; i++) {
         if (candidates.includes(keys[i])) foundIndex = i;
       }
-      if (foundIndex !== -1) {
-        lookup.set(canon, originalKeys[foundIndex]);
-      }
+      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
     }
     return lookup;
   };
@@ -319,12 +314,6 @@ export default function Standards() {
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
   const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F9]+$/u;
-
-  const normalizeName = (name = '') => {
-    const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
-    const tatweel = /\u0640/g;
-    return String(name).replace(diacritics, '').replace(tatweel, '').replace(/\s+/g, ' ').trim().toLowerCase();
-  };
 
   const parseProofs = (raw = '') => {
     const txt = String(raw).replace(/،/g, ',');
@@ -369,11 +358,24 @@ export default function Standards() {
     return copy;
   }, [filteredData, sortKey, sortDir]);
 
+  const setSort = (key, dir='asc') => { setSortKey(key); setSortDir(dir); };
+  const toggleSort = (key) => {
+    if (sortKey !== key) { setSortKey(key); setSortDir('asc'); return; }
+    if (sortDir === 'asc') { setSortDir('desc'); return; }
+    if (sortDir === 'desc') { setSortKey(null); setSortDir('none'); return; }
+    setSortDir('asc');
+  };
+  const sortIcon = (key) => {
+    if (sortKey !== key || sortDir === 'none') return null;
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  };
+
   const isViewer = user?.role?.toLowerCase?.() === 'user';
 
-  // عدد الأعمدة بعد إزالة عمود الحذف
+  // Columns
   const colCount = isViewer ? 6 : 8;
 
+  // Pagination
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (sortedData.length || 0) : Number(pageSize);
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(sortedData.length / numericPageSize));
@@ -383,12 +385,12 @@ export default function Standards() {
 
   const hasPageData = paginatedData.length > 0;
 
-  // === Skeleton control
+  // Skeleton
   const skeletonMode = loading && useSkeleton;
   const skeletonCount = isAll ? 15 : numericPageSize;
 
-  // === Filler rows when NOT loading
-  const baseRowsCount = hasPageData ? paginatedData.length : 1; // واحد لصف "لا توجد نتائج"
+  // Filler
+  const baseRowsCount = hasPageData ? paginatedData.length : 1;
   const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
 
   const renderFillerRows = (count) =>
@@ -398,7 +400,7 @@ export default function Standards() {
       </tr>
     ));
 
-  // skeleton row
+  // Skeleton rows/cards
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
       {!isViewer && <td className="td-select"><span className="skel skel-icon" /></td>}
@@ -412,12 +414,40 @@ export default function Standards() {
     </tr>
   );
 
+  const SkeletonCard = ({ idx }) => (
+    <div className="mobile-card" key={`msc-${idx}`}>
+      <div className="mobile-card-header">
+        <span className="skel skel-line" style={{ width: '65%' }} />
+        <span className="skel skel-badge" />
+      </div>
+      <div className="mobile-row">
+        <span className="mobile-subtle">الإدارة</span>
+        <span className="skel skel-line" style={{ width: '40%' }} />
+      </div>
+      <div className="mobile-row">
+        <span className="mobile-subtle">رقم المعيار</span>
+        <span className="skel skel-line" style={{ width: '30%' }} />
+      </div>
+      <div className="mobile-row">
+        <span className="mobile-subtle">تاريخ الإنشاء</span>
+        <span className="skel skel-line" style={{ width: '30%' }} />
+      </div>
+      {!isViewer && (
+        <div className="mobile-row" style={{ marginTop: 8 }}>
+          <span className="skel skel-chip" style={{ width: '40%' }} />
+          <span className="skel skel-chip" style={{ width: '30%' }} />
+        </div>
+      )}
+    </div>
+  );
+
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  // PREVENT EXPORT WHILE LOADING
+  // Export
+  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || filteredData.length === 0;
   const exportToExcel = () => {
-    if (loading) return; // حراسة إضافية
+    if (exportDisabled) return;
     const exportData = filteredData.map(item => ({
       'رقم المعيار': item.standard_number,
       'اسم المعيار': item.standard_name,
@@ -431,17 +461,6 @@ export default function Standards() {
     XLSX.writeFile(wb, 'المعايير.xlsx');
   };
 
-  const toggleSort = (key) => {
-    if (sortKey !== key) { setSortKey(key); setSortDir('asc'); return; }
-    if (sortDir === 'asc') { setSortDir('desc'); return; }
-    if (sortDir === 'desc') { setSortKey(null); setSortDir('none'); return; }
-    setSortDir('asc');
-  };
-  const sortIcon = (key) => {
-    if (sortKey !== key || sortDir === 'none') return null;
-    return sortDir === 'asc' ? ' ↑' : ' ↓';
-  };
-
   const downloadTemplateExcel = () => {
     const ws = XLSX.utils.aoa_to_sheet([
       ['رقم المعيار', 'اسم المعيار', 'الهدف', 'متطلبات التطبيق', 'الجهة', 'مستندات الإثبات'],
@@ -452,7 +471,7 @@ export default function Standards() {
     XLSX.writeFile(wb, 'قالب_المعايير.xlsx');
   };
 
-  /* ===== Import ===== */
+  // Import
   const handleExcelImport = async (file) => {
     if (!file) return;
     setImporting(true);
@@ -481,6 +500,12 @@ export default function Standards() {
         return;
       }
 
+      const normalizeName = (name = '') => {
+        const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
+        const tatweel = /\u0640/g;
+        return String(name).replace(diacritics, '').replace(tatweel, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      };
+
       const deptMap = new Map(
         (departments || []).map(d => [normalizeName(d.department_name), d.department_id])
       );
@@ -495,12 +520,17 @@ export default function Standards() {
       const unknownDeptNames = new Set();
 
       for (const r of rows) {
-        const rawNum   = getCell(r, headerMap, 'رقم المعيار');
-        const name     = getCell(r, headerMap, 'اسم المعيار');
-        const goal     = getCell(r, headerMap, 'الهدف');
-        const reqs     = getCell(r, headerMap, 'متطلبات التطبيق');
-        const depRaw   = getCell(r, headerMap, 'الجهة');
-        const proofsRaw= getCell(r, headerMap, 'مستندات الإثبات');
+        const get = (canon) => {
+          const actual = headerMap.get(canon);
+          return stripHidden(r[actual] ?? '');
+        };
+
+        const rawNum   = get('رقم المعيار');
+        const name     = get('اسم المعيار');
+        const goal     = get('الهدف');
+        const reqs     = get('متطلبات التطبيق');
+        const depRaw   = get('الجهة');
+        const proofsRaw= get('مستندات الإثبات');
 
         const proofsList = parseProofs(proofsRaw);
         if (!rawNum || !name || !goal || !reqs || !depRaw || proofsList.length === 0) {
@@ -571,8 +601,8 @@ export default function Standards() {
       msg += '.';
 
       setBanner({ type: 'success', text: msg });
-      await refreshData('skeleton'); // ← سكيلتون بعد الاستيراد
-    } catch (e) {
+      await refreshData();
+    } catch {
       setBanner({
         type: 'danger',
         text: 'تعذر قراءة الملف. تأكد من أن البيانات في الورقة الأولى وأن الأعمدة مسماة بشكل صحيح. جرّب "تحميل القالب".'
@@ -583,13 +613,12 @@ export default function Standards() {
     }
   };
 
-  /* ===== اختيار جماعي وحذف جماعي ===== */
+  /* ===== Selection / Bulk delete ===== */
   const pageIds = useMemo(() => paginatedData.map(r => r?.standard_id).filter(Boolean), [paginatedData]);
   const pageSelectedCount = pageIds.reduce((acc, id) => acc + (selectedIds.has(id) ? 1 : 0), 0);
   const pageAllSelected = !loading && pageIds.length > 0 && pageSelectedCount === pageIds.length;
   const anySelected = selectedIds.size > 0;
 
-  // header checkbox indeterminate
   useEffect(() => {
     if (headerCbRef.current) {
       headerCbRef.current.indeterminate = pageSelectedCount > 0 && !pageAllSelected;
@@ -669,14 +698,14 @@ export default function Standards() {
       setBanner({ type: 'success', text: `تم حذف ${ids.length} معيارًا بنجاح.` });
       closeBulkDelete();
       clearSelection();
-      await refreshData('skeleton'); // ← سكيلتون بعد الحذف
+      await refreshData();
       return;
     }
 
     const res = await deleteManyFallback(ids);
     closeBulkDelete();
     clearSelection();
-    await refreshData('skeleton'); // ← سكيلتون بعد الحذف
+    await refreshData();
 
     if (res.failed === 0) {
       setBanner({ type: 'success', text: `تم حذف ${ids.length} معيارًا بنجاح.` });
@@ -685,14 +714,74 @@ export default function Standards() {
     }
   };
 
-  // حساب صلاحية رفع/حذف المرفقات داخل المودال (USER + حالة معتمد = ممنوع)
+  // Role limits in modal
   const isUserRole = user?.role?.toLowerCase?.() === 'user';
-  const modalUploadsAllowed = !(isUserRole && modalItem?.status === 'معتمد');
+
+  /* ===== Mobile card ===== */
+  const MobileCard = ({ item, idx }) => {
+    const id = item.standard_id;
+    const checked = selectedIds.has(id);
+    return (
+      <div className="mobile-card" key={id}>
+        <div className="mobile-card-header">
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {!isViewer && (
+              <input
+                type="checkbox"
+                className="form-check-input m-0"
+                checked={checked}
+                onChange={(e) => toggleOne(id, idx, e)}
+                aria-label="تحديد"
+              />
+            )}
+            <div>
+              <div className="mobile-title">{item.standard_name}</div>
+              <div className="mobile-subtle">رقم: {item.standard_number}</div>
+            </div>
+          </div>
+          <span className={`badge bg-${getStatusClass(item.status)}`} style={{ whiteSpace:'nowrap' }}>
+            {item.status}
+          </span>
+        </div>
+
+        <div className="mobile-row">
+          <span className="mobile-subtle">الإدارة</span>
+          <span className="mobile-chip">{item.department?.department_name || '—'}</span>
+        </div>
+
+        <div className="mobile-row">
+          <span className="mobile-subtle">تاريخ الإنشاء</span>
+          <span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span>
+        </div>
+
+        <div className="mobile-row" style={{ marginTop: 8 }}>
+          <div className="mobile-actions">
+            <button
+              className="btn btn-link p-0"
+              onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
+            >
+              إظهار التفاصيل
+            </button>
+            {user?.role?.toLowerCase?.() !== 'user' && (
+              <button
+                className="btn-icon text-success"
+                onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
+                title="تعديل"
+                aria-label="تعديل"
+              >
+                <i className="fas fa-pen"></i>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }} className="min-vh-100 d-flex flex-column">
         <Header />
 
         {banner.type && (
@@ -701,86 +790,92 @@ export default function Standards() {
           </div>
         )}
 
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1">
-              <div className="container-fluid">
+            <div id="content" className="flex-grow-1 d-flex">
+              <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
                   <div className="col-12"><Breadcrumbs /></div>
                 </div>
 
-                <div className="row justify-content-center">
-                  <div className="col-12 col-xl-11">
+                <div className="row justify-content-center flex-grow-1">
+                  <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
+                      {/* ===== Header ===== */}
                       <div className="head-flat">
-                        <div className="controls-inline">
-                          <input
-                            className="form-control form-control-sm"
-                            style={{ width: 200 }}
-                            type="search"
-                            placeholder="بحث..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
-                          {user?.role?.toLowerCase?.() !== 'user' && (
-                            <>
-                              {/* الحالة */}
-                              <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
-                                <Dropdown.Toggle size="sm" variant="outline-secondary">الحالة</Dropdown.Toggle>
-                                <Dropdown.Menu
-                                  renderOnMount
-                                  popperConfig={dropdownPopper}
-                                  style={{ maxWidth: 'calc(100vw - 2rem)' }}
-                                >
+                        {/* Desktop header unified */}
+                        {!isMobile && (
+                          <div className="head-row">
+                            <div className="search-block">
+                              <input
+                                className="form-control form-control-sm search-input"
+                                type="search"
+                                placeholder="بحث..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                              />
+                            </div>
+
+                            <div className="controls-inline">
+                              {/* Sort */}
+                              <Dropdown align="end">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount>
+                                  <Dropdown.Header>حسب التاريخ</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('created_at','desc')} active={sortKey==='created_at' && sortDir==='desc'}>الأحدث أولًا</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('created_at','asc')}  active={sortKey==='created_at' && sortDir==='asc'}>الأقدم أولًا</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>حقول أخرى</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('standard_name','asc')}  active={sortKey==='standard_name' && sortDir==='asc'}>الاسم (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_name','desc')} active={sortKey==='standard_name' && sortDir==='desc'}>الاسم (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_number','asc')} active={sortKey==='standard_number' && sortDir==='asc'}>رقم المعيار (تصاعدي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_number','desc')} active={sortKey==='standard_number' && sortDir==='desc'}>رقم المعيار (تنازلي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','asc')} active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','desc')} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('status','asc')} active={sortKey==='status' && sortDir==='asc'}>الحالة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('status','desc')} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Filters combined (Status + Department) */}
+                              <Dropdown autoClose="outside" align="end">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 360, overflowY: 'auto' }}>
+                                  <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
-                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                    <label key={`st-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
                                       <input type="checkbox" className="form-check-input m-0" checked={statusFilter.includes(status)} onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)} />
                                       <span className="form-check-label">{status}</span>
                                     </label>
                                   ))}
-                                </Dropdown.Menu>
-                              </Dropdown>
-
-                              {/* الإدارة */}
-                              <Dropdown autoClose="outside" align={isMobile ? 'start' : 'end'} flip={isMobile}>
-                                <Dropdown.Toggle size="sm" variant="outline-secondary">الإدارة</Dropdown.Toggle>
-                                <Dropdown.Menu
-                                  renderOnMount
-                                  popperConfig={dropdownPopper}
-                                  style={{
-                                    maxHeight: isMobile ? '60vh' : 320,
-                                    overflowY: 'auto',
-                                    maxWidth: 'calc(100vw - 2rem)'
-                                  }}
-                                >
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>الإدارة</Dropdown.Header>
                                   {uniqueDepartments.map((dep, idx) => (
-                                    <label key={idx} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                    <label key={`dep-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
                                       <input className="form-check-input m-0" type="checkbox" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
                                       <span className="form-check-label">{dep}</span>
                                     </label>
                                   ))}
+                                  {!uniqueStatuses.length && !uniqueDepartments.length && <div className="dropdown-item text-muted small">لا توجد عوامل تصفية</div>}
                                 </Dropdown.Menu>
                               </Dropdown>
 
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
 
-                              {/* تصدير Excel — مع تعطيل أثناء التحميل */}
-                              {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={exportToExcel}
-                                  disabled={loading || skeletonMode}
-                                  title={loading ? 'جاري التحميل… انتظر حتى يكتمل لتمكين التصدير' : 'تصدير Excel'}
-                                  aria-disabled={loading || skeletonMode}
-                                >
-                                  <i className="fas fa-file-excel ms-1" /> تصدير Excel
-                                </button>
-                              )}
-
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
+                                  <button
+                                    className="btn btn-success btn-sm"
+                                    onClick={exportToExcel}
+                                    disabled={exportDisabled}
+                                    title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'}
+                                    aria-disabled={exportDisabled}
+                                  >
+                                    <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                  </button>
+
                                   <input
                                     ref={fileInputRef}
                                     type="file"
@@ -788,29 +883,16 @@ export default function Standards() {
                                     style={{ display: 'none' }}
                                     onChange={(e) => handleExcelImport(e.target.files?.[0])}
                                   />
-                                  <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={importing}
-                                  >
-                                    {importing ? (
-                                      <>
-                                        <span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد
-                                      </>
-                                    ) : (
-                                      <>
-                                        <i className="fas fa-file-upload ms-1" /> استيراد Excel
-                                      </>
-                                    )}
+                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
                                   </button>
 
-                                  {/* زر تحميل القالب مع Popover — على الجوال يعمل بالنقر */}
                                   <OverlayTrigger
                                     placement="bottom"
                                     delay={{ show: 200, hide: 100 }}
                                     overlay={popTemplateHelp}
                                     popperConfig={dropdownPopper}
-                                    trigger={isMobile ? ['click'] : ['hover', 'focus']}
+                                    trigger={['hover','focus']}
                                   >
                                     <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
                                       <i className="fas fa-download ms-1" /> تحميل القالب
@@ -818,32 +900,113 @@ export default function Standards() {
                                   </OverlayTrigger>
                                 </>
                               )}
-                            </>
-                          )}
-                        </div>
 
-                        <div className="d-flex align-items-center gap-2">
-                          {(!loading || !useSkeleton) && (
-                            <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>
-                          )}
-                          <button
-                            className="btn btn-outline-primary btn-sm btn-update"
-                            onClick={() => refreshData('skeleton')}
-                            title="تحديث"
-                            disabled={loading}
-                            aria-busy={loading}
-                          >
-                            {loading ? (
-                              <span className="spinner-border spinner-border-sm ms-1" />
-                            ) : (
-                              <i className="fas fa-rotate-right" />
-                            )}
-                            تحديث
-                          </button>
-                        </div>
+                              <div className="d-flex align-items-center gap-2">
+                                {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
+                                <button
+                                  className="btn btn-outline-primary btn-sm btn-update"
+                                  onClick={refreshData}
+                                  title="تحديث"
+                                  disabled={loading}
+                                  aria-busy={loading}
+                                >
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mobile header unified (matches Users/Departments) */}
+                        {isMobile && (
+                          <div className="m-stack">
+                            <input
+                              className="form-control form-control-sm search-input"
+                              type="search"
+                              placeholder="بحث..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+
+                            <div className="m-toolbar">
+                              {/* Sort */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-sort ms-1" /> فرز
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Header>حسب التاريخ</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('created_at','desc')} active={sortKey==='created_at' && sortDir==='desc'}>الأحدث أولًا</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('created_at','asc')}  active={sortKey==='created_at' && sortDir==='asc'}>الأقدم أولًا</Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>حقول أخرى</Dropdown.Header>
+                                  <Dropdown.Item onClick={() => setSort('standard_name','asc')}  active={sortKey==='standard_name' && sortDir==='asc'}>الاسم (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_name','desc')} active={sortKey==='standard_name' && sortDir==='desc'}>الاسم (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_number','asc')} active={sortKey==='standard_number' && sortDir==='asc'}>رقم المعيار (تصاعدي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('standard_number','desc')} active={sortKey==='standard_number' && sortDir==='desc'}>رقم المعيار (تنازلي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','asc')} active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('department','desc')} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('status','asc')} active={sortKey==='status' && sortDir==='asc'}>الحالة (أ-ي)</Dropdown.Item>
+                                  <Dropdown.Item onClick={() => setSort('status','desc')} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Filters (Status + Department) */}
+                              <Dropdown autoClose="outside" align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-filter ms-1" /> تصفية
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Header>الحالة</Dropdown.Header>
+                                  {uniqueStatuses.map((status, idx) => (
+                                    <label key={`mst-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input type="checkbox" className="form-check-input m-0" checked={statusFilter.includes(status)} onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)} />
+                                      <span className="form-check-label">{status}</span>
+                                    </label>
+                                  ))}
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>الإدارة</Dropdown.Header>
+                                  {uniqueDepartments.map((dep, idx) => (
+                                    <label key={`mdep-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
+                                      <input className="form-check-input m-0" type="checkbox" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
+                                      <span className="form-check-label">{dep}</span>
+                                    </label>
+                                  ))}
+                                  {!uniqueStatuses.length && !uniqueDepartments.length && <div className="dropdown-item text-muted small">لا توجد عوامل تصفية</div>}
+                                </Dropdown.Menu>
+                              </Dropdown>
+
+                              {/* Actions */}
+                              <Dropdown align="start">
+                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                  <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight:'48vh', overflow:'auto', maxWidth:'calc(100vw - 2rem)' }}>
+                                  <Dropdown.Item as={Link} to="/standards_create"><i className="fas fa-square-plus ms-1" /> إضافة معيار</Dropdown.Item>
+                                  {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                    <>
+                                      <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}><i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}</Dropdown.Item>
+                                      <Dropdown.Item onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</Dropdown.Item>
+                                    </>
+                                  )}
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </div>
+
+                            <div className="meta-row">
+                              {(!loading || !useSkeleton) ? (
+                                <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>
+                              ) : <span className="skel skel-line" style={{ width: 80 }} />}
+                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* شريط التحديد */}
+                      {/* Selection bar */}
                       {(!isViewer && anySelected) && (
                         <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
                           <div className="d-flex align-items-center gap-2">
@@ -866,121 +1029,136 @@ export default function Standards() {
                         </div>
                       )}
 
-                      <div className="table-responsive">
-                        <table className="table table-hover text-center align-middle">
-                          <thead>
-                            <tr>
-                              {!isViewer && (
-                                <th className="th-select">
-                                  <div className="d-flex justify-content-center align-items-center">
-                                    <input
-                                      ref={headerCbRef}
-                                      type="checkbox"
-                                      className="form-check-input"
-                                      checked={pageAllSelected}
-                                      onChange={(e) => togglePageAll(e.target.checked)}
-                                      title="تحديد/إلغاء تحديد عناصر الصفحة"
-                                      disabled={skeletonMode}
-                                    />
-                                  </div>
+                      {/* ===== Content: Cards (mobile) / Table (desktop) ===== */}
+                      {isMobile ? (
+                        <div className="mobile-list">
+                          {skeletonMode ? (
+                            Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
+                          ) : hasPageData ? (
+                            paginatedData.map((item, idx) => (
+                              <MobileCard key={item.standard_id} item={item} idx={idx} />
+                            ))
+                          ) : (
+                            <div className="text-muted text-center py-3">لا توجد نتائج</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table table-hover text-center align-middle">
+                            <thead>
+                              <tr>
+                                {!isViewer && (
+                                  <th className="th-select">
+                                    <div className="d-flex justify-content-center align-items-center">
+                                      <input
+                                        ref={headerCbRef}
+                                        type="checkbox"
+                                        className="form-check-input"
+                                        checked={pageAllSelected}
+                                        onChange={(e) => togglePageAll(e.target.checked)}
+                                        title="تحديد/إلغاء تحديد عناصر الصفحة"
+                                        disabled={skeletonMode}
+                                      />
+                                    </div>
+                                  </th>
+                                )}
+                                <th className="th-num">
+                                  <button type="button" className="th-sort" onClick={() => toggleSort('standard_number')} disabled={skeletonMode}>
+                                    رقم المعيار{sortIcon('standard_number')}
+                                  </button>
                                 </th>
-                              )}
-                              <th className="th-num">
-                                <button type="button" className="th-sort" onClick={() => toggleSort('standard_number')} disabled={skeletonMode}>
-                                  رقم المعيار{sortIcon('standard_number')}
-                                </button>
-                              </th>
-                              <th className="th-name">
-                                <button type="button" className="th-sort" onClick={() => toggleSort('standard_name')} disabled={skeletonMode}>
-                                  اسم المعيار{sortIcon('standard_name')}
-                                </button>
-                              </th>
-                              <th className="th-dept">
-                                <button type="button" className="th-sort" onClick={() => toggleSort('department')} disabled={skeletonMode}>
-                                  الإدارة{sortIcon('department')}
-                                </button>
-                              </th>
-                              <th className="th-status">
-                                <button type="button" className="th-sort" onClick={() => toggleSort('status')} disabled={skeletonMode}>
-                                  حالة المعيار{sortIcon('status')}
-                                </button>
-                              </th>
-                              <th className="th-det">تفاصيل</th>
-                              <th className="th-date">
-                                <button type="button" className="th-sort" onClick={() => toggleSort('created_at')} disabled={skeletonMode}>
-                                  تاريخ الإنشاء{sortIcon('created_at')}
-                                </button>
-                              </th>
-                              {user?.role?.toLowerCase?.() !== 'user' && <th className="th-icon">تعديل</th>}
-                            </tr>
-                          </thead>
+                                <th className="th-name">
+                                  <button type="button" className="th-sort" onClick={() => toggleSort('standard_name')} disabled={skeletonMode}>
+                                    اسم المعيار{sortIcon('standard_name')}
+                                  </button>
+                                </th>
+                                <th className="th-dept">
+                                  <button type="button" className="th-sort" onClick={() => toggleSort('department')} disabled={skeletonMode}>
+                                    الإدارة{sortIcon('department')}
+                                  </button>
+                                </th>
+                                <th className="th-status">
+                                  <button type="button" className="th-sort" onClick={() => toggleSort('status')} disabled={skeletonMode}>
+                                    حالة المعيار{sortIcon('status')}
+                                  </button>
+                                </th>
+                                <th className="th-det">تفاصيل</th>
+                                <th className="th-date">
+                                  <button type="button" className="th-sort" onClick={() => toggleSort('created_at')} disabled={skeletonMode}>
+                                    تاريخ الإنشاء{sortIcon('created_at')}
+                                  </button>
+                                </th>
+                                {user?.role?.toLowerCase?.() !== 'user' && <th className="th-icon">تعديل</th>}
+                              </tr>
+                            </thead>
 
-                          <tbody>
-                            {skeletonMode ? (
-                              Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
-                            ) : hasPageData ? (
-                              paginatedData.map((item, idx) => {
-                                const id = item.standard_id;
-                                const checked = selectedIds.has(id);
-                                return (
-                                  <tr key={id}>
-                                    {!isViewer && (
-                                      <td className="td-select">
-                                        <div className="form-check d-flex justify-content-center align-items-center m-0" style={{ minHeight: '1.5rem' }}>
-                                          <input
-                                            type="checkbox"
-                                            className="form-check-input"
-                                            checked={checked}
-                                            onChange={(e) => toggleOne(id, idx, e)}
-                                          />
-                                        </div>
-                                      </td>
-                                    )}
-                                    <td>{item.standard_number}</td>
-                                    <td className="text-primary">{item.standard_name}</td>
-                                    <td>{item.department?.department_name}</td>
-                                    <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
-                                    <td>
-                                      <button
-                                        className="btn btn-link p-0 text-primary"
-                                        onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
-                                      >
-                                        إظهار
-                                      </button>
-                                    </td>
-                                    <td>{new Date(item.created_at).toLocaleDateString('ar-SA')}</td>
-                                    {user?.role?.toLowerCase?.() !== 'user' && (
+                            <tbody>
+                              {skeletonMode ? (
+                                Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                              ) : hasPageData ? (
+                                paginatedData.map((item, idx) => {
+                                  const id = item.standard_id;
+                                  const checked = selectedIds.has(id);
+                                  return (
+                                    <tr key={id}>
+                                      {!isViewer && (
+                                        <td className="td-select">
+                                          <div className="form-check d-flex justify-content-center align-items-center m-0" style={{ minHeight: '1.5rem' }}>
+                                            <input
+                                              type="checkbox"
+                                              className="form-check-input"
+                                              checked={checked}
+                                              onChange={(e) => toggleOne(id, idx, e)}
+                                            />
+                                          </div>
+                                        </td>
+                                      )}
+                                      <td>{item.standard_number}</td>
+                                      <td className="text-primary">{item.standard_name}</td>
+                                      <td>{item.department?.department_name}</td>
+                                      <td><span className={`badge bg-${getStatusClass(item.status)}`}>{item.status}</span></td>
                                       <td>
                                         <button
-                                          className="btn btn-link p-0 text-success"
-                                          onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
+                                          className="btn btn-link p-0 text-primary"
+                                          onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
                                         >
-                                          <i className="fas fa-pen" />
+                                          إظهار
                                         </button>
                                       </td>
-                                    )}
-                                  </tr>
-                                );
-                              })
-                            ) : (
-                              <tr className="table-empty-row">
-                                <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
-                              </tr>
-                            )}
+                                      <td>{new Date(item.created_at).toLocaleDateString('ar-SA')}</td>
+                                      {user?.role?.toLowerCase?.() !== 'user' && (
+                                        <td>
+                                          <button
+                                            className="btn btn-link p-0 text-success"
+                                            onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
+                                          >
+                                            <i className="fas fa-pen" />
+                                          </button>
+                                        </td>
+                                      )}
+                                    </tr>
+                                  );
+                                })
+                              ) : (
+                                <tr className="table-empty-row">
+                                  <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                                </tr>
+                              )}
 
-                            {/* صفوف الحشو — فقط عند عدم التحميل */}
-                            {!skeletonMode && renderFillerRows(fillerCount)}
-                          </tbody>
-                        </table>
-                      </div>
+                              {!skeletonMode && renderFillerRows(fillerCount)}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
 
+                      {/* Footer */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
                             <Dropdown.Toggle size="sm" variant="outline-secondary">
                               عدد الصفوف: {isAll ? 'الكل' : pageSize}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
+                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item
                                   key={opt}
@@ -1017,23 +1195,29 @@ export default function Standards() {
         </div>
       </div>
 
-      {/* تفاصيل المعيار — نمرر onUpdated ليعمل refresh مع سكيلتون */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        style={{ display: 'none' }}
+        onChange={(e) => handleExcelImport(e.target.files?.[0])}
+      />
+
       <StandardModal
         show={showModal}
         onHide={() => setShowModal(false)}
         standardId={modalItem?.standard_id}
-        canUpload={!(user?.role?.toLowerCase?.() === 'user' && modalItem?.status === 'معتمد')}
-        canDeleteFiles={!(user?.role?.toLowerCase?.() === 'user' && modalItem?.status === 'معتمد')}
-        onUpdated={() => refreshData('skeleton')}
+        canUpload={!(isUserRole && modalItem?.status === 'معتمد')}
+        canDeleteFiles={!(isUserRole && modalItem?.status === 'معتمد')}
+        onUpdated={refreshData}
       />
 
-      {/* حذف جماعي فقط + يتطلب كتابة عدد العناصر المحددة */}
       <DeleteModal
         show={showBulkDelete}
         onHide={closeBulkDelete}
         onConfirm={performBulkDelete}
         subject={`حذف ${selectedIds.size} معيار`}
-        requireCount={selectedIds.size}   // يدعم الأرقام العربية
+        requireCount={selectedIds.size}
       />
     </>
   );

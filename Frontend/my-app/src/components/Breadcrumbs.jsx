@@ -4,14 +4,14 @@ import { Link, useLocation } from 'react-router-dom';
 const map = {
   standards: { label: ' معايير التحول' },
   standards_create: { label: 'إضافة معيار جديد', parent: 'standards' },
-  standards_edit: { label: 'تعديل بيانات المعيار', parent: 'standards' },
+  standards_edit: { label: 'تعديل معيار', parent: 'standards' },
   departments: { label: 'إدارة الجهات' },
-  departments_create: { label: 'إضافة جهة جديدة', parent: 'departments' },
-  departments_edit: { label: 'تعديل بيانات الجهة', parent: 'departments' },
+  departments_create: { label: 'إنشاء جهة جديدة', parent: 'departments' },
+  departments_edit: { label: 'تعديل جهة', parent: 'departments' },
   reports: { label: 'تقارير الإحصائيات' },
   users: { label: 'إدارة المستخدمين' },
-  users_create: { label: 'إضافة مستخدم جديد', parent: 'users' },
-  users_edit: { label: 'تعديل بيانات المستخدم', parent: 'users' },
+  users_create: { label: 'إنشاء مستخدم ', parent: 'users' },
+  users_edit: { label: 'تعديل مستخدم ', parent: 'users' },
   profile: { label: 'الملف الشخصي ' }
 };
 

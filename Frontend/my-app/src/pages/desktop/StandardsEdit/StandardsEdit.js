@@ -418,7 +418,7 @@ export default function StandardsEdit() {
                   <div className="surface" aria-busy={isSubmitting || isLoading}>
                     {/* Header inside the card with exact height */}
                     <div className="head-flat head-match">
-                      <h5 className="m-0">تعديل بطاقة معيار</h5>
+                      <h5 className="m-0">تعديل معيار</h5>
                     </div>
 
                     <div className="body-flat">

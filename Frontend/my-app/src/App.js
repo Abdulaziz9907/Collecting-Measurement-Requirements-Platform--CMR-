@@ -23,6 +23,13 @@ const TEMP_TIMER = false;        // set to false after testing
 const TEMP_IDLE_SEC = 10;       // show modal after 10 seconds
 const TEMP_WARN_SEC = 7;        // countdown inside modal (then logout)
 
+// Keys for cross-tab & resume robustness
+const LS_KEYS = {
+  lastActivity: 'cmr:lastActivityAt',
+  warnAt: 'cmr:warnAt',
+  logoutAt: 'cmr:logoutAt',
+};
+
 function DebugTimerOverlay({ toWarn, toLogout, visible }) {
   if (!visible) return null;
   return (
@@ -46,31 +53,48 @@ function App() {
 
   const resetRef = useRef(() => {});            // public reset() for "متابعة الجلسة"
   const showTimeoutRef = useRef(false);         // snapshot used inside listeners
-  const timersRef = useRef({ warn: null, logout: null, countdown: null });
+  const timersRef = useRef({ warn: null, logout: null, tick: null }); // tick = 1s UI updater
 
-  const warnAtRef = useRef(null);               // epoch ms, for debug overlay
-  const logoutAtRef = useRef(null);             // epoch ms, for debug overlay
+  const warnAtRef = useRef(null);               // epoch ms
+  const logoutAtRef = useRef(null);             // epoch ms
   const [dbg, setDbg] = useState({ toWarn: 0, toLogout: 0 });
 
   const location = useLocation();
   const navigate = useNavigate();
 
   // Effective durations (minutes in production, seconds in temp test)
-  const idleSec = TEMP_TIMER ? TEMP_IDLE_SEC : 25 * 60;
-  const warnSec = TEMP_TIMER ? TEMP_WARN_SEC : 5 * 60;
-  const totalSec = idleSec + warnSec;
+  const idleSec = TEMP_TIMER ? TEMP_IDLE_SEC : 25 * 60; // 25 min idle -> show modal
+  const warnSec = TEMP_TIMER ? TEMP_WARN_SEC : 5 * 60;  // 5 min countdown -> logout
+  const totalSec = idleSec + warnSec;                   // total 30 min
 
   useEffect(() => { showTimeoutRef.current = showTimeout; }, [showTimeout]);
 
-  
+  const persistClocks = useCallback((lastActivityMs) => {
+    const warnAt = lastActivityMs + idleSec * 1000;
+    const logoutAt = lastActivityMs + (idleSec + warnSec) * 1000;
+    localStorage.setItem(LS_KEYS.lastActivity, String(lastActivityMs));
+    localStorage.setItem(LS_KEYS.warnAt, String(warnAt));
+    localStorage.setItem(LS_KEYS.logoutAt, String(logoutAt));
+    warnAtRef.current = warnAt;
+    logoutAtRef.current = logoutAt;
+    return { warnAt, logoutAt };
+  }, [idleSec, warnSec]);
+
+  const readClocks = useCallback(() => {
+    const warnAt = Number(localStorage.getItem(LS_KEYS.warnAt)) || null;
+    const logoutAt = Number(localStorage.getItem(LS_KEYS.logoutAt)) || null;
+    const lastActivity = Number(localStorage.getItem(LS_KEYS.lastActivity)) || null;
+    warnAtRef.current = warnAt;
+    logoutAtRef.current = logoutAt;
+    return { warnAt, logoutAt, lastActivity };
+  }, []);
+
   const clearAllTimers = useCallback(() => {
     const t = timersRef.current;
     if (t.warn) clearTimeout(t.warn);
     if (t.logout) clearTimeout(t.logout);
-    if (t.countdown) clearInterval(t.countdown);
-    timersRef.current = { warn: null, logout: null, countdown: null };
-    warnAtRef.current = null;
-    logoutAtRef.current = null;
+    if (t.tick) clearInterval(t.tick);
+    timersRef.current = { warn: null, logout: null, tick: null };
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -94,34 +118,69 @@ function App() {
     if (location.pathname === '/') setShowTimeout(false);
   }, [location.pathname]);
 
+  // Start a live 1s ticker (for modal countdown & debug overlay)
+  const startTick = useCallback(() => {
+    if (timersRef.current.tick) return;
+    timersRef.current.tick = setInterval(() => {
+      const now = Date.now();
+      const warnAt = warnAtRef.current;
+      const logoutAt = logoutAtRef.current;
+      if (TEMP_TIMER && location.pathname !== '/') {
+        const toWarn = warnAt ? Math.max(0, Math.ceil((warnAt - now) / 1000)) : 0;
+        const toLogout = logoutAt ? Math.max(0, Math.ceil((logoutAt - now) / 1000)) : 0;
+        setDbg({ toWarn, toLogout });
+      }
+      if (showTimeoutRef.current && logoutAt) {
+        const secLeft = Math.max(0, Math.ceil((logoutAt - now) / 1000));
+        setSecondsLeft(secLeft);
+        if (secLeft <= 0) {
+          clearAllTimers();
+          handleLogout();
+        }
+      }
+    }, 1000);
+  }, [handleLogout, clearAllTimers, location.pathname]);
+
+  // Apply the "resume" check: if we've been idle long enough while backgrounded, act immediately
+  const applyResumeCheck = useCallback(() => {
+    const now = Date.now();
+    const { warnAt, logoutAt } = readClocks();
+
+    if (!warnAt || !logoutAt) return;
+
+    if (now >= logoutAt) {
+      // Hard-expired while backgrounded
+      handleLogout();
+      return;
+    }
+    if (now >= warnAt && !showTimeoutRef.current) {
+      // Should be in warning state
+      setShowTimeout(true);
+      // secondsLeft will be driven by the 1s tick from logoutAt clock
+    }
+  }, [handleLogout, readClocks]);
+
   // Core inactivity / countdown logic
   useEffect(() => {
-    if (!user || location.pathname === '/') return;
+    if (!user || location.pathname === '/') {
+      clearAllTimers();
+      return;
+    }
 
     const schedule = () => {
       const now = Date.now();
-      warnAtRef.current = now + idleSec * 1000;
-      logoutAtRef.current = now + (idleSec + warnSec) * 1000;
+      persistClocks(now);
 
-      // 1) Warning (open modal + start countdown)
+      // Warning: open modal at idleSec
+      if (timersRef.current.warn) clearTimeout(timersRef.current.warn);
       timersRef.current.warn = setTimeout(() => {
         setShowTimeout(true);
-        let remaining = warnSec;
-        setSecondsLeft(remaining);
-
-        timersRef.current.countdown = setInterval(() => {
-          remaining -= 1;
-          setSecondsLeft(remaining);
-          if (remaining <= 0) {
-            clearAllTimers();
-            handleLogout();
-          }
-        }, 1000);
+        // secondsLeft is computed from logoutAt via 1s tick
       }, idleSec * 1000);
 
-      // 2) Hard logout guard
+      // Hard logout guard at idleSec + warnSec
+      if (timersRef.current.logout) clearTimeout(timersRef.current.logout);
       timersRef.current.logout = setTimeout(() => {
-        clearAllTimers();
         handleLogout();
       }, (idleSec + warnSec) * 1000);
     };
@@ -131,40 +190,69 @@ function App() {
       clearAllTimers();
       if (showTimeoutRef.current) setShowTimeout(false);
       schedule();
+      startTick();
     };
 
     resetRef.current = () => reset(true);
 
     // Any activity resets — only if modal not open
-    const activityHandler = () => reset(false);
-    const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+    const activityHandler = () => {
+      if (showTimeoutRef.current) return;
+      persistClocks(Date.now());
+      reset(false);
+    };
+
+    const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart', 'pointerdown'];
     events.forEach(e => window.addEventListener(e, activityHandler, { passive: true }));
 
+    // Resume/background handling (iOS Safari suspends timers)
+    const resumeHandler = () => applyResumeCheck();
+    document.addEventListener('visibilitychange', resumeHandler, { passive: true });
+    window.addEventListener('focus', resumeHandler, { passive: true });
+    window.addEventListener('pageshow', resumeHandler, { passive: true }); // Safari bfcache
+
+    // Cross-tab sync (if another tab logs out or resets)
+    const storageHandler = (ev) => {
+      if (ev.key === LS_KEYS.warnAt || ev.key === LS_KEYS.logoutAt || ev.key === LS_KEYS.lastActivity) {
+        applyResumeCheck();
+      }
+      if (ev.key === 'user' && !ev.newValue) {
+        // Logged out elsewhere
+        handleLogout();
+      }
+    };
+    window.addEventListener('storage', storageHandler);
+
     // Start timers immediately
-    reset(false);
+    startTick();
+    // On mount, ensure clocks exist & then check if already expired while we were away
+    if (!localStorage.getItem(LS_KEYS.warnAt) || !localStorage.getItem(LS_KEYS.logoutAt)) {
+      persistClocks(Date.now());
+    }
+    applyResumeCheck();
 
     return () => {
       events.forEach(e => window.removeEventListener(e, activityHandler));
+      document.removeEventListener('visibilitychange', resumeHandler);
+      window.removeEventListener('focus', resumeHandler);
+      window.removeEventListener('pageshow', resumeHandler);
+      window.removeEventListener('storage', storageHandler);
       clearAllTimers();
     };
-  }, [user, handleLogout, location.pathname, clearAllTimers, idleSec, warnSec]);
-
-  // Debug overlay ticker (for TEMP_TIMER)
-  useEffect(() => {
-    if (!TEMP_TIMER || location.pathname === '/') return;
-    const tick = () => {
-      const now = Date.now();
-      const toWarn = warnAtRef.current ? Math.max(0, Math.ceil((warnAtRef.current - now) / 1000)) : 0;
-      const toLogout = logoutAtRef.current ? Math.max(0, Math.ceil((logoutAtRef.current - now) / 1000)) : 0;
-      setDbg({ toWarn, toLogout });
-    };
-    const id = setInterval(tick, 250);
-    tick();
-    return () => clearInterval(id);
-  }, [location.pathname]);
+  }, [
+    user,
+    location.pathname,
+    idleSec,
+    warnSec,
+    persistClocks,
+    applyResumeCheck,
+    clearAllTimers,
+    startTick,
+    handleLogout
+  ]);
 
   const stayLoggedIn = () => {
-    // Force reset & close modal
+    // Force reset & close modal (also refresh clocks)
     resetRef.current();
   };
 

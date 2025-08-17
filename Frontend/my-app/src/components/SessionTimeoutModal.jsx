@@ -2,8 +2,9 @@ import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
 export default function SessionTimeoutModal({ show, timeLeft, onStay, onLogout }) {
-  const m = Math.floor(Math.max(0, timeLeft) / 60);
-  const s = Math.max(0, timeLeft) % 60;
+  const safe = Math.max(0, Number.isFinite(timeLeft) ? timeLeft : 0);
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
   const formatted = `${m}:${s.toString().padStart(2, '0')}`;
 
   return (
@@ -21,7 +22,7 @@ export default function SessionTimeoutModal({ show, timeLeft, onStay, onLogout }
           <Modal.Title>انتهاء الجلسة</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          سيتم تسجيل خروجك تلقائيًا خلال {formatted} بسبب عدم النشاط.
+          سيتم تسجيل خروجك تلقائيًا خلال <b>{formatted}</b> بسبب عدم النشاط.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onLogout}>تسجيل الخروج الآن</Button>
