@@ -165,6 +165,35 @@ namespace Commander.Services
             }
         }
 
+        public async Task SendVerificationCodeAsync(string toEmail, string toName, string code, string subject)
+        {
+            var text = $"{_brand} - {subject}\n\nرمزك: {code}\n\nهذا الرمز صالح لمدة 5 دقائق.";
+            var html = $"<p>مرحباً {toName ?? toEmail},</p><p>رمزك: <strong>{code}</strong></p><p>هذا الرمز صالح لمدة 5 دقائق.</p>";
+
+            var request = new MailjetRequest
+            {
+                Resource = SendV31.Resource
+            }
+            .Property("Messages", new JArray {
+                new JObject {
+                    ["From"] = new JObject { ["Email"] = _fromEmail, ["Name"] = _fromName },
+                    ["To"]   = new JArray   { new JObject { ["Email"] = toEmail, ["Name"] = toName ?? toEmail } },
+                    ["Subject"]  = subject ?? string.Empty,
+                    ["TextPart"] = text,
+                    ["HTMLPart"] = html,
+                    ["ReplyTo"]  = new JObject { ["Email"] = _replyToEmail, ["Name"] = _replyToName },
+                    ["CustomID"] = "verification_code"
+                }
+            });
+
+            var response = await _client.PostAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger?.LogError("Mailjet send failed ({Status}): {Body}", response.StatusCode, response.Content);
+                throw new InvalidOperationException($"Mailjet send failed ({response.StatusCode}): {response.Content}");
+            }
+        }
+
         private static string BuildResetHtml(string brand, string code, string username, string resetUrl)
         {
             return $@"

@@ -267,9 +267,11 @@ namespace Commander.Controllers
             try
             {
                 var subject = "رمز تأكيد البريد الحالي";
-                var text = $"رمزك: {code}";
-                var html = $"<p>رمزك: <strong>{code}</strong></p>";
-                await _emailService.SendAsync(user.Email, subject, text, html);
+                await _emailService.SendVerificationCodeAsync(
+                    toEmail: user.Email,
+                    toName: user.First_name,
+                    code: code,
+                    subject: subject);
             }
             catch (Exception ex)
             {
@@ -332,9 +334,11 @@ namespace Commander.Controllers
             try
             {
                 var subject = "رمز تأكيد تغيير البريد الإلكتروني";
-                var text = $"رمزك: {code}";
-                var html = $"<p>رمزك: <strong>{code}</strong></p>";
-                await _emailService.SendAsync(dto.NewEmail, subject, text, html);
+                await _emailService.SendVerificationCodeAsync(
+                    toEmail: dto.NewEmail,
+                    toName: user?.First_name ?? string.Empty,
+                    code: code,
+                    subject: subject);
             }
             catch (Exception ex)
             {
