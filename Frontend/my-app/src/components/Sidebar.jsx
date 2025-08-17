@@ -14,6 +14,7 @@ import { getStoredUser } from '../utils/auth';
 
 export default function Sidebar() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const location = useLocation();
 
   const user = getStoredUser();
@@ -46,10 +47,23 @@ export default function Sidebar() {
     ];
   }
 
+  const toggleSidebar = () => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    setSidebarVisible(prev => !prev);
+    
+    // Reset animation state after animation completes
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 300);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && sidebarVisible) {
         setSidebarVisible(false);
+        setIsAnimating(false);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -74,6 +88,7 @@ export default function Sidebar() {
       ? '0 4px 15px rgba(43, 43, 43, 0.3)' 
       : '0 2px 8px rgba(0,0,0,0.1)',
     transition: 'all 0.3s ease',
+    transform: isAnimating ? 'scale(0.95)' : 'scale(1)',
   };
 
   const barColor = sidebarVisible ? '#fff' : '#495057';
@@ -88,6 +103,7 @@ export default function Sidebar() {
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             zIndex: 1020,
             backdropFilter: 'blur(2px)',
+            animation: 'fadeIn 0.3s ease',
           }}
           onClick={() => setSidebarVisible(false)}
         />
@@ -116,16 +132,14 @@ export default function Sidebar() {
         ))}
       </button>
 
-      {/* Mobile Sidebar (same look as desktop) */}
+      {/* Mobile Sidebar */}
       <div
         className="text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
           width: '240px',
           background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)', 
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
-          opacity: sidebarVisible ? 1 : 0,
-          pointerEvents: sidebarVisible ? 'auto' : 'none',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 0.3s ease',
           zIndex: 1025,
           boxShadow: sidebarVisible ? '4px 0 20px rgba(0,0,0,0.25)' : 'none',
         }}
@@ -138,7 +152,15 @@ export default function Sidebar() {
                 : location.pathname === item.href;
 
             return (
-              <li className="nav-item p-0 m-0" key={idx}>
+              <li 
+                className="nav-item p-0 m-0"
+                key={idx}
+                style={{
+                  opacity: sidebarVisible ? 1 : 0,
+                  transform: sidebarVisible ? 'translateX(0)' : 'translateX(-20px)',
+                  transition: `all 0.3s ease ${idx * 0.05}s`,
+                }}
+              >
                 <Link
                   className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                   to={item.href}
@@ -193,6 +215,11 @@ export default function Sidebar() {
 
       {/* Styles */}
       <style>{`
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -204,11 +231,11 @@ export default function Sidebar() {
   position: relative;
   transition: all 0.3s ease;
   white-space: nowrap;
-  text-decoration: none; /* remove underline */
+  text-decoration: none;
 }
 
 .sidebar-link:hover {
-  text-decoration: none; /* prevent underline on hover */
+  text-decoration: none;
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -250,8 +277,6 @@ export default function Sidebar() {
   border: none;
   margin: 0 24px;
 }
-
-        }
       `}</style>
     </>
   );
