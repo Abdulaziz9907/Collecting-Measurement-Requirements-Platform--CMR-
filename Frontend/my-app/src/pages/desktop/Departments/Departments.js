@@ -75,14 +75,17 @@ export default function Departments() {
         --surface:#ffffff; --surface-muted:#fbfdff; --stroke:#eef2f7;
         --text:#0b2440; --text-muted:#6b7280; --brand:#4F7689;
         --skeleton-bg:#e9edf3; --skeleton-sheen:rgba(255,255,255,.6); --skeleton-speed:1.2s;
+        --search-max: 460px; /* ✅ unified desktop search width */
       }
 
       .table-card { background:var(--surface); border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:56px; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-      .search-block { flex:1 1 320px; min-width:240px; }
-      .search-input { width:100%; max-width:460px; margin:0 !important; }
+
+      /* ✅ Desktop: identical width */
+      .search-block { flex: 0 0 var(--search-max); }
+      .search-input { width: var(--search-max); max-width: 100%; margin:0 !important; }
 
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-name{ min-width:280px; } .th-bnum{ min-width:140px; } .th-icon{ width:60px; }
@@ -98,7 +101,9 @@ export default function Departments() {
         animation:shimmer var(--skeleton-speed) infinite; }
       @keyframes shimmer { 100% { transform: translateX(100%);} }
       @media (prefers-reduced-motion: reduce){ .skel::after{ animation:none; } }
-      .skel-line{ height:12px; } .skel-chip{ height:28px; width:100%; border-radius:999px; }
+      .skel-line{ height:12px; }
+      .skel-chip{ height:28px; width:100%; border-radius:999px; }
+      .skel-icon{ height:16px; width:16px; border-radius:4px; } /* ✅ match Users skeleton icon */
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
       /* Dropdown look identical to Users */
@@ -115,7 +120,11 @@ export default function Departments() {
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; margin:0; padding:0; }
         .m-toolbar{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:0; padding:0; }
         .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
-        .search-input{ max-width:100%; height:36px; line-height:36px; }
+
+        /* ✅ Mobile: full width */
+        .search-block{ flex:1 1 auto; min-width:0; }
+        .search-input{ width:100%; max-width:100%; height:36px; line-height:36px; }
+
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
         /* The special mobile dropdown menu sizing class */
         .m-menu{ width:min(92vw, 360px); max-width:92vw; }
@@ -253,12 +262,13 @@ export default function Departments() {
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
+  /* ✅ Skeleton row — edit/delete now use .skel-icon to match Users */
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
       <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
       <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
-      {!isViewer && <td><span className="skel skel-line" style={{ width: '28px' }} /></td>}
-      {!isViewer && <td><span className="skel skel-line" style={{ width: '28px' }} /></td>}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
+      {!isViewer && <td><span className="skel skel-icon" /></td>}
     </tr>
   );
 
@@ -486,33 +496,30 @@ export default function Departments() {
       <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }} className="min-vh-100 d-flex flex-column">
         <Header />
 
-{banner.type && (
-  <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
-    <div
-      className={`alert alert-${banner.type} mb-0`}
-      role="alert"
-      dir="rtl"
-      style={{
-        position: 'relative',
-        paddingLeft: '2.5rem',   // space for the close button on the left
-      }}
-    >
-      {banner.text}
+        {banner.type && (
+          <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
+            <div
+              className={`alert alert-${banner.type} mb-0`}
+              role="alert"
+              dir="rtl"
+              style={{
+                position: 'relative',
+                paddingLeft: '2.5rem',
+              }}
+            >
+              {banner.text}
 
-      {/* Close (×) — black, not overlapping text */}
-      <button
-        type="button"
-        className="btn-close"     // default is black
-        aria-label="إغلاق"
-        onClick={() => setBanner({ type: null, text: '' })}
-        style={{ position: 'absolute', left: 8, opacity: 1 }}
-      />
-    </div>
-  </div>
-)}
-
-
-
+              {/* Close (×) — black, not overlapping text */}
+              <button
+                type="button"
+                className="btn-close"
+                aria-label="إغلاق"
+                onClick={() => setBanner({ type: null, text: '' })}
+                style={{ position: 'absolute', left: 8, opacity: 1 }}
+              />
+            </div>
+          </div>
+        )}
 
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />

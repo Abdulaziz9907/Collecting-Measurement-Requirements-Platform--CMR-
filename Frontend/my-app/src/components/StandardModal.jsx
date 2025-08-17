@@ -406,20 +406,27 @@ export default function StandardModal({
                 </div>
               </Form.Group>
 
+              {/* === FIXED: move the button OUT of the label so only the button is clickable === */}
               {effectiveStatus === 'غير معتمد' && Boolean(parsedReject.current) && (
                 <Form.Group className="mb-3">
-                  <Form.Label className="text-danger d-flex justify-content-between align-items-center">
-                    <span>سبب الرفض</span>
-                    <Button variant="outline-danger" size="sm" onClick={() => setShowReasons(true)}>
+                  <div className="d-flex justify-content-between align-items-center gap-2">
+                    <Form.Label className="mb-1 text-danger flex-shrink-0">سبب الرفض</Form.Label>
+                    <Button
+                      type="button"
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); setShowReasons(true); }}
+                    >
                       أسباب الرفض السابقة
                     </Button>
-                  </Form.Label>
+                  </div>
+
                   <Form.Control
                     as="textarea"
                     rows={3}
                     value={parsedReject.current}
                     readOnly
-                    className="text-danger"
+                    className="text-danger mt-2"
                     dir="rtl"
                     style={{ backgroundColor: '#fff5f5', whiteSpace: 'pre-wrap' }}
                   />
@@ -427,8 +434,13 @@ export default function StandardModal({
               )}
 
               {!parsedReject.current && parsedReject.history.length > 0 && effectiveStatus === 'غير معتمد' && (
-                <div className="mb-3">
-                  <Button variant="outline-danger" size="sm" onClick={() => setShowReasons(true)}>
+                <div className="mb-3 d-flex justify-content-end">
+                  <Button
+                    type="button"
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); setShowReasons(true); }}
+                  >
                     أسباب الرفض السابقة
                   </Button>
                 </div>
@@ -644,6 +656,10 @@ export default function StandardModal({
             filter: none;
           }
         }
+
+        /* Label should not occupy full clickable width when next to actions */
+        .form-label { display: inline-block; }
+
         @media (prefers-reduced-motion: reduce) {
           .modal-content-animated { animation: none !important; }
           .underlay-dim-content { filter: none !important; }

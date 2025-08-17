@@ -232,12 +232,11 @@ export default function Login({ onLogin }) {
 
   return (
     <>
-
-<style>{`
+      <style>{`
 
     /* =========================
-   Login Page Styles (RTL)
-   ========================= */
+       Login Page Styles (RTL)
+       ========================= */
 
 :root {
   --primary-color: #667eea;
@@ -384,10 +383,10 @@ export default function Login({ onLogin }) {
   transition: color .3s ease;
 }
 
-/* Eye toggle (left side in RTL) */
+/* Eye toggle (left side in RTL) — bigger hit target (≥44px) */
 .toggle-password {
   position: absolute;
-  left: 1rem;
+  left: .5rem;               /* closer to edge for easier thumb reach */
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -395,8 +394,20 @@ export default function Login({ onLogin }) {
   padding: 0;
   cursor: pointer;
   line-height: 0;
+
+  /* Make it easy to press */
+  width: 2.75rem;            /* ~44px */
+  height: 2.75rem;           /* ~44px */
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;        /* subtle rounded touch area */
 }
-.toggle-password i { color: var(--primary-color); }
+.toggle-password:active { transform: translateY(-50%) scale(0.98); }
+.toggle-password i { font-size: 1.1rem; color: var(--primary-color); }
 
 /* Password field masking */
 .password-input { font-weight: 400; }
@@ -480,12 +491,24 @@ export default function Login({ onLogin }) {
   }
 }
 
+/* ===== Center row extracted from inline style so we can tweak on mobile ===== */
+.row-login-center {
+  min-height: 100vh;
+  align-items: center;
+  padding-bottom: 28vh; /* default desktop push */
+}
+
 /* =========================
    Mobile (≤ 576.98px)
-   Make button same size as fields
+   Lift the form higher + make button match fields
    ========================= */
 @media (max-width: 576.98px) {
-  :root { --m-input-h: 44px; } /* adjust 40–46px as needed */
+  :root { --m-input-h: 46px; } /* adjust 40–46px as needed */
+
+  /* Lift the form higher on mobile by increasing bottom padding */
+  .row-login-center {
+    padding-bottom: 38vh;  /* ↑ Raise the card (tweak 34–44vh to taste) */
+  }
 
   .card-header-custom { padding: 1.4rem 1rem 1rem; }
   .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
@@ -494,9 +517,9 @@ export default function Login({ onLogin }) {
   .floating-label input {
     box-sizing: border-box !important;
     height: var(--m-input-h);
-    padding: 0 3rem !important;   /* keep space for icons (RTL) */
+    padding: 0 3.5rem !important;   /* space for icons (RTL) */
     border-radius: 10px;
-    font-size: 16px;              /* avoid iOS zoom */
+    font-size: 16px;                 /* avoid iOS zoom */
     line-height: var(--m-input-h);
   }
 
@@ -504,20 +527,30 @@ export default function Login({ onLogin }) {
   .password-input { font-size: 16px; line-height: var(--m-input-h); }
   .ios .password-input { font-size: 16px; }
 
-  /* Eye toggle fits the input height */
+  /* Eye toggle = full input height, ≥44px width */
   .toggle-password {
     height: var(--m-input-h);
-    width: 2.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 2.75rem;                  /* ~44px */
+    min-width: 2.75rem;
   }
+    /* Make the page container breathe wider on phones */
+.content-layer .container {
+  max-width: 100%;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Ensure the card itself can use all available width */
+.login-wrapper { max-width: 100% !important; }
+.login-card { width: 100%; }
+
 
   .floating-label-container { margin-bottom: 0.85rem; }
 
   /* Button matches inputs on mobile */
   .btn-login {
     height: var(--m-input-h);
+      margin-top: 50px;
     padding: 0 1rem;        /* compact like fields */
     font-size: 0.95rem;     /* slightly smaller on mobile */
     border-radius: 10px;    /* match inputs */
@@ -531,9 +564,16 @@ export default function Login({ onLogin }) {
   }
 
   .caps-warning { font-size: .8rem; padding: .4rem .6rem; }
+
+  /* (Optional) Make the card taller on small screens */
+  .login-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .card-body-custom {
+    flex: 1;
+  }
 }
-
-
 
       `}</style>
 
@@ -553,7 +593,7 @@ export default function Login({ onLogin }) {
 
           <div className="content-layer">
             <div className="container">
-              <div className="row justify-content-center" style={{ minHeight: '100vh', alignItems: 'center', paddingBottom: '28vh' }}>
+              <div className="row justify-content-center row-login-center">
                 {/* LEFT TEXT COLUMN — hidden on md and below */}
                 <div className={`col-lg-7 d-none d-lg-block justify-content-center p-4 rounded anim-text ${mounted ? 'in' : ''}`} dir="rtl" lang="ar">
                   <h1 className="mb-3 text-lg-end" style={{ color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
@@ -636,11 +676,12 @@ export default function Login({ onLogin }) {
                             />
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'} field-icon`} />
 
-                            {/* Toggle password visibility */}
+                            {/* Toggle password visibility (bigger hit target) */}
                             <button
                               type="button"
                               className="toggle-password"
                               aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                              aria-pressed={showPassword ? 'true' : 'false'}
                               onClick={() =>
                                 setShowPassword((prev) => {
                                   const next = !prev;
@@ -657,7 +698,6 @@ export default function Login({ onLogin }) {
                                 })
                               }
                               disabled={isLoading}
-                              tabIndex={-1}
                             >
                               <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
                             </button>
@@ -671,11 +711,11 @@ export default function Login({ onLogin }) {
                           )}
                         </div>
 
-{hasError && (
-  <div className="global-error-message" role="alert" aria-live="polite">
-    {message}
-  </div>
-)}
+                        {hasError && (
+                          <div className="global-error-message" role="alert" aria-live="polite">
+                            {message}
+                          </div>
+                        )}
 
                         <div className="text-end mb-3">
                           <a
