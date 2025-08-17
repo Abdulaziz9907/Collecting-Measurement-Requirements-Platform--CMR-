@@ -403,17 +403,48 @@ export default function Standards() {
     ));
 
   // Skeleton rows/cards
-  const SkeletonRow = ({ idx }) => (
-    <tr key={`sk-${idx}`}>
-      {!isViewer && <td className="td-select"><span className="skel skel-icon" /></td>}
-      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '85%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
-      <td><span className="skel skel-badge" /></td>
-      <td><span className="skel skel-line" style={{ width: '55%' }} /></td>
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-    </tr>
-  );
+// Desktop skeleton row: now includes a cell for "تفاصيل" and a separate one for "تاريخ الإنشاء"
+const SkeletonRow = ({ idx }) => (
+  <tr key={`sk-${idx}`}>
+    {/* Select checkbox (admins only) */}
+    {!isViewer && (
+      <td className="td-select">
+        <span className="skel skel-icon" />
+      </td>
+    )}
+
+    <td>
+      <span className="skel skel-line" style={{ width: '60%' }} />
+    </td>
+
+    <td>
+      <span className="skel skel-line" style={{ width: '85%' }} />
+    </td>
+
+    <td>
+      <span className="skel skel-line" style={{ width: '70%' }} />
+    </td>
+
+    <td>
+      <span className="skel skel-badge" />
+    </td>
+
+    <td>
+      <span className="skel skel-line" style={{ width: '40%' }} />
+    </td>
+
+    <td>
+      <span className="skel skel-line" style={{ width: '55%' }} />
+    </td>
+
+    {!isViewer && (
+      <td>
+        <span className="skel skel-icon" />
+      </td>
+    )}
+  </tr>
+);
+
 
   const SkeletonCard = ({ idx }) => (
     <div className="mobile-card" key={`msc-${idx}`}>
