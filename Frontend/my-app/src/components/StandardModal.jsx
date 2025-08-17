@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
+import { getStoredUser } from '../utils/auth';
 
 export default function StandardModal({
   show,
@@ -9,7 +10,7 @@ export default function StandardModal({
   onLocalStatusChange,
 }) {
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = getStoredUser();
   const role = (user?.role || '').toLowerCase();
 
   const [standard, setStandard] = useState(null);

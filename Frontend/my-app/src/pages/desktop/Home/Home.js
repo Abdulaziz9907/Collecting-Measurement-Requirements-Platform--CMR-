@@ -7,6 +7,7 @@ import Header from '../../../components/Header.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import Footer from '../../../components/Footer.jsx';
+import { getStoredUser } from '../../../utils/auth';
 
 export default function Home() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -29,7 +30,7 @@ export default function Home() {
   const [deptLoading, setDeptLoading] = useState(false);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const user = useMemo(() => getStoredUser(), []);
 
   const statusMap = useMemo(() => ({
     'معتمد': 'approved',

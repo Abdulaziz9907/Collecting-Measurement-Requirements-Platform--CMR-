@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
+import { initStoredUser, getStoredUser, clearUser } from './utils/auth';
 
 // Pages
 import Login from './pages/desktop/Login/Login';
@@ -228,12 +229,10 @@ function SessionDevPanel({
 
 function App() {
   // -------- user/login state --------
-  const [user, setUser] = useState(() =>
-    JSON.parse(localStorage.getItem('user') || 'null')
-  );
+  const [user, setUser] = useState(() => initStoredUser());
 
   // Always-available view of the auth state for guards (avoids first-render race)
-  const currentUser = user || JSON.parse(localStorage.getItem('user') || 'null');
+  const currentUser = user || getStoredUser();
 
   // -------- modal + countdown (seconds) --------
   const [showTimeout, setShowTimeout] = useState(false);
@@ -284,7 +283,7 @@ function App() {
   const showTimeoutRef = useRef(false);
   const timersRef = useRef({ warn: null, logout: null, tick: null });
 
-  const sessionIdRef = useRef(localStorage.getItem(SESSION_KEY) || null);
+  const sessionIdRef = useRef(sessionStorage.getItem(SESSION_KEY) || null);
   const lsKeysRef = useRef(mkKeys(sessionIdRef.current));
 
   const warnAtRef = useRef(null);
@@ -312,10 +311,10 @@ useEffect(() => {
   // ----- session helpers -----
   const ensureSessionId = useCallback(() => {
     if (!user) return null;
-    let sid = sessionIdRef.current || localStorage.getItem(SESSION_KEY);
+    let sid = sessionIdRef.current || sessionStorage.getItem(SESSION_KEY);
     if (!sid) {
       sid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      localStorage.setItem(SESSION_KEY, sid);
+      sessionStorage.setItem(SESSION_KEY, sid);
     }
     sessionIdRef.current = sid;
     lsKeysRef.current = mkKeys(sid);
@@ -325,7 +324,7 @@ useEffect(() => {
   const clearSessionId = useCallback(() => {
     sessionIdRef.current = null;
     lsKeysRef.current = null;
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
   }, []);
 
   // ----- clocks I/O (scoped by session) -----
@@ -335,9 +334,9 @@ useEffect(() => {
       const { lastActivity, warnAt, logoutAt } = lsKeysRef.current;
       const warnAtVal = lastActivityMs + idleSec * 1000;
       const logoutAtVal = lastActivityMs + (idleSec + warnSec) * 1000;
-      localStorage.setItem(lastActivity, String(lastActivityMs));
-      localStorage.setItem(warnAt, String(warnAtVal));
-      localStorage.setItem(logoutAt, String(logoutAtVal));
+      sessionStorage.setItem(lastActivity, String(lastActivityMs));
+      sessionStorage.setItem(warnAt, String(warnAtVal));
+      sessionStorage.setItem(logoutAt, String(logoutAtVal));
       warnAtRef.current = warnAtVal;
       logoutAtRef.current = logoutAtVal;
       return { warnAt: warnAtVal, logoutAt: logoutAtVal };
@@ -348,9 +347,9 @@ useEffect(() => {
   const readClocks = useCallback(() => {
     if (!lsKeysRef.current) return {};
     const { warnAt, logoutAt, lastActivity } = lsKeysRef.current;
-    const warnAtVal = Number(localStorage.getItem(warnAt)) || null;
-    const logoutAtVal = Number(localStorage.getItem(logoutAt)) || null;
-    const lastActivityVal = Number(localStorage.getItem(lastActivity)) || null;
+    const warnAtVal = Number(sessionStorage.getItem(warnAt)) || null;
+    const logoutAtVal = Number(sessionStorage.getItem(logoutAt)) || null;
+    const lastActivityVal = Number(sessionStorage.getItem(lastActivity)) || null;
     warnAtRef.current = warnAtVal;
     logoutAtRef.current = logoutAtVal;
     return { warnAt: warnAtVal, logoutAt: logoutAtVal, lastActivity: lastActivityVal };
@@ -359,9 +358,9 @@ useEffect(() => {
   const clearClockKeys = useCallback(() => {
     if (!lsKeysRef.current) return;
     const { lastActivity, warnAt, logoutAt } = lsKeysRef.current;
-    localStorage.removeItem(lastActivity);
-    localStorage.removeItem(warnAt);
-    localStorage.removeItem(logoutAt);
+    sessionStorage.removeItem(lastActivity);
+    sessionStorage.removeItem(warnAt);
+    sessionStorage.removeItem(logoutAt);
     warnAtRef.current = null;
     logoutAtRef.current = null;
   }, []);
@@ -378,8 +377,8 @@ useEffect(() => {
     clearAllTimers();
     clearClockKeys();
     clearSessionId();
-    localStorage.removeItem('user');
-  }, [clearAllTimers, clearClockKeys, clearSessionId]);
+    clearUser();
+  }, [clearAllTimers, clearClockKeys, clearSessionId, clearUser]);
 
   const handleLogout = useCallback(() => {
     cleanupLogout();
@@ -392,11 +391,6 @@ useEffect(() => {
     window.addEventListener('cmr:logout', handleLogout);
     return () => window.removeEventListener('cmr:logout', handleLogout);
   }, [handleLogout]);
-
-  useEffect(() => {
-    window.addEventListener('beforeunload', cleanupLogout);
-    return () => window.removeEventListener('beforeunload', cleanupLogout);
-  }, [cleanupLogout]);
 
   const role = currentUser?.role?.trim().toLowerCase();
   const allow = (roles) => roles.map((r) => r.toLowerCase()).includes(role);
@@ -524,28 +518,6 @@ useEffect(() => {
     window.addEventListener('focus', resumeHandler, { passive: true });
     window.addEventListener('pageshow', resumeHandler, { passive: true });
 
-    const storageHandler = (ev) => {
-      if (!sessionIdRef.current) return;
-      const keys = lsKeysRef.current || {};
-      if (
-        ev.key === keys.warnAt ||
-        ev.key === keys.logoutAt ||
-        ev.key === keys.lastActivity
-      ) {
-        scheduleFromClocks();
-      }
-      if (ev.key === 'user') {
-        if (!ev.newValue) handleLogout();
-        else scheduleFromClocks();
-      }
-      if (ev.key === SESSION_KEY) {
-        sessionIdRef.current = ev.newValue || null;
-        lsKeysRef.current = mkKeys(sessionIdRef.current);
-        scheduleFromClocks();
-      }
-    };
-    window.addEventListener('storage', storageHandler);
-
     // init
     scheduleFromClocks();
 
@@ -554,7 +526,6 @@ useEffect(() => {
       document.removeEventListener('visibilitychange', resumeHandler);
       window.removeEventListener('focus', resumeHandler);
       window.removeEventListener('pageshow', resumeHandler);
-      window.removeEventListener('storage', storageHandler);
       clearAllTimers();
     };
   }, [

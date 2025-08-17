@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import ForgotPasswordModal from '../../../components/ForgotPasswordModal.jsx';
+import { storeUser } from '../../../utils/auth';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -202,6 +203,7 @@ export default function Login({ onLogin }) {
       const res = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username: normalizeDigits(username.trim()), password }),
       });
       if (!res.ok) {
@@ -212,9 +214,9 @@ export default function Login({ onLogin }) {
       const data = await res.json();
 
       // 🔒 Reset session namespace so timers/clocks start fresh on first render after login
-      localStorage.removeItem('cmr:sessionId');
+      sessionStorage.removeItem('cmr:sessionId');
 
-      localStorage.setItem('user', JSON.stringify(data));
+      storeUser(data);
       if (typeof onLogin === 'function') onLogin(data);
 
       navigate('/home', { replace: true });
