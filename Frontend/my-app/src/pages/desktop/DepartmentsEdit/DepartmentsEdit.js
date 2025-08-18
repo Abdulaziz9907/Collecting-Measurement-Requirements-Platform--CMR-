@@ -80,7 +80,6 @@ export default function DepartmentsEdit() {
         padding-bottom: env(safe-area-inset-bottom);
       }
 
-      /* Area under Header */
       #wrapper {
         flex:1 1 auto;
         min-height:0;           /* allow shrinking within viewport */
@@ -145,7 +144,6 @@ export default function DepartmentsEdit() {
   );
 
   /* ===== Data fetching ===== */
-  // Load the department being edited
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -156,7 +154,6 @@ export default function DepartmentsEdit() {
     return () => { isMounted = false; };
   }, [API_BASE, id]);
 
-  // Load all departments to build a set of names EXCLUDING this department (for duplicate checks)
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -240,7 +237,6 @@ export default function DepartmentsEdit() {
 
       if (!res.ok) {
         if (res.status === 409) {
-          // Server says duplicate
           setErrorMessage('اسم الجهة موجود مسبقاً، لا يمكن تحديث الجهة باسم مكرر');
           setShowError(true);
           setNameIsDuplicate(true);
@@ -251,7 +247,6 @@ export default function DepartmentsEdit() {
         }
       } else {
         setShowSuccess(true);
-        // Update local set (if the name changed) to prevent immediate duplicates after edit
         if (!existingNames.has(normalizeName(rawName))) {
           setExistingNames(prev => new Set([...prev, normalizeName(rawName)]));
         }
@@ -308,7 +303,6 @@ export default function DepartmentsEdit() {
                     {/* Body */}
                     <div className="body-flat">
                       {isLoading ? (
-                        // Loading skeleton (mirrors form fields, no spinner)
                         <div className="row g-3">
                           <div className="col-12">
                             <div className="skel skel-line mb-2" style={{ width: '30%' }} />
@@ -400,12 +394,11 @@ export default function DepartmentsEdit() {
                 </div>
               </div>
 
-              {/* Responsive spacer */}
-              <div className="page-spacer" />
+              {/* Spacer removed entirely */}
+              {/* <div className="page-spacer" /> */}
             </div>
           </div>
 
-          {/* Footer stays at bottom now on all screen sizes */}
           <Footer />
         </div>
       </div>
