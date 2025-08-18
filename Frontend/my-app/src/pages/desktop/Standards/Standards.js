@@ -23,7 +23,7 @@ export default function Standards() {
   const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Mobile detection (mobile-only changes; desktop unchanged)
+  // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
@@ -72,7 +72,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  /* ========== Local Theme (app-shell removed; min-vh-100 layout like Users) ========== */
+  /* ========== Local Theme (يحافظ على 200px فوق الفوتر ويزيل الفراغ تحته) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -89,38 +89,22 @@ export default function Standards() {
         --skeleton-speed: 1.2s;
       }
 
+      /* حاوية الصفحة: بدون أي حشوة سفلية قد ترفع الفوتر على iOS */
       .page-shell {
-        min-height: 100vh;
-        min-height: 100dvh;
         min-height: 100svh;
         min-height: -webkit-fill-available;
         display: flex;
         flex-direction: column;
         background: #f6f8fb;
+        padding-bottom: 0 !important;
       }
 
-      #wrapper {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: row;
-        min-height: 0;
-      }
+      #wrapper { flex: 1 1 auto; display:flex; flex-direction:row; min-height:0; }
+      #content-wrapper { flex: 1 1 auto; display:flex; flex-direction:column; min-height:0; }
+      #content { flex: 1 1 auto; display:flex; min-height:0; }
 
-      #content-wrapper {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      #content {
-        flex: 1 1 auto;
-        display: flex;
-        min-height: 0;
-      }
-
-      /* Removed min-height overrides so footer sits correctly on mobile */
-      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
+      /* البطاقة الرئيسية – نترك المسافة فوق الفوتر عبر page-spacer فقط */
+      .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 0; }
       .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -143,7 +127,9 @@ export default function Standards() {
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 200px; } /* keep same as Users */
+
+      /* هذه المسافة (200px) تبقى كما طلبت — فوق الفوتر مباشرة */
+      .page-spacer { height: 200px; }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -158,36 +144,30 @@ export default function Standards() {
 
       .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
 
-      /* Desktop dropdown (unchanged) */
       .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; max-height: 50vh; overflow:auto; min-width: 220px; }
       .dropdown-item { color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
 
-      /* Selection bar */
       .selection-bar { border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background: linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding: 8px 12px; }
 
       .th-select .form-check-input,
       .td-select .form-check-input { float: none; margin: 0; position: static; transform: none; }
 
-      /* ===== Mobile unified header/control sizing ===== */
+      /* ===== Mobile ===== */
       @media (max-width: 576px) {
         .head-row { display:none; }
         .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
         .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
-        /* Expand to 2 columns when only "فرز" + "تصفية" exist */
         .m-toolbar.cols-2 { grid-template-columns: repeat(2, 1fr); }
         .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
         .search-input { max-width: 100%; height: 36px; line-height: 36px; }
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        /* removed bad unitless override */
       }
 
-      /* ===== Mobile dropdowns same as Users ===== */
       .m-menu { width: min(92vw, 360px); max-width: 92vw; }
       .m-menu .dropdown-item { padding: 10px 12px; font-size: .95rem; }
       .m-menu .dropdown-header { font-size: .9rem; }
 
-      /* ===== Mobile cards ===== */
       .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
       .mobile-card { border: 1px solid var(--stroke); border-radius: 12px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px; }
       .mobile-card-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -196,10 +176,20 @@ export default function Standards() {
       .mobile-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
       .mobile-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.8rem; background: #f8fafc; }
 
-      /* Two action buttons like Users/Departments on mobile only */
       .s-actions { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px; }
       .s-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:700; }
-      .s-btn i { font-size: .85rem; }
+
+      /* ✦ إزالة أي فراغ تحت الفوتر على iOS */
+      @supports (padding: env(safe-area-inset-bottom)) {
+        .page-shell { padding-bottom: 0 !important; }
+      }
+
+      /* ✦ اجعل غلاف الفوتر يلتصق بأسفل الشاشة بدون أي مساحة تحته */
+      .footer-safe {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+      }
     `}</style>
   );
 
@@ -408,7 +398,7 @@ export default function Standards() {
   };
 
   const isViewer = user?.role?.toLowerCase?.() === 'user';
-  const showActions = !isViewer; // <— if false, expand the two buttons
+  const showActions = !isViewer;
 
   // Columns
   const colCount = isViewer ? 6 : 8;
@@ -826,7 +816,7 @@ export default function Standards() {
 
         <div id="wrapper">
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          {/* Flex column that grows without forcing extra height on mobile */}
+          {/* Flex column that grows */}
           <div id="content-wrapper">
             <div id="content">
               <div className="container-fluid d-flex flex-column">
@@ -840,7 +830,7 @@ export default function Standards() {
                     <div className="table-card" aria-busy={loading}>
                       {/* ===== Header ===== */}
                       <div className="head-flat">
-                        {/* Desktop header (unchanged) */}
+                        {/* Desktop header */}
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
@@ -950,7 +940,7 @@ export default function Standards() {
                               onChange={(e) => setSearchTerm(e.target.value)}
                             />
 
-                            {/* NOTE: if showActions === false, use cols-2 to expand the two buttons */}
+                            {/* إذا المستخدم Viewer نخلي الأدوات عمودين فقط */}
                             <div className={`m-toolbar ${showActions ? '' : 'cols-2'}`}>
                               {/* Sort */}
                               <Dropdown align="start">
@@ -1031,7 +1021,7 @@ export default function Standards() {
                         )}
                       </div>
 
-                      {/* Selection bar (unchanged) */}
+                      {/* Selection bar */}
                       {(!isViewer && anySelected) && (
                         <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
                           <div className="d-flex align-items-center gap-2">
@@ -1176,7 +1166,7 @@ export default function Standards() {
                         </div>
                       )}
 
-                      {/* Footer (controls) */}
+                      {/* Footer controls داخل البطاقة */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
@@ -1212,11 +1202,15 @@ export default function Standards() {
                   </div>
                 </div>
 
+                {/* ✦ تبقى هذه المسافة 200px أعلى الفوتر كما طلبت */}
                 <div className="page-spacer" />
               </div>
             </div>
 
-            <Footer />
+            {/* ✦ غلاف لاصق للفوتر يمنع أي فراغ سفلي على iPhone */}
+            <div className="footer-safe">
+              <Footer />
+            </div>
           </div>
         </div>
       </div>
