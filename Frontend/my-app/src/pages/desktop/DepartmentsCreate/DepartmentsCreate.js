@@ -80,8 +80,8 @@ export default function DepartmentsCreate() {
 
       /* Responsive spacer: small on phones, larger on desktop */
       .page-spacer { height: 24px; }
-      @media (min-width: 768px) { .page-spacer { height: 300px; } }
-      @media (min-width: 1200px) { .page-spacer { height: 300px; } }
+      @media (min-width: 768px) { .page-spacer { height: 200px; } }
+      @media (min-width: 1200px) { .page-spacer { height: 200px; } }
 
       /* Safety net for RTL checkboxes if non-RTL Bootstrap leaks in */
       [dir="rtl"] .form-check .form-check-input{

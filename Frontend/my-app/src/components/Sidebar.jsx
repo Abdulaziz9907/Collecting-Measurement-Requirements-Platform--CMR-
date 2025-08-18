@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { Modal, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faList,
@@ -22,23 +23,14 @@ export default function Sidebar() {
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false); // micro scale for button
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // NEW: modal state
   const location = useLocation();
   const sidebarRef = useRef(null);
 
   const user = getStoredUser();
   const role = user?.role?.trim().toLowerCase();
 
-  const confirmLogout = useCallback((e) => {
-    e.preventDefault();
-    if (window.confirm('هل تريد تسجيل الخروج؟')) {
-      window.dispatchEvent(new Event('cmr:logout'));
-      return true;
-    }
-    return false;
-  }, []);
-
   let navItems = [];
-
   if (role === 'admin' || role === 'administrator') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
@@ -47,21 +39,21 @@ export default function Sidebar() {
       { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
       { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', isLogout: true },
     ];
   } else if (role === 'user') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', isLogout: true },
     ];
   } else if (role === 'management') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', isLogout: true },
     ];
   }
 
@@ -70,6 +62,17 @@ export default function Sidebar() {
     setIsAnimating(true);
     setSidebarVisible(v => !v);
   };
+
+  // Modal handlers
+  const openLogoutModal = (e) => {
+    if (e) e.preventDefault();
+    setShowLogoutModal(true);
+  };
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    window.dispatchEvent(new Event('cmr:logout'));
+  };
+  const handleLogoutCancel = () => setShowLogoutModal(false);
 
   // Relax button micro-scale when slide ends
   useEffect(() => {
@@ -205,8 +208,11 @@ export default function Sidebar() {
                     className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
                     onClick={(e) => {
-                      const proceed = item.onClick ? item.onClick(e) : true;
-                      if (proceed) toggleSidebar();            // reversible mid-way
+                      if (item.isLogout) {
+                        openLogoutModal(e);         // open modal, don't toggle or navigate
+                      } else {
+                        toggleSidebar();            // reversible mid-way
+                      }
                     }}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
@@ -239,7 +245,11 @@ export default function Sidebar() {
                   <Link
                     className={`nav-link d-flex align-items-center sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
-                    onClick={(e) => item.onClick && item.onClick(e)}
+                    onClick={(e) => {
+                      if (item.isLogout) {
+                        openLogoutModal(e); // open modal on desktop too
+                      }
+                    }}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                     <span className="me-2" style={{ fontSize: '15px' }}>{item.label}</span>
@@ -251,6 +261,31 @@ export default function Sidebar() {
           </ul>
         </div>
       </nav>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        show={showLogoutModal}
+        onHide={handleLogoutCancel}
+        centered
+        dir="rtl"
+        aria-labelledby="logout-modal-title"
+        backdrop="static"
+      >
+        <Modal.Header >
+          <Modal.Title id="logout-modal-title">تأكيد تسجيل الخروج</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          هل تريد تسجيل الخروج؟
+        </Modal.Body>
+        <Modal.Footer className="justify-content-between">
+          <Button variant="secondary" onClick={handleLogoutCancel}>
+            إلغاء
+          </Button>
+          <Button variant="danger" onClick={handleLogoutConfirm}>
+            تسجيل الخروج
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Styles */}
       <style>{`
