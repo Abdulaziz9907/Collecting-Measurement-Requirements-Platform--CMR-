@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function LoggedOut() {
   const navigate = useNavigate();
   useEffect(() => {
-    const t = setTimeout(() => navigate('/', { replace: true }), 3000);
+    const t = setTimeout(() => navigate('/', { replace: true }), 5000);
     return () => clearTimeout(t);
   }, [navigate]);
 
