@@ -24,24 +24,6 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Maintain a stable viewport height on iOS to prevent the footer from
-  // appearing lifted when the browser chrome changes size.
-  useEffect(() => {
-    const setVh = () => {
-      document.documentElement.style.setProperty(
-        '--vh-fix',
-        `${window.innerHeight * 0.01}px`
-      );
-    };
-    setVh();
-    window.addEventListener('resize', setVh);
-    window.addEventListener('orientationchange', setVh);
-    return () => {
-      window.removeEventListener('resize', setVh);
-      window.removeEventListener('orientationchange', setVh);
-    };
-  }, []);
-
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -77,13 +59,6 @@ export default function Standards() {
 
   const LocalTheme = () => (
     <style>{`
-      /* Use a dynamic viewport height so the footer sits flush on iOS */
-      :root{ --app-vh: 100svh; }
-      @supports not (height: 100svh) {
-        :root{ --app-vh: calc(var(--vh-fix, 1vh) * 100); }
-      }
-      body{ overscroll-behavior-y: contain; }
-
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
@@ -530,16 +505,9 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* Container uses dynamic viewport height so the footer stays at the bottom */}
-      <div
-        dir="rtl"
-        className="d-flex flex-column"
-        style={{
-          minHeight: 'var(--app-vh)',
-          fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-          backgroundColor: '#f6f8fb'
-        }}
-      >
+      {/* Single min-vh-100 on the outermost container to avoid iOS extra scroll;
+          inner wrappers just flex-grow. */}
+      <div dir="rtl" className="min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}>
         <Header />
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
