@@ -72,7 +72,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  /* ========== Local Theme (unified; desktop unchanged, adds mobile .m-menu & mobile buttons) ========== */
+  /* ========== Local Theme (mobile tweak added: .m-toolbar.cols-2) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -143,6 +143,8 @@ export default function Standards() {
         .head-row { display:none; }
         .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
         .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
+        /* NEW: when we only have two controls (فرز + تصفية), stretch them 2-up */
+        .m-toolbar.cols-2 { grid-template-columns: repeat(2, 1fr); }
         .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
         .search-input { max-width: 100%; height: 36px; line-height: 36px; }
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -312,7 +314,7 @@ export default function Standards() {
   };
 
   const normalizeDigits = (str = '') => {
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'8','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
@@ -374,6 +376,7 @@ export default function Standards() {
   };
 
   const isViewer = user?.role?.toLowerCase?.() === 'user';
+  const showActions = !isViewer; // <— if false, expand the two buttons
 
   // Columns
   const colCount = isViewer ? 6 : 8;
@@ -404,48 +407,22 @@ export default function Standards() {
     ));
 
   // Skeleton rows/cards
-// Desktop skeleton row: separate cells for details and created date
-const SkeletonRow = ({ idx }) => (
-  <tr key={`sk-${idx}`}>
-    {/* Select checkbox (admins only) */}
-    {!isViewer && (
-      <td className="td-select">
-        <span className="skel skel-icon" />
-      </td>
-    )}
-
-    <td>
-      <span className="skel skel-line" style={{ width: '60%' }} />
-    </td>
-
-    <td>
-      <span className="skel skel-line" style={{ width: '85%' }} />
-    </td>
-
-    <td>
-      <span className="skel skel-line" style={{ width: '70%' }} />
-    </td>
-
-    <td>
-      <span className="skel skel-badge" />
-    </td>
-
-    <td>
-      <span className="skel skel-line" style={{ width: '40%' }} />
-    </td>
-
-    <td>
-      <span className="skel skel-line" style={{ width: '55%' }} />
-    </td>
-
-    {!isViewer && (
-      <td>
-        <span className="skel skel-icon" />
-      </td>
-    )}
-  </tr>
-);
-
+  const SkeletonRow = ({ idx }) => (
+    <tr key={`sk-${idx}`}>
+      {!isViewer && (
+        <td className="td-select">
+          <span className="skel skel-icon" />
+        </td>
+      )}
+      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '85%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
+      <td><span className="skel skel-badge" /></td>
+      <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
+      <td><span className="skel skel-line" style={{ width: '55%' }} /></td>
+      {!isViewer && (<td><span className="skel skel-icon" /></td>)}
+    </tr>
+  );
 
   const SkeletonCard = ({ idx }) => (
     <div className="mobile-card" key={`msc-${idx}`}>
@@ -536,7 +513,7 @@ const SkeletonRow = ({ idx }) => (
       const normalizeName = (name = '') => {
         const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
         const tatweel = /\u0640/g;
-        return String(name).replace(diacritics, '').replace(tatweel, '').replace(/\s+/g, ' ').trim().toLowerCase();
+        return String(name).replace(diacritics, '').replace(tatweel, '').replace(/\س+/g, ' ').trim().toLowerCase();
       };
 
       const deptMap = new Map(
@@ -566,22 +543,14 @@ const SkeletonRow = ({ idx }) => (
         const proofsRaw= get('مستندات الإثبات');
 
         const proofsList = parseProofs(proofsRaw);
-        if (!rawNum || !name || !goal || !reqs || !depRaw || proofsList.length === 0) {
-          skipped++;
-          continue;
-        }
+        if (!rawNum || !name || !goal || !reqs || !depRaw || proofsList.length === 0) { skipped++; continue; }
 
         const isStdValid = STD_RE.test(rawNum) || STD_RE.test(rawNum.replace(/\./g, '٫'));
         const stdNumNorm = normalizeStandardNumber(rawNum);
         if (!isStdValid || !stdNumNorm) { skipped++; continue; }
 
         const depId = deptMap.get(normalizeName(depRaw));
-        if (!Number.isInteger(depId)) {
-          fail++;
-          unknownDeptCount++;
-          unknownDeptNames.add(depRaw);
-          continue;
-        }
+        if (!Number.isInteger(depId)) { fail++; unknownDeptCount++; unknownDeptNames.add(depRaw); continue; }
 
         if (existingNumbers.has(stdNumNorm) || batchSeen.has(stdNumNorm)) { dup++; continue; }
 
@@ -614,16 +583,9 @@ const SkeletonRow = ({ idx }) => (
 
         try {
           const okRes = await tryCreate();
-          if (okRes) {
-            ok++;
-            batchSeen.add(stdNumNorm);
-            existingNumbers.add(stdNumNorm);
-          } else {
-            fail++;
-          }
-        } catch {
-          fail++;
-        }
+          if (okRes) { ok++; batchSeen.add(stdNumNorm); existingNumbers.add(stdNumNorm); }
+          else { fail++; }
+        } catch { fail++; }
       }
 
       let msg = `تمت المعالجة: ${ok} مضافة، ${dup} مكررة، ${skipped} غير مكتملة/غير صالحة، ${fail} فشلت`;
@@ -750,7 +712,7 @@ const SkeletonRow = ({ idx }) => (
   // Role limits in modal
   const isUserRole = user?.role?.toLowerCase?.() === 'user';
 
-  /* ===== Mobile card (only mobile changed) ===== */
+  /* ===== Mobile card ===== */
   const MobileCard = ({ item, idx }) => {
     const id = item.standard_id;
     const checked = selectedIds.has(id);
@@ -787,7 +749,7 @@ const SkeletonRow = ({ idx }) => (
           <span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span>
         </div>
 
-        {/* Two buttons like Users/Departments (Show + Edit). Desktop remains unchanged. */}
+        {/* If only one button for viewer, make it full width (already handled) */}
         <div className="s-actions" style={isViewer ? { gridTemplateColumns: '1fr' } : undefined}>
           <button
             className="btn btn-primary s-btn"
@@ -856,7 +818,7 @@ const SkeletonRow = ({ idx }) => (
                             </div>
 
                             <div className="controls-inline">
-                              {/* Sort (desktop unchanged) */}
+                              {/* Sort (desktop) */}
                               <Dropdown align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -876,7 +838,7 @@ const SkeletonRow = ({ idx }) => (
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filters (desktop unchanged) */}
+                              {/* Filters (desktop) */}
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -917,13 +879,7 @@ const SkeletonRow = ({ idx }) => (
                                     {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
                                   </button>
 
-                                  <OverlayTrigger
-                                    placement="bottom"
-                                    delay={{ show: 200, hide: 100 }}
-                                    overlay={popTemplateHelp}
-                                    popperConfig={dropdownPopper}
-                                    trigger={['hover','focus']}
-                                  >
+                                  <OverlayTrigger placement="bottom" delay={{ show: 200, hide: 100 }} overlay={popTemplateHelp} popperConfig={dropdownPopper} trigger={['hover','focus']}>
                                     <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
                                       <i className="fas fa-download ms-1" /> تحميل القالب
                                     </button>
@@ -947,7 +903,7 @@ const SkeletonRow = ({ idx }) => (
                           </div>
                         )}
 
-                        {/* Mobile header (ONLY mobile changed) */}
+                        {/* Mobile header */}
                         {isMobile && (
                           <div className="m-stack">
                             <input
@@ -958,8 +914,9 @@ const SkeletonRow = ({ idx }) => (
                               onChange={(e) => setSearchTerm(e.target.value)}
                             />
 
-                            <div className="m-toolbar">
-                              {/* Sort — Users-like menu size/look */}
+                            {/* NOTE: if showActions === false, use cols-2 to expand the two buttons */}
+                            <div className={`m-toolbar ${showActions ? '' : 'cols-2'}`}>
+                              {/* Sort */}
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
@@ -981,7 +938,7 @@ const SkeletonRow = ({ idx }) => (
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filters — Users-like menu size/look */}
+                              {/* Filters */}
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-filter ms-1" /> تصفية
@@ -1006,22 +963,24 @@ const SkeletonRow = ({ idx }) => (
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Actions — Users-like menu size/look */}
-                              <Dropdown align="start">
-                                <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
-                                  <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
-                                  <Dropdown.Item as={Link} to="/standards_create"><i className="fas fa-square-plus ms-1" /> إضافة معيار</Dropdown.Item>
-                                  {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
-                                    <>
-                                      <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</Dropdown.Item>
-                                      <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}><i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}</Dropdown.Item>
-                                      <Dropdown.Item onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</Dropdown.Item>
-                                    </>
-                                  )}
-                                </Dropdown.Menu>
-                              </Dropdown>
+                              {/* Actions — HIDDEN for user role on mobile */}
+                              {showActions && (
+                                <Dropdown align="start">
+                                  <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
+                                    <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
+                                  </Dropdown.Toggle>
+                                  <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
+                                    <Dropdown.Item as={Link} to="/standards_create"><i className="fas fa-square-plus ms-1" /> إضافة معيار</Dropdown.Item>
+                                    {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
+                                      <>
+                                        <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}><i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}</Dropdown.Item>
+                                        <Dropdown.Item onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</Dropdown.Item>
+                                      </>
+                                    )}
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                              )}
                             </div>
 
                             <div className="meta-row">
@@ -1073,7 +1032,6 @@ const SkeletonRow = ({ idx }) => (
                           )}
                         </div>
                       ) : (
-                        // Desktop table (UNCHANGED)
                         <div className="table-responsive">
                           <table className="table table-hover text-center align-middle">
                             <thead>
@@ -1226,19 +1184,12 @@ const SkeletonRow = ({ idx }) => (
         </div>
       </div>
 
-      {/* Hidden input for import (works for mobile actions too) */}
-      {/* Visually-hidden file input (no display:none for mobile compatibility) */}
+      {/* Hidden input for import */}
       <input
         ref={fileInputRef}
         type="file"
         accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-        style={{
-          position: 'absolute',
-          width: 0,
-          height: 0,
-          opacity: 0,
-          pointerEvents: 'none'
-        }}
+        style={{ position:'absolute', width:0, height:0, opacity:0, pointerEvents:'none' }}
         onChange={(e) => handleExcelImport(e.target.files?.[0])}
       />
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -13,7 +13,6 @@ import {
 import { getStoredUser } from '../utils/auth';
 
 export default function Sidebar() {
-<<<<<<< HEAD
   // Faster, more responsive timings with better easing
   const TRANSFORM_MS = 220;                 // sidebar slide duration (was 340ms)
   const OVERLAY_MS = 180;                   // overlay fade (was 240ms)
@@ -22,11 +21,10 @@ export default function Sidebar() {
   const ITEM_STAGGER = 18;                  // (unused now for mobile items)
   const ITEM_OFFSET = 28;                   // (unused now for mobile items)
 
-=======
->>>>>>> parent of 1961417 (deployment)
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const location = useLocation();
+  const sidebarRef = useRef(null);
 
   const user = getStoredUser();
   const role = user?.role?.trim().toLowerCase();
@@ -58,23 +56,12 @@ export default function Sidebar() {
     ];
   }
 
-<<<<<<< HEAD
   // Faster, more responsive toggle
-=======
->>>>>>> parent of 1961417 (deployment)
   const toggleSidebar = () => {
-    if (isAnimating) return;
-    
     setIsAnimating(true);
-    setSidebarVisible(prev => !prev);
-    
-    // Reset animation state after animation completes
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 300);
+    setSidebarVisible(v => !v);
   };
 
-<<<<<<< HEAD
   // Faster button scale reset
   useEffect(() => {
     const el = sidebarRef.current;
@@ -87,8 +74,6 @@ export default function Sidebar() {
   }, []);
 
   // Close at desktop breakpoint
-=======
->>>>>>> parent of 1961417 (deployment)
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && sidebarVisible) {
@@ -102,8 +87,8 @@ export default function Sidebar() {
 
   const buttonStyles = {
     zIndex: 1040,
-    background: sidebarVisible 
-      ? 'linear-gradient(135deg, #333333ff 0%, #2c2c2cff 100%)' 
+    background: sidebarVisible
+      ? 'linear-gradient(135deg, #333333ff 0%, #2c2c2cff 100%)'
       : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
     border: sidebarVisible ? '1px solid #313131ff' : '1px solid #dee2e6',
     padding: '8px 10px',
@@ -114,27 +99,18 @@ export default function Sidebar() {
     alignItems: 'center',
     width: '42px',
     height: '42px',
-<<<<<<< HEAD
     boxShadow: sidebarVisible
       ? '0 8px 24px rgba(43, 43, 43, 0.35)'
       : '0 2px 8px rgba(0,0,0,0.12)',
     transition: `transform 160ms ${SLIDE_EASING}, box-shadow ${TRANSFORM_MS}ms ${SLIDE_EASING}, background ${TRANSFORM_MS}ms ${SLIDE_EASING}, border ${TRANSFORM_MS}ms ${SLIDE_EASING}`,
     transform: isAnimating ? 'scale(0.92)' : 'scale(1)',
     willChange: 'transform'
-=======
-    boxShadow: sidebarVisible 
-      ? '0 4px 15px rgba(43, 43, 43, 0.3)' 
-      : '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'all 0.3s ease',
-    transform: isAnimating ? 'scale(0.95)' : 'scale(1)',
->>>>>>> parent of 1961417 (deployment)
   };
 
   const barColor = sidebarVisible ? '#fff' : '#495057';
 
   return (
     <>
-<<<<<<< HEAD
       {/* Mobile Overlay with faster fade */}
       <div
         className="position-fixed top-0 start-0 w-100 h-100 d-md-none"
@@ -148,29 +124,15 @@ export default function Sidebar() {
         }}
         onClick={toggleSidebar}
       />
-=======
-      {/* Mobile Overlay */}
-      {sidebarVisible && (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-md-none"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1020,
-            backdropFilter: 'blur(2px)',
-            animation: 'fadeIn 0.3s ease',
-          }}
-          onClick={() => setSidebarVisible(false)}
-        />
-      )}
->>>>>>> parent of 1961417 (deployment)
 
       {/* Hamburger Button with enhanced animation */}
       <button
         type="button"
         className="position-fixed top-0 start-0 m-3 d-md-none"
         style={buttonStyles}
-        onClick={() => setSidebarVisible((prev) => !prev)}
+        onClick={toggleSidebar}
         aria-label="Toggle sidebar"
+        aria-expanded={sidebarVisible}
       >
         {[...Array(3)].map((_, i) => (
           <div
@@ -181,12 +143,8 @@ export default function Sidebar() {
               backgroundColor: barColor,
               margin: '3px 0',
               borderRadius: '1px',
-<<<<<<< HEAD
               transition: `background-color ${TRANSFORM_MS}ms ${SLIDE_EASING}, transform 180ms ${SLIDE_EASING}`,
               transform: sidebarVisible && i === 1 ? 'scaleX(0.8)' : 'scaleX(1)',
-=======
-              transition: '0.3s',
->>>>>>> parent of 1961417 (deployment)
             }}
           />
         ))}
@@ -194,21 +152,19 @@ export default function Sidebar() {
 
       {/* Mobile Sidebar with improved animations */}
       <div
+        ref={sidebarRef}
         className="text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
           width: '240px',
-          background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)', 
+          background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)',
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
-<<<<<<< HEAD
           transition: `transform ${TRANSFORM_MS}ms ${SLIDE_EASING}, box-shadow ${TRANSFORM_MS - 40}ms ${SLIDE_EASING}`,
-=======
-          transition: 'transform 0.3s ease',
->>>>>>> parent of 1961417 (deployment)
           zIndex: 1025,
-          boxShadow: sidebarVisible ? '4px 0 20px rgba(0,0,0,0.25)' : 'none',
+          boxShadow: sidebarVisible ? '6px 0 24px rgba(0,0,0,0.28)' : 'none',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden'
         }}
       >
-<<<<<<< HEAD
         {/* Keep container motion if you like; items won't slide individually */}
         <div
           style={{
@@ -254,56 +210,19 @@ export default function Sidebar() {
             })}
           </ul>
         </div>
-=======
-        <ul className="navbar-nav p-0 mt-5 pt-4 w-100">
-          {navItems.map((item, idx) => {
-            const isActive =
-              location.pathname.startsWith(item.href) && item.href !== '/'
-                ? true
-                : location.pathname === item.href;
-
-            return (
-              <li 
-                className="nav-item p-0 m-0"
-                key={idx}
-                style={{
-                  opacity: sidebarVisible ? 1 : 0,
-                  transform: sidebarVisible ? 'translateX(0)' : 'translateX(-20px)',
-                  transition: `all 0.3s ease ${idx * 0.05}s`,
-                }}
-              >
-                <Link
-                  className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
-                  to={item.href}
-                  onClick={() => {
-                    setSidebarVisible(false);
-                    item.onClick && item.onClick();
-                  }}
-                >
-                  <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
-                  <span className="me-2">{item.label}</span>
-                  {isActive && <div className="active-dot"></div>}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
->>>>>>> parent of 1961417 (deployment)
       </div>
 
       {/* Desktop Sidebar */}
       <nav
         className="navbar align-items-start p-0 sidebar sidebar-dark accordion navbar-dark d-none d-md-block"
-        style={{ 
-          background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-        }}
+        style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}
       >
         <div className="container-fluid d-flex flex-column p-0 ">
           <hr className="my-0 sidebar-divider" />
           <ul className="navbar-nav text-light mt-4 w-100" id="accordionSidebar">
             {navItems.map((item, idx) => {
               const isActive =
-                location.pathname.startsWith(item.href) && item.href !== '/'
+                item.href !== '/' && location.pathname.startsWith(item.href)
                   ? true
                   : location.pathname === item.href;
 
@@ -327,11 +246,6 @@ export default function Sidebar() {
 
       {/* Enhanced Styles */}
       <style>{`
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -339,29 +253,21 @@ export default function Sidebar() {
   padding: 0 24px;
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.88);
   position: relative;
-<<<<<<< HEAD
   transition: background 200ms ${SLIDE_EASING}, color 200ms ${SLIDE_EASING}, transform 160ms ${SLIDE_EASING};
-=======
-  transition: all 0.3s ease;
->>>>>>> parent of 1961417 (deployment)
   white-space: nowrap;
   text-decoration: none;
 }
 
 .sidebar-link:hover {
   text-decoration: none;
-<<<<<<< HEAD
   background: rgba(255, 255, 255, 0.10);
   transform: translateX(2px);
-=======
-  background: rgba(255, 255, 255, 0.08);
->>>>>>> parent of 1961417 (deployment)
 }
 
 .sidebar-link.active {
-  background: #778fc24d;
+  background: #7e90c64d;
   color: #fff !important;
 }
 
@@ -370,12 +276,8 @@ export default function Sidebar() {
 }
 
 .sidebar-link.logout:hover {
-<<<<<<< HEAD
   background: rgba(239, 68, 68, 0.12);
   transform: translateX(2px);
-=======
-  background: rgba(239, 68, 68, 0.1);
->>>>>>> parent of 1961417 (deployment)
 }
 
 .active-dot {
