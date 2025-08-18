@@ -30,7 +30,30 @@ export default function DepartmentsEdit() {
   const normalizeName = (s = '') =>
     s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
 
-  /* ===== Minimal shell + sticky footer, zero gap under footer ===== */
+  /* ===== Viewport fix for mobile (iOS/Android) ===== */
+  const ViewportUnitFix = () => {
+    useEffect(() => {
+      const apply = () => {
+        const vh = (window.visualViewport?.height ?? window.innerHeight);
+        document.documentElement.style.setProperty('--app-dvh', `${vh}px`);
+      };
+      apply();
+
+      // Listen to both resize and visualViewport changes
+      window.addEventListener('resize', apply);
+      window.visualViewport?.addEventListener('resize', apply);
+      window.visualViewport?.addEventListener('scroll', apply);
+
+      return () => {
+        window.removeEventListener('resize', apply);
+        window.visualViewport?.removeEventListener('resize', apply);
+        window.visualViewport?.removeEventListener('scroll', apply);
+      };
+    }, []);
+    return null;
+  };
+
+  /* ===== Minimal shell + skeleton + sticky footer (mobile-safe) ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -44,18 +67,22 @@ export default function DepartmentsEdit() {
         --skeleton-speed:1.2s;
       }
 
-      html, body { height:100%; margin:0; }
+      /* Reset heights so flex children can shrink on mobile */
+      html, body, #root { height:auto; min-height:0; }
 
+      /* Full-height column so Footer sits at bottom on mobile
+         Use dynamic viewport var (updated by ViewportUnitFix) with 100dvh fallback */
       .page-bg {
         background:#f6f8fb;
-        min-height:100dvh;
+        min-height: calc(var(--app-dvh, 100dvh));
         display:flex;
         flex-direction:column;
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
       #wrapper {
         flex:1 1 auto;
-        min-height:0;
+        min-height:0;           /* allow shrinking within viewport */
         display:flex;
         flex-direction:row;
       }
@@ -67,10 +94,14 @@ export default function DepartmentsEdit() {
         flex-direction:column;
       }
 
+      /* Ensure main content can shrink; avoids "lifted" footer on phones */
       #content {
         flex:1 1 auto;
         min-height:0;
       }
+
+      /* Make the last child (Footer) auto stick to bottom within the column */
+      #content-wrapper > :last-child { margin-top:auto; }
 
       .surface {
         background:var(--surface);
@@ -89,15 +120,10 @@ export default function DepartmentsEdit() {
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
 
-      /* No spacer at all on any screen */
-      .page-spacer { display:none !important; height:0 !important; }
-
-      /* Footer: no outside gap and don't shrink */
-      footer, .app-footer, #app-footer {
-        margin: 0 !important;
-        padding: 0 !important;
-        flex-shrink: 0;
-      }
+      /* Smaller spacer on phones; scaled up on larger screens */
+      .page-spacer { height:12px; }
+      @media (min-width: 768px) { .page-spacer { height:64px; } }
+      @media (min-width: 1200px) { .page-spacer { height:100px; } }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -234,6 +260,7 @@ export default function DepartmentsEdit() {
 
   return (
     <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+      <ViewportUnitFix />
       <LocalTheme />
       <Header />
 
