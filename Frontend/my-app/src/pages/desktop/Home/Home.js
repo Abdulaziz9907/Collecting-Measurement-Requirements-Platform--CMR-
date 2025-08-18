@@ -105,7 +105,8 @@ export default function Home() {
         setHasLoadedOnce(true);
       }
     } finally {
-      const elapsed = ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0;
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const elapsed = now - t0;
       const finish = () => { if (loadSeqRef.current === seq) setLoading(false); };
       if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed); else finish();
     }
@@ -196,7 +197,7 @@ export default function Home() {
   const role = (user?.role || '').toString().toLowerCase();
   const isManagement = role === 'management' || role === 'managment';
 
-  // Chip shown only if role === 'users' (exactly)
+  // Chip shown only if role === 'user'
   const isUsersRole = role === 'user';
 
   const recentItems = useMemo(() => recentAll.slice(0, 5), [recentAll]);
@@ -219,11 +220,9 @@ export default function Home() {
   return (
     <div
       dir="rtl"
+      className="min-vh-100 d-flex flex-column"
       style={{
         fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
         backgroundColor: '#f6f8fb',
       }}
     >
@@ -352,11 +351,9 @@ export default function Home() {
           .rep-chip i{
             font-size: 12px;
           }
-          /* Hide "department representation" label on phones */
           .rep-chip .muted{
             display: none;
           }
-          /* Keep department name on one line and truncate if long */
           .rep-chip strong{
             display: inline-block;
             max-width: 60vw;
@@ -365,23 +362,27 @@ export default function Home() {
             white-space: nowrap;
             font-weight: 800;
           }
-          /* Smaller spinner inside the chip on mobile */
           .rep-chip .spinner-border{
             width: .9rem;
             height: .9rem;
             border-width: .12rem;
           }
         }
+
+        /* Spacer so short pages never let anything touch the footer */
+        .page-spacer { height: 24px; }
       `}</style>
 
       <Header />
 
-      <div id="wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
+      {/* FULL-HEIGHT ROW like Standards: Sidebar + Right Column */}
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1">
-            <div className="container-fluid">
+          {/* content area grows; footer sits at the bottom of this column */}
+          <div id="content" className="flex-grow-1 d-flex">
+            <div className="container-fluid d-flex flex-column">
 
               {/* Breadcrumbs */}
               <div className="row p-4">
@@ -403,7 +404,7 @@ export default function Home() {
                             : 'جاري التحميل...'}
                         </small>
 
-                        {/* Chip only when role === 'users' */}
+                        {/* Chip only when role === 'user' */}
                         {isUsersRole && (
                           <div className="rep-chip mt-2" role="status" aria-live="polite">
                             <i className="fas fa-building" aria-hidden="true" />
@@ -541,9 +542,9 @@ export default function Home() {
               </div>
 
               {/* Recent updates — show only for non-management roles */}
-              {!isManagement && (
+              {!(role === 'management' || role === 'managment') && (
                 <div className="row justify-content-center">
-                  <div className="col-12 col-xl-10 mb-5">
+                  <div className="col-12 col-xl-10 mb-4">
                     <div className="table-card compact" aria-busy={loading}>
                       <div className="head-flat">أخر التحديثات</div>
                       <div className="body">
@@ -600,12 +601,15 @@ export default function Home() {
                 </div>
               )}
 
+              {/* keep a little breathing room above the footer */}
+              <div className="page-spacer" />
             </div>
           </div>
+
+          {/* Footer is inside the right column now (same as Standards) */}
+          <Footer />
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

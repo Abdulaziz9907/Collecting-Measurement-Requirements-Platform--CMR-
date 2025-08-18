@@ -17,7 +17,7 @@ export default function Sidebar() {
   const TRANSFORM_MS = 340;                 // sidebar slide duration
   const OVERLAY_MS = 240;                   // overlay fade
   const EASING = 'cubic-bezier(0.25, 0.1, 0.25, 1)'; // classic ease-in-out (no overshoot)
-  const ITEM_STAGGER = 28;                  // per-item delay (ms)
+  const ITEM_STAGGER = 0;                   // per-item delay (ms) — removed stagger
   const ITEM_OFFSET  = 22;                  // list item slide distance (px)
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
