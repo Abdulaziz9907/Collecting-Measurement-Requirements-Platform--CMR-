@@ -26,28 +26,15 @@ input[type="password"] {
 
 /* Ensure each page stretches to full viewport height so the footer
    naturally sits at the bottom even when content is short */
-html,
-body,
-#root {
+#root > div {
   min-height: 100vh;
-}
-
-body,
-#root {
   display: flex;
   flex-direction: column;
 }
 
 /* Main content wrapper should grow to fill remaining space */
-#wrapper {
+#root > div > #wrapper {
   flex: 1;
   display: flex;
   flex-direction: row;
-}
-
-/* Content area grows to push footer down */
-#content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
 }
