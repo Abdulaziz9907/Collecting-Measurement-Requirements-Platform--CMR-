@@ -14,9 +14,16 @@ const Footer = () => {
         @media (max-width: 576px) {
           .footer-text { font-size: 13px !important; }
         }
+        /* Ensure footer covers iOS safe area */
+        .ios-footer {
+          padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        }
       `}</style>
 
-      <nav className="navbar py-3 px-4 text-center" style={{ backgroundColor: '#0f172a' }}>
+      <nav
+        className="navbar py-3 px-4 text-center ios-footer"
+        style={{ backgroundColor: '#0f172a' }}
+      >
         <div className="container-fluid d-flex align-items-center justify-content-center">
           <h6
             className="fw-light mt-1 mb-1 footer-text"
