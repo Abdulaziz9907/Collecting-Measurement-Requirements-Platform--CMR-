@@ -72,7 +72,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  /* ========== Local Theme (mobile tweak added: .m-toolbar.cols-2) ========== */
+  /* ========== Local Theme (added app-shell, safe-area, flex fixes) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -88,6 +88,19 @@ export default function Standards() {
         --skeleton-sheen: rgba(255,255,255,.6);
         --skeleton-speed: 1.2s;
       }
+
+      /* === Visual viewport height fix for mobile === */
+      .app-shell { min-height: 100vh; } /* fallback */
+      @supports (height: 100svh) { .app-shell { min-height: 100svh; } }
+      @supports (height: 100dvh) { .app-shell { min-height: 100dvh; } }
+
+      /* Ensure the middle content can grow correctly */
+      #wrapper { min-height: 0; }
+      #content-wrapper { display: flex; flex-direction: column; min-height: 0; }
+      #content { flex: 1 1 auto; min-height: 0; }
+
+      /* Respect iOS home indicator so footer hugs bottom nicely */
+      footer, .site-footer { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
 
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
       .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
@@ -113,9 +126,6 @@ export default function Standards() {
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height: 160px; }
-      @media (max-width: 576px) {
-        .page-spacer { height: 24px; }
-      }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -146,11 +156,13 @@ export default function Standards() {
         .head-row { display:none; }
         .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
         .m-toolbar { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:0; padding:0; }
-        /* NEW: when we only have two controls (فرز + تصفية), stretch them 2-up */
+        /* Expand to 2 columns when only "فرز" + "تصفية" exist */
         .m-toolbar.cols-2 { grid-template-columns: repeat(2, 1fr); }
         .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
         .search-input { max-width: 100%; height: 36px; line-height: 36px; }
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        /* Remove extra spacer on phones so footer can touch bottom */
+        .page-spacer { height: 0 !important; }
       }
 
       /* ===== Mobile dropdowns same as Users ===== */
@@ -317,7 +329,7 @@ export default function Standards() {
   };
 
   const normalizeDigits = (str = '') => {
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'8','۸':'8','۹':'9' };
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'8','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'8','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
@@ -718,7 +730,6 @@ export default function Standards() {
   /* ===== Mobile card ===== */
   const MobileCard = ({ item, idx }) => {
     const id = item.standard_id;
-    const checked = selectedIds.has(id);
     return (
       <div className="mobile-card" key={id}>
         <div className="mobile-card-header">
@@ -727,7 +738,7 @@ export default function Standards() {
               <input
                 type="checkbox"
                 className="form-check-input m-0"
-                checked={checked}
+                checked={selectedIds.has(id)}
                 onChange={(e) => toggleOne(id, idx, e)}
                 aria-label="تحديد"
               />
@@ -752,7 +763,6 @@ export default function Standards() {
           <span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span>
         </div>
 
-        {/* If only one button for viewer, make it full width (already handled) */}
         <div className="s-actions" style={isViewer ? { gridTemplateColumns: '1fr' } : undefined}>
           <button
             className="btn btn-primary s-btn"
@@ -783,7 +793,12 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }} className="min-vh-100 d-flex flex-column">
+      {/* CHANGED: use app-shell instead of min-vh-100 */}
+      <div
+        dir="rtl"
+        style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}
+        className="app-shell d-flex flex-column"
+      >
         <Header />
 
         {banner.type && (

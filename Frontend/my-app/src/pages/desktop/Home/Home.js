@@ -370,7 +370,7 @@ export default function Home() {
         }
 
         /* Spacer so short pages never let anything touch the footer */
-        .page-spacer { height: 24px; }
+      .page-spacer { height:300px; }
       `}</style>
 
       <Header />

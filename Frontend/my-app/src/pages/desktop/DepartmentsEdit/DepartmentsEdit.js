@@ -92,8 +92,8 @@ export default function DepartmentsEdit() {
 
       /* Responsive spacer: small on phones so footer doesn't look "lifted" */
       .page-spacer { height:24px; }
-      @media (min-width: 768px) { .page-spacer { height:80px; } }
-      @media (min-width: 1200px) { .page-spacer { height:140px; } }
+      @media (min-width: 768px) { .page-spacer { height:300px; } }
+      @media (min-width: 1200px) { .page-spacer { height:300px; } }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }

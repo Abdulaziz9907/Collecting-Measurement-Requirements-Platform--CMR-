@@ -152,7 +152,7 @@ export default function Users() {
       .th-icon  { width: 60px; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 160px; } /* extra bottom spacing */
+      .page-spacer { height: 300px; } /* extra bottom spacing */
 
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 

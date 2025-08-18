@@ -90,7 +90,7 @@ export default function StandardsEdit() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; }
+      .page-spacer { height:300px; }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); border-radius:10px; }

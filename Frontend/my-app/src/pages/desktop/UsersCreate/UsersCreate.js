@@ -52,7 +52,7 @@ export default function UsersCreate() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:140px; }
+      .page-spacer { height:300px; }
     `}</style>
   );
 
