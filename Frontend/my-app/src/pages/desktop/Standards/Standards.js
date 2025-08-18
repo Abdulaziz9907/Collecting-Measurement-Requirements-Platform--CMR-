@@ -72,7 +72,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  /* ========== Local Theme (added app-shell, safe-area, flex fixes) ========== */
+  /* ========== Local Theme (app-shell removed; min-vh-100 layout like Users) ========== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -89,18 +89,10 @@ export default function Standards() {
         --skeleton-speed: 1.2s;
       }
 
-      /* === Visual viewport height fix for mobile === */
-      .app-shell { min-height: 100vh; } /* fallback */
-      @supports (height: 100svh) { .app-shell { min-height: 100svh; } }
-      @supports (height: 100dvh) { .app-shell { min-height: 100dvh; } }
-
       /* Ensure the middle content can grow correctly */
       #wrapper { min-height: 0; }
       #content-wrapper { display: flex; flex-direction: column; min-height: 0; }
       #content { flex: 1 1 auto; min-height: 0; }
-
-      /* Respect iOS home indicator so footer hugs bottom nicely */
-      footer, .site-footer { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
 
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
       .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
@@ -125,7 +117,7 @@ export default function Standards() {
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 200px; }
+      .page-spacer { height: 200px; } /* keep same as Users */
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -161,8 +153,7 @@ export default function Standards() {
         .m-btn.btn { padding: 5px 8px; min-height: 32px; font-size: .85rem; border-radius: 10px; font-weight:600; width: 100%; }
         .search-input { max-width: 100%; height: 36px; line-height: 36px; }
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        /* Remove extra spacer on phones so footer can touch bottom */
-        .page-spacer { height: 200 !important; }
+        /* removed bad unitless override */
       }
 
       /* ===== Mobile dropdowns same as Users ===== */
@@ -329,7 +320,7 @@ export default function Standards() {
   };
 
   const normalizeDigits = (str = '') => {
-    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'8','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'8','۸':'8','۹':'9' };
+    const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
@@ -793,11 +784,11 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* CHANGED: use app-shell instead of min-vh-100 */}
+      {/* Match Users page: min-vh-100 + flex column */}
       <div
         dir="rtl"
+        className="min-vh-100 d-flex flex-column"
         style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}
-        className="app-shell d-flex flex-column"
       >
         <Header />
 
@@ -809,7 +800,8 @@ export default function Standards() {
 
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+          {/* Match Users: add min-vh-100 here too */}
+          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
             <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
 
@@ -1158,7 +1150,7 @@ export default function Standards() {
                         </div>
                       )}
 
-                      {/* Footer (unchanged) */}
+                      {/* Footer (controls) */}
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
@@ -1197,7 +1189,11 @@ export default function Standards() {
                 <div className="page-spacer" />
               </div>
             </div>
-            <Footer />
+
+            {/* ✅ Footer pinned to bottom like Users */}
+            <div className="mt-auto">
+              <Footer />
+            </div>
           </div>
         </div>
       </div>

@@ -281,7 +281,7 @@ export default function Sidebar() {
         aria-labelledby="logout-modal-title"
         backdrop="static"
       >
-        <Modal.Header closeButton>
+        <Modal.Header >
           <Modal.Title id="logout-modal-title">تأكيد تسجيل الخروج</Modal.Title>
         </Modal.Header>
         <Modal.Body>هل تريد بالتأكيد تسجيل الخروج؟</Modal.Body>
