@@ -24,20 +24,6 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // ✅ Stable viewport for iOS (prevents extra space under footer)
-  useEffect(() => {
-    const setVh = () => {
-      document.documentElement.style.setProperty('--vh-fix', `${window.innerHeight * 0.01}px`);
-    };
-    setVh();
-    window.addEventListener('resize', setVh);
-    window.addEventListener('orientationchange', setVh);
-    return () => {
-      window.removeEventListener('resize', setVh);
-      window.removeEventListener('orientationchange', setVh);
-    };
-  }, []);
-
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -59,12 +45,15 @@ export default function Standards() {
   const [importing, setImporting] = useState(false);
   const [banner, setBanner] = useState({ type: null, text: '' });
   const fileInputRef = useRef(null);
+
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => getStoredUser(), []);
   const navigate = useNavigate();
+
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
+
   const LOAD_MIN_MS = 450;
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
@@ -73,20 +62,6 @@ export default function Standards() {
 
   const LocalTheme = () => (
     <style>{`
-      /* ---------- iOS-safe viewport ---------- */
-      :root{
-        --app-vh: 100svh; /* smallest visible viewport unit */
-      }
-      @supports not (height: 100svh) {
-        :root{ --app-vh: calc(var(--vh-fix, 1vh) * 100); }
-      }
-
-      /* Optional: avoid rubber band scroll creating phantom space */
-      body { overscroll-behavior-y: contain; }
-
-      /* Footer safe area so it sits flush to bottom on iOS with home indicator */
-      .footer-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
@@ -96,12 +71,14 @@ export default function Standards() {
         --text: #0b2440;
         --text-muted: #6b7280;
       }
-      .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
+
+      .table-card { background: #fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:56px; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
       .search-block { flex:1 1 320px; min-width:240px; }
       .search-input { width:100%; max-width:460px; margin:0 !important; }
+
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-select{ width:42px; text-align:center; }
       .td-select{ width:42px; text-align:center; }
@@ -113,6 +90,7 @@ export default function Standards() {
       .th-icon{ width:60px; }
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
+
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
       .page-spacer{ height:200px; }
 
@@ -125,6 +103,7 @@ export default function Standards() {
       .skel-chip{ height:28px; width:100%; border-radius:999px; }
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
       .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
+
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; }
@@ -134,6 +113,7 @@ export default function Standards() {
         .search-input{ max-width:100%; height:36px; line-height:36px; }
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
       }
+
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .mobile-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .mobile-card-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -182,25 +162,32 @@ export default function Standards() {
   const refreshData = async () => {
     setUseSkeleton(true);
     setLoading(true);
+
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
+
     loadSeqRef.current += 1;
     const seq = loadSeqRef.current;
     const t0 = performance.now();
+
     try {
       const [standardsRes, depsRes] = await Promise.all([
         fetch(`${API_BASE}/api/standards`, { signal }),
         fetch(`${API_BASE}/api/departments`, { signal }),
       ]);
       if (!standardsRes.ok || !depsRes.ok) throw new Error('HTTP error');
+
       let standards = await standardsRes.json();
       let deps = await depsRes.json();
+
       if ((user?.role || '').toLowerCase() === 'user') {
         standards = (standards || []).filter(s => Number(s.assigned_department_id) === Number(user.department_id));
         deps = (deps || []).filter(d => Number(d.department_id) === Number(user.department_id));
       }
+
       standards = (standards || []).map((s, i) => ({ ...s, __i: i }));
+
       if (seq !== loadSeqRef.current) return;
       setData(Array.isArray(standards) ? standards : []);
       setDepartments(Array.isArray(deps) ? deps : []);
@@ -319,12 +306,14 @@ export default function Standards() {
 
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const showActions = !isViewer;
+
   const colCount = isViewer ? 6 : 8;
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (sortedData.length || 0) : Number(pageSize);
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(sortedData.length / numericPageSize));
   const paginatedData = isAll ? sortedData : sortedData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedData.length > 0;
+
   const skeletonMode = loading && useSkeleton;
   const skeletonCount = isAll ? 15 : numericPageSize;
   const baseRowsCount = hasPageData ? paginatedData.length : 1;
@@ -431,7 +420,15 @@ export default function Standards() {
         const depId = deptMap.get(normalizeName(depRaw));
         if (!Number.isInteger(depId)) { fail++; unknownDeptCount++; unknownDeptNames.add(depRaw); continue; }
         if (existingNumbers.has(stdNumNorm) || batchSeen.has(stdNumNorm)) { dup++; continue; }
-        const payload = { standard_number: stdNumNorm, standard_name: name, standard_goal: goal, standard_requirments: reqs, assigned_department_id: depId, proof_required: proofsList.map(p => escapeCommas(p)).join(','), status: 'لم يبدأ' };
+        const payload = {
+          standard_number: stdNumNorm,
+          standard_name: name,
+          standard_goal: goal,
+          standard_requirments: reqs,
+          assigned_department_id: depId,
+          proof_required: proofsList.map(p => escapeCommas(p)).join(','),
+          status: 'لم يبدأ'
+        };
         const tryCreate = async () => {
           let res = await fetch(`${API_BASE}/api/standards`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           if (!res.ok) {
@@ -534,38 +531,40 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* ⬇️ use a stable viewport height; remove nested min-vh-100s */}
+      {/* same structure as Users: no footer-safe, no special vh */}
       <div
         dir="rtl"
-        className="d-flex flex-column"
-        style={{
-          minHeight: 'var(--app-vh)',
-          fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-          backgroundColor: '#f6f8fb'
-        }}
+        className="min-vh-100 d-flex flex-column"
+        style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}
       >
         <Header />
+
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
+
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          {/* ⬇️ drop min-vh-100 here to avoid double-counting height */}
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
-            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
+
+          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+            <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
+
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
+
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
+                      {/* Header */}
                       <div className="head-flat">
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
                               <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
+
                             <div className="controls-inline">
                               <Dropdown align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
@@ -585,6 +584,7 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -605,23 +605,32 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
+
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
                                   <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</button>
-                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>{importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}</button>
+                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
+                                  </button>
                                   <OverlayTrigger placement="bottom" delay={{ show: 200, hide: 100 }} overlay={popTemplateHelp}>
                                     <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</button>
                                   </OverlayTrigger>
                                 </>
                               )}
+
                               <div className="d-flex align-items-center gap-2">
                                 {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
-                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                </button>
                               </div>
                             </div>
                           </div>
                         )}
+
+                        {/* Mobile header */}
                         {isMobile && (
                           <div className="m-stack">
                             <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -644,6 +653,7 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-filter ms-1" /> تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -664,6 +674,7 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               {showActions && (
                                 <Dropdown align="start">
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات</Dropdown.Toggle>
@@ -680,9 +691,12 @@ export default function Standards() {
                                 </Dropdown>
                               )}
                             </div>
+
                             <div className="meta-row">
                               {(!loading || !useSkeleton) ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span className="skel skel-line" style={{ width: 80 }} />}
-                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                              </button>
                             </div>
                           </div>
                         )}
@@ -715,7 +729,11 @@ export default function Standards() {
                           <table className="table table-hover text-center align-middle">
                             <thead>
                               <tr>
-                                {!isViewer && (<th className="th-select"><div className="d-flex justify-content-center align-items-center"><input ref={headerCbRef} type="checkbox" className="form-check-input" checked={pageAllSelected} onChange={(e) => togglePageAll(e.target.checked)} disabled={skeletonMode} /></div></th>)}
+                                {!isViewer && (<th className="th-select">
+                                  <div className="d-flex justify-content-center align-items-center">
+                                    <input ref={headerCbRef} type="checkbox" className="form-check-input" checked={pageAllSelected} onChange={(e) => togglePageAll(e.target.checked)} disabled={skeletonMode} />
+                                  </div>
+                                </th>)}
                                 <th className="th-num"><button type="button" className="th-sort" onClick={() => toggleSort('standard_number')} disabled={skeletonMode}>رقم المعيار{sortIcon('standard_number')}</button></th>
                                 <th className="th-name"><button type="button" className="th-sort" onClick={() => toggleSort('standard_name')} disabled={skeletonMode}>اسم المعيار{sortIcon('standard_name')}</button></th>
                                 <th className="th-dept"><button type="button" className="th-sort" onClick={() => toggleSort('department')} disabled={skeletonMode}>الإدارة{sortIcon('department')}</button></th>
@@ -786,11 +804,13 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
+
                 <div className="page-spacer" />
               </div>
             </div>
-            {/* ✅ Footer gains safe-area padding; sits flush at bottom */}
-            <div className="mt-auto footer-safe">
+
+            {/* Footer with NO extra bottom padding */}
+            <div className="mt-auto">
               <Footer />
             </div>
           </div>
@@ -809,8 +829,8 @@ export default function Standards() {
         show={showModal}
         onHide={() => setShowModal(false)}
         standardId={modalItem?.standard_id}
-        canUpload={!(isUserRole && modalItem?.status === 'معتمد')}
-        canDeleteFiles={!(isUserRole && modalItem?.status === 'معتمد')}
+        canUpload={!(user?.role?.toLowerCase?.() === 'user' && modalItem?.status === 'معتمد')}
+        canDeleteFiles={!(user?.role?.toLowerCase?.() === 'user' && modalItem?.status === 'معتمد')}
         onUpdated={refreshData}
       />
 
