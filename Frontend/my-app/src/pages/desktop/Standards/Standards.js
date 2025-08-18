@@ -24,6 +24,20 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // ✅ Stable viewport for iOS (prevents extra space under footer)
+  useEffect(() => {
+    const setVh = () => {
+      document.documentElement.style.setProperty('--vh-fix', `${window.innerHeight * 0.01}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
+    return () => {
+      window.removeEventListener('resize', setVh);
+      window.removeEventListener('orientationchange', setVh);
+    };
+  }, []);
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -59,6 +73,20 @@ export default function Standards() {
 
   const LocalTheme = () => (
     <style>{`
+      /* ---------- iOS-safe viewport ---------- */
+      :root{
+        --app-vh: 100svh; /* smallest visible viewport unit */
+      }
+      @supports not (height: 100svh) {
+        :root{ --app-vh: calc(var(--vh-fix, 1vh) * 100); }
+      }
+
+      /* Optional: avoid rubber band scroll creating phantom space */
+      body { overscroll-behavior-y: contain; }
+
+      /* Footer safe area so it sits flush to bottom on iOS with home indicator */
+      .footer-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
@@ -506,10 +534,12 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
+      {/* ⬇️ use a stable viewport height; remove nested min-vh-100s */}
       <div
         dir="rtl"
-        className="min-vh-100 d-flex flex-column"
+        className="d-flex flex-column"
         style={{
+          minHeight: 'var(--app-vh)',
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           backgroundColor: '#f6f8fb'
         }}
@@ -520,10 +550,11 @@ export default function Standards() {
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
-            <div id="content" className="flex-grow-1 d-flex">
+          {/* ⬇️ drop min-vh-100 here to avoid double-counting height */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
+            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
                 <div className="row justify-content-center flex-grow-1">
@@ -759,7 +790,7 @@ export default function Standards() {
               </div>
             </div>
             {/* ✅ Footer gains safe-area padding; sits flush at bottom */}
-            <div className="mt-auto">
+            <div className="mt-auto footer-safe">
               <Footer />
             </div>
           </div>
