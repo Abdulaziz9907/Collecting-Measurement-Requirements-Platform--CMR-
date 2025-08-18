@@ -23,6 +23,7 @@ export default function Standards() {
   const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -34,6 +35,7 @@ export default function Standards() {
       else mq.removeListener(update);
     };
   }, []);
+
   const [showModal, setShowModal] = useState(false);
   const [modalItem, setModalItem] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -57,6 +59,7 @@ export default function Standards() {
 
   const LocalTheme = () => (
     <style>{`
+      /* ===== Theme + iOS viewport fix ===== */
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
@@ -65,7 +68,17 @@ export default function Standards() {
         --stroke: #eef2f7;
         --text: #0b2440;
         --text-muted: #6b7280;
+        /* Use dynamic viewport to avoid extra space in iOS Safari */
+        --app-vh: 100dvh;
       }
+      /* iOS/Safari fallback */
+      @supports (-webkit-touch-callout: none) {
+        html, body, #root { height: -webkit-fill-available; min-height: -webkit-fill-available; }
+        :root { --app-vh: -webkit-fill-available; }
+      }
+      /* Reduce overscroll bounce adding phantom space */
+      body { overscroll-behavior-y: contain; }
+
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -84,7 +97,11 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; }
+
+      /* ✅ Keep the intended 200px gap before the footer */
+      .page-spacer{ height:200px; flex:0 0 auto; }
+
+      /* Skeletons */
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
       @keyframes shimmer{ 100%{ transform:translateX(100%);} }
@@ -94,6 +111,7 @@ export default function Standards() {
       .skel-chip{ height:28px; width:100%; border-radius:999px; }
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
       .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
+
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; }
@@ -103,6 +121,7 @@ export default function Standards() {
         .search-input{ max-width:100%; height:36px; line-height:36px; }
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
       }
+
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .mobile-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .mobile-card-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -481,7 +500,13 @@ export default function Standards() {
         <div className="mobile-card-header">
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             {!isViewer && (
-              <input type="checkbox" className="form-check-input m-0" checked={selectedIds.has(id)} onChange={(e) => toggleOne(id, idx, e)} aria-label="تحديد" />
+              <input
+                type="checkbox"
+                className="form-check-input m-0"
+                checked={selectedIds.has(id)}
+                onChange={(e) => toggleOne(id, idx, e)}
+                aria-label="تحديد"
+              />
             )}
             <div>
               <div className="mobile-title">{item.standard_name}</div>
@@ -493,8 +518,26 @@ export default function Standards() {
         <div className="mobile-row"><span className="mobile-subtle">الإدارة</span><span className="mobile-chip">{item.department?.department_name || '—'}</span></div>
         <div className="mobile-row"><span className="mobile-subtle">تاريخ الإنشاء</span><span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span></div>
         <div className="s-actions" style={isViewer ? { gridTemplateColumns: '1fr' } : undefined}>
-          <button className="btn btn-primary s-btn" onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }} title="إظهار التفاصيل" aria-label="إظهار التفاصيل"><i className="fas fa-eye ms-1" />إظهار</button>
-          {!isViewer && (<button className="btn btn-success s-btn" onClick={() => navigate(`/standards_edit/${item.standard_id}`)} title="تعديل" aria-label="تعديل"><i className="fas fa-pen ms-1" />تعديل</button>)}
+          <button
+            className="btn btn-primary s-btn"
+            onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }}
+            title="إظهار التفاصيل"
+            aria-label="إظهار التفاصيل"
+          >
+            <i className="fas fa-eye ms-1" />
+            إظهار
+          </button>
+          {!isViewer && (
+            <button
+              className="btn btn-success s-btn"
+              onClick={() => navigate(`/standards_edit/${item.standard_id}`)}
+              title="تعديل"
+              aria-label="تعديل"
+            >
+              <i className="fas fa-pen ms-1" />
+              تعديل
+            </button>
+          )}
         </div>
       </div>
     );
@@ -503,19 +546,31 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" className="min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}>
+      {/* ✅ Use dynamic viewport var to avoid iOS extra space; keep 200px spacer */}
+      <div
+        dir="rtl"
+        className="d-flex flex-column"
+        style={{
+          fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          backgroundColor: '#f6f8fb',
+          minHeight: 'var(--app-vh)'
+        }}
+      >
         <Header />
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
+
         <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper" style={{ minHeight:0 }}>
+          {/* ❌ Removed extra min-vh-100 here to prevent double stretching */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
             <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
+
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
@@ -523,7 +578,13 @@ export default function Standards() {
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
-                              <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                              <input
+                                className="form-control form-control-sm search-input"
+                                type="search"
+                                placeholder="بحث..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                              />
                             </div>
                             <div className="controls-inline">
                               <Dropdown align="end">
@@ -550,7 +611,12 @@ export default function Standards() {
                                   <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={`st-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input type="checkbox" className="form-check-input m-0" checked={statusFilter.includes(status)} onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)} />
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={statusFilter.includes(status)}
+                                        onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)}
+                                      />
                                       <span className="form-check-label">{status}</span>
                                     </label>
                                   ))}
@@ -558,7 +624,12 @@ export default function Standards() {
                                   <Dropdown.Header>الإدارة</Dropdown.Header>
                                   {uniqueDepartments.map((dep, idx) => (
                                     <label key={`dep-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input className="form-check-input m-0" type="checkbox" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
+                                      <input
+                                        className="form-check-input m-0"
+                                        type="checkbox"
+                                        checked={departmentFilter.includes(dep)}
+                                        onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                                      />
                                       <span className="form-check-label">{dep}</span>
                                     </label>
                                   ))}
@@ -567,23 +638,53 @@ export default function Standards() {
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
-                                  <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</button>
-                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>{importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}</button>
+                                  <button
+                                    className="btn btn-success btn-sm"
+                                    onClick={exportToExcel}
+                                    disabled={exportDisabled}
+                                    title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'}
+                                    aria-disabled={exportDisabled}
+                                  >
+                                    <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                  </button>
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={importing}
+                                  >
+                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
+                                  </button>
                                   <OverlayTrigger placement="bottom" delay={{ show: 200, hide: 100 }} overlay={popTemplateHelp}>
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}>
+                                      <i className="fas fa-download ms-1" /> تحميل القالب
+                                    </button>
                                   </OverlayTrigger>
                                 </>
                               )}
                               <div className="d-flex align-items-center gap-2">
                                 {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
-                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                                <button
+                                  className="btn btn-outline-primary btn-sm"
+                                  onClick={refreshData}
+                                  title="تحديث"
+                                  disabled={loading}
+                                  aria-busy={loading}
+                                >
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                </button>
                               </div>
                             </div>
                           </div>
                         )}
                         {isMobile && (
                           <div className="m-stack">
-                            <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input
+                              className="form-control form-control-sm search-input"
+                              type="search"
+                              placeholder="بحث..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                             <div className={`m-toolbar ${showActions ? '' : 'cols-2'}`}>
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-sort ms-1" /> فرز</Dropdown.Toggle>
@@ -609,7 +710,12 @@ export default function Standards() {
                                   <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={`mst-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input type="checkbox" className="form-check-input m-0" checked={statusFilter.includes(status)} onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)} />
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input m-0"
+                                        checked={statusFilter.includes(status)}
+                                        onChange={() => handleCheckboxFilter(status, statusFilter, setStatusFilter)}
+                                      />
                                       <span className="form-check-label">{status}</span>
                                     </label>
                                   ))}
@@ -617,7 +723,12 @@ export default function Standards() {
                                   <Dropdown.Header>الإدارة</Dropdown.Header>
                                   {uniqueDepartments.map((dep, idx) => (
                                     <label key={`mdep-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
-                                      <input className="form-check-input m-0" type="checkbox" checked={departmentFilter.includes(dep)} onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)} />
+                                      <input
+                                        className="form-check-input m-0"
+                                        type="checkbox"
+                                        checked={departmentFilter.includes(dep)}
+                                        onChange={() => handleCheckboxFilter(dep, departmentFilter, setDepartmentFilter)}
+                                      />
                                       <span className="form-check-label">{dep}</span>
                                     </label>
                                   ))}
@@ -641,7 +752,15 @@ export default function Standards() {
                             </div>
                             <div className="meta-row">
                               {(!loading || !useSkeleton) ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span className="skel skel-line" style={{ width: 80 }} />}
-                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                              <button
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={refreshData}
+                                title="تحديث"
+                                disabled={loading}
+                                aria-busy={loading}
+                              >
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                              </button>
                             </div>
                           </div>
                         )}
@@ -745,6 +864,8 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
+
+                {/* ✅ Keep the fixed 200px space before the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
