@@ -14,3 +14,4 @@ frontend/build/
 # Secrets
 **/appsettings.json
 **/appsettings.Development.json
+/Commander/bin/Debug
