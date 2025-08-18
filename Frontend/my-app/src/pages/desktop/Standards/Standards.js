@@ -89,11 +89,7 @@ export default function Standards() {
         --skeleton-speed: 1.2s;
       }
 
-      /* Ensure the middle content can grow correctly */
-      #wrapper { min-height: 0; }
-      #content-wrapper { display: flex; flex-direction: column; min-height: 0; }
-      #content { flex: 1 1 auto; min-height: 0; }
-
+      /* Removed min-height overrides so footer sits correctly on mobile */
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
       .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
