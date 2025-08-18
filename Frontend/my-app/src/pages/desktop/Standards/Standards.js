@@ -113,6 +113,9 @@ export default function Standards() {
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height: 160px; }
+      @media (max-width: 576px) {
+        .page-spacer { height: 24px; }
+      }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }

@@ -196,7 +196,7 @@ export default function DepartmentsCreate() {
   };
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+    <div dir="rtl" className="page-bg min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <LocalTheme />
       <Header />
 
@@ -220,7 +220,7 @@ export default function DepartmentsCreate() {
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1">
+          <div id="content" className="flex-grow-1 d-flex">
             <div className="container-fluid">
               <div className="row p-4">
                 <div className="col-12">

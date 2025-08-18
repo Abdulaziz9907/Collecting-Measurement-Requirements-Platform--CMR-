@@ -66,6 +66,7 @@ export default function UsersEdit() {
       #wrapper { display:flex; flex-direction:row; flex: 1 1 auto; min-height:0; }
       #content-wrapper { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
       #content { flex: 1 1 auto; min-height:0; }
+      .page-spacer{ height:24px; }
 
       .surface {
         background:var(--surface);
@@ -331,7 +332,7 @@ export default function UsersEdit() {
   const isAdminNow = ((user?.role || '').toLowerCase() === 'admin'); // for password visibility
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-shell">
+    <div dir="rtl" className="page-shell min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <LocalTheme />
       <Header />
 
@@ -350,8 +351,8 @@ export default function UsersEdit() {
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1">
-            <div className="container-fluid">
+          <div id="content" className="flex-grow-1 d-flex">
+            <div className="container-fluid d-flex flex-column">
               <div className="row p-4">
                 <div className="col-12">
                   <Breadcrumbs />
@@ -566,12 +567,12 @@ export default function UsersEdit() {
                 </div>
               </div>
 
+              <div className="page-spacer" />
             </div>
           </div>
+          <Footer />
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }
