@@ -91,7 +91,7 @@ export default function Departments() {
       .th-name{ min-width:280px; } .th-bnum{ min-width:140px; } .th-icon{ width:60px; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer { height:300px; }
+      .page-spacer { height:200px; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
 
       /* Skeletons */

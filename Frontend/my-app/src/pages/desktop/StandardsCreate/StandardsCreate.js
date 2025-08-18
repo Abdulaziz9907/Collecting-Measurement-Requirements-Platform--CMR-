@@ -77,7 +77,7 @@ export default function StandardsCreate() {
       .head-match { height:56px; padding-block:10px; }
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
-      .page-spacer { height:300px; }
+      .page-spacer { height:200px; }
     `}</style>
   );
 

@@ -18,7 +18,6 @@ import Report from './pages/desktop/Reports/Report';
 import Home from './pages/desktop/Home/Home';
 import Profile from './pages/desktop/Profile/Profile';
 import SessionTimeoutModal from './components/SessionTimeoutModal.jsx';
-import LoggedOut from './pages/desktop/LoggedOut/LoggedOut';
 
 // ===================== Feature Flags (Production Toggles) =====================
 // Toggle the entire inactivity timer system (listeners, timeouts, modal)
@@ -687,7 +686,6 @@ useEffect(() => {
           path="/profile"
           element={currentUser ? <Profile /> : <Navigate to="/" replace />}
         />
-        <Route path="/logged-out" element={<LoggedOut />} />
       </Routes>
 
       {/* Session timeout modal (gated by master flag) */}

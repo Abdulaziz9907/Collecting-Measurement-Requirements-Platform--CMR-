@@ -66,7 +66,7 @@ export default function UsersEdit() {
       #wrapper { display:flex; flex-direction:row; flex: 1 1 auto; min-height:0; }
       #content-wrapper { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
       #content { flex: 1 1 auto; min-height:0; }
-      .page-spacer { height:300px; }
+      .page-spacer { height:200px; }
 
       .surface {
         background:var(--surface);

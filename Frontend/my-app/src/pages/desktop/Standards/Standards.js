@@ -125,7 +125,7 @@ export default function Standards() {
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 160px; }
+      .page-spacer { height: 200px; }
 
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
@@ -162,7 +162,7 @@ export default function Standards() {
         .search-input { max-width: 100%; height: 36px; line-height: 36px; }
         .meta-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
         /* Remove extra spacer on phones so footer can touch bottom */
-        .page-spacer { height: 0 !important; }
+        .page-spacer { height: 200 !important; }
       }
 
       /* ===== Mobile dropdowns same as Users ===== */

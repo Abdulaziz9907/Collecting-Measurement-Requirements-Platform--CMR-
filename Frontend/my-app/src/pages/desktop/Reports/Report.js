@@ -86,7 +86,7 @@ export default function Report() {
         --skeleton-sheen: rgba(255,255,255,.6);
         --skeleton-speed: 1.2s;
       }
-      .page-spacer { height:300px; }
+      .page-spacer { height:200px; }
       .surface { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
       .surface.allow-overflow { overflow: visible; }
       .head-flat {

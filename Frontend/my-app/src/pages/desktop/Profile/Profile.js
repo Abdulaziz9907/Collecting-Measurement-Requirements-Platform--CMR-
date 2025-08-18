@@ -25,7 +25,7 @@ export default function Profile() {
         --skeleton-speed: 1.2s;
       }
       .page-bg { background:#f6f8fb; min-height:100vh; }
-      .page-spacer { height:300px; }
+      .page-spacer { height:200px; }
 
       /* NEW: wrapper holds the shadow so it isn't masked */
       .surface-wrap{
