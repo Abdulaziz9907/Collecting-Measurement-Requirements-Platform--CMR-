@@ -6,6 +6,11 @@ const Footer = () => {
   return (
     <>
       <style>{`
+        .footer-text {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
         @media (max-width: 576px) {
           .footer-text { font-size: 13px !important; }
         }
