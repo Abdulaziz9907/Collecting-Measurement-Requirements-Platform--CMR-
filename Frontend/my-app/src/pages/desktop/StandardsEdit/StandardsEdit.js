@@ -374,7 +374,7 @@ export default function StandardsEdit() {
   );
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic' }} className="page-bg">
+    <div dir="rtl" className="page-bg min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic' }}>
       <LocalTheme />
       <Header />
 
@@ -393,11 +393,11 @@ export default function StandardsEdit() {
         </div>
       )}
 
-      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1">
+          <div id="content" className="flex-grow-1 d-flex">
             <div className="container-fluid">
               {/* Breadcrumbs — same placement as Standards */}
               <div className="row p-4">

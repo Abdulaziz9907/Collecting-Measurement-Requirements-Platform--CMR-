@@ -25,6 +25,7 @@ export default function Profile() {
         --skeleton-speed: 1.2s;
       }
       .page-bg { background:#f6f8fb; min-height:100vh; }
+      .page-spacer { height:24px; }
 
       /* NEW: wrapper holds the shadow so it isn't masked */
       .surface-wrap{
@@ -516,7 +517,7 @@ export default function Profile() {
   return (
     <div
       dir="rtl"
-      className="page-bg"
+      className="page-bg min-vh-100 d-flex flex-column"
       style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}
     >
       <LocalTheme />
@@ -531,11 +532,11 @@ export default function Profile() {
         </div>
       )}
 
-      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+      <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
         <Sidebar />
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1">
-            <div className="container-fluid">
+          <div id="content" className="flex-grow-1 d-flex">
+            <div className="container-fluid d-flex flex-column">
               <div className="row p-4">
                 <div className="col-12"><Breadcrumbs /></div>
               </div>
@@ -917,7 +918,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div style={{ height: 140 }} />
+              <div className="page-spacer" />
             </div>
           </div>
           <Footer />

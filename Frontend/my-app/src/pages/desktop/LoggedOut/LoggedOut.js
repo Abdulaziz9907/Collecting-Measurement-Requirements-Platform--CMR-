@@ -9,7 +9,7 @@ export default function LoggedOut() {
   }, [navigate]);
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100" dir="rtl">
+    <div className="d-flex justify-content-center align-items-center min-vh-100" dir="rtl">
       <div className="text-center">
         <h3 className="mb-3">تم تسجيل الخروج</h3>
         <p className="mb-3">سيتم تحويلك إلى صفحة الدخول.</p>

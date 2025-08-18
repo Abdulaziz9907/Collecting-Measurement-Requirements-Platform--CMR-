@@ -86,6 +86,7 @@ export default function Report() {
         --skeleton-sheen: rgba(255,255,255,.6);
         --skeleton-speed: 1.2s;
       }
+      .page-spacer { height:24px; }
       .surface { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
       .surface.allow-overflow { overflow: visible; }
       .head-flat {
@@ -574,14 +575,14 @@ export default function Report() {
   return (
     <>
       <LocalTheme />
-      <div dir="rtl" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb', minHeight: '100vh' }}>
+      <div dir="rtl" className="min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}>
         <Header />
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row' }}>
+        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1">
-              <div className="container-fluid">
+          <div id="content" className="flex-grow-1 d-flex">
+            <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
                   <div className="col-12">
@@ -969,6 +970,7 @@ export default function Report() {
                   </div>
                 </div>
 
+                <div className="page-spacer" />
               </div>
             </div>
             <Footer />
