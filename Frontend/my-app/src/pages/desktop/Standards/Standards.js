@@ -89,6 +89,36 @@ export default function Standards() {
         --skeleton-speed: 1.2s;
       }
 
+      .page-shell {
+        min-height: 100vh;
+        min-height: 100dvh;
+        min-height: 100svh;
+        min-height: -webkit-fill-available;
+        display: flex;
+        flex-direction: column;
+        background: #f6f8fb;
+      }
+
+      #wrapper {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: row;
+        min-height: 0;
+      }
+
+      #content-wrapper {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      #content {
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+      }
+
       /* Removed min-height overrides so footer sits correctly on mobile */
       .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; margin-bottom: 56px; }
       .head-flat { padding: 10px 12px; background: var(--surface-muted); border-bottom: 1px solid var(--stroke); color: var(--text); }
@@ -780,11 +810,11 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* Match Users page: min-vh-100 + flex column */}
+      {/* Match Users page: full-height flex column */}
       <div
         dir="rtl"
-        className="min-vh-100 d-flex flex-column"
-        style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}
+        className="page-shell"
+        style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}
       >
         <Header />
 
@@ -794,11 +824,11 @@ export default function Standards() {
           </div>
         )}
 
-        <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
+        <div id="wrapper">
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
           {/* Flex column that grows without forcing extra height on mobile */}
-          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
-            <div id="content" className="flex-grow-1 d-flex">
+          <div id="content-wrapper">
+            <div id="content">
               <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
@@ -1186,10 +1216,7 @@ export default function Standards() {
               </div>
             </div>
 
-            {/* ✅ Footer pinned to bottom like Users */}
-            <div className="mt-auto">
-              <Footer />
-            </div>
+            <Footer />
           </div>
         </div>
       </div>
