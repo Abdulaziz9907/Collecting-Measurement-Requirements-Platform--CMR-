@@ -105,8 +105,7 @@ export default function Home() {
         setHasLoadedOnce(true);
       }
     } finally {
-      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      const elapsed = now - t0;
+      const elapsed = ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0;
       const finish = () => { if (loadSeqRef.current === seq) setLoading(false); };
       if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed); else finish();
     }
@@ -136,7 +135,7 @@ export default function Home() {
         );
         setDepartmentsMap(map);
       } catch (_) {
-        // ignore
+        // ignore, fallbacks below
       } finally {
         setDeptLoading(false);
       }
@@ -197,7 +196,7 @@ export default function Home() {
   const role = (user?.role || '').toString().toLowerCase();
   const isManagement = role === 'management' || role === 'managment';
 
-  // Chip shown only if role === 'user'
+  // Chip shown only if role === 'users' (exactly)
   const isUsersRole = role === 'user';
 
   const recentItems = useMemo(() => recentAll.slice(0, 5), [recentAll]);
@@ -220,9 +219,11 @@ export default function Home() {
   return (
     <div
       dir="rtl"
-      className="min-vh-100 d-flex flex-column"
       style={{
         fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
         backgroundColor: '#f6f8fb',
       }}
     >
@@ -351,9 +352,11 @@ export default function Home() {
           .rep-chip i{
             font-size: 12px;
           }
+          /* Hide "department representation" label on phones */
           .rep-chip .muted{
             display: none;
           }
+          /* Keep department name on one line and truncate if long */
           .rep-chip strong{
             display: inline-block;
             max-width: 60vw;
@@ -362,20 +365,17 @@ export default function Home() {
             white-space: nowrap;
             font-weight: 800;
           }
+          /* Smaller spinner inside the chip on mobile */
           .rep-chip .spinner-border{
             width: .9rem;
             height: .9rem;
             border-width: .12rem;
           }
         }
-
-        /* Page spacer to keep content clear of footer when short */
-        .page-spacer { height: 24px; }
       `}</style>
 
       <Header />
 
-      {/* wrapper fills remaining height; footer lives inside content-wrapper (like Standards) */}
       <div id="wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
@@ -403,7 +403,7 @@ export default function Home() {
                             : 'جاري التحميل...'}
                         </small>
 
-                        {/* Chip only when role === 'user' */}
+                        {/* Chip only when role === 'users' */}
                         {isUsersRole && (
                           <div className="rep-chip mt-2" role="status" aria-live="polite">
                             <i className="fas fa-building" aria-hidden="true" />
@@ -543,7 +543,7 @@ export default function Home() {
               {/* Recent updates — show only for non-management roles */}
               {!isManagement && (
                 <div className="row justify-content-center">
-                  <div className="col-12 col-xl-10 mb-4">
+                  <div className="col-12 col-xl-10 mb-5">
                     <div className="table-card compact" aria-busy={loading}>
                       <div className="head-flat">أخر التحديثات</div>
                       <div className="body">
@@ -600,15 +600,12 @@ export default function Home() {
                 </div>
               )}
 
-              {/* spacer to keep content away from footer if short */}
-              <div className="page-spacer" />
             </div>
           </div>
-
-          {/* Footer lives inside content-wrapper to avoid sidebar overlap */}
-          <Footer />
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

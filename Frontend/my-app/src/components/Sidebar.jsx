@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -13,17 +13,16 @@ import {
 import { getStoredUser } from '../utils/auth';
 
 export default function Sidebar() {
-  // Smooth, non-bouncy timings
-  const TRANSFORM_MS = 340;                 // sidebar slide duration
-  const OVERLAY_MS = 240;                   // overlay fade
-  const EASING = 'cubic-bezier(0.25, 0.1, 0.25, 1)'; // classic ease-in-out (no overshoot)
-  const ITEM_STAGGER = 0;                   // per-item delay (ms) — removed stagger
-  const ITEM_OFFSET  = 22;                  // list item slide distance (px)
-
+  // Faster, more responsive timings with better easing
+  const TRANSFORM_MS = 220;                 // sidebar slide duration (was 340ms)
+  const OVERLAY_MS = 180;                   // overlay fade (was 240ms)
+  const EASING = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // smooth ease-out without bounce
+  const SLIDE_EASING = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // smooth slide without bounce
+  const ITEM_STAGGER = 18;                  // (unused now for mobile items)
+  const ITEM_OFFSET = 28;                   // (unused now for mobile items)
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false); // micro scale for button
+  const [isAnimating, setIsAnimating] = useState(false);
   const location = useLocation();
-  const sidebarRef = useRef(null);
 
   const user = getStoredUser();
   const role = user?.role?.trim().toLowerCase();
@@ -55,22 +54,18 @@ export default function Sidebar() {
     ];
   }
 
-  // Interruptible: no gating; reversing mid-transition is smooth
+  // Faster, more responsive toggle
   const toggleSidebar = () => {
-    setIsAnimating(true);
-    setSidebarVisible(v => !v);
-  };
+    if (isAnimating) return;
 
-  // Relax button micro-scale when slide ends
-  useEffect(() => {
-    const el = sidebarRef.current;
-    if (!el) return;
-    const onEnd = (e) => {
-      if (e.propertyName === 'transform') setIsAnimating(false);
-    };
-    el.addEventListener('transitionend', onEnd);
-    return () => el.removeEventListener('transitionend', onEnd);
-  }, []);
+    setIsAnimating(true);
+    setSidebarVisible(prev => !prev);
+    
+    // Reset animation state after animation completes
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 300);
+  };
 
   // Close at desktop breakpoint
   useEffect(() => {
@@ -86,8 +81,8 @@ export default function Sidebar() {
 
   const buttonStyles = {
     zIndex: 1040,
-    background: sidebarVisible
-      ? 'linear-gradient(135deg, #333333ff 0%, #2c2c2cff 100%)'
+    background: sidebarVisible 
+      ? 'linear-gradient(135deg, #333333ff 0%, #2c2c2cff 100%)' 
       : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
     border: sidebarVisible ? '1px solid #313131ff' : '1px solid #dee2e6',
     padding: '8px 10px',
@@ -101,8 +96,8 @@ export default function Sidebar() {
     boxShadow: sidebarVisible
       ? '0 8px 24px rgba(43, 43, 43, 0.35)'
       : '0 2px 8px rgba(0,0,0,0.12)',
-    transition: `transform ${TRANSFORM_MS}ms ${EASING}, box-shadow ${TRANSFORM_MS}ms ${EASING}, background ${TRANSFORM_MS}ms ${EASING}, border ${TRANSFORM_MS}ms ${EASING}`,
-    transform: isAnimating ? 'scale(0.985)' : 'scale(1)',
+    transition: `transform 160ms ${SLIDE_EASING}, box-shadow ${TRANSFORM_MS}ms ${SLIDE_EASING}, background ${TRANSFORM_MS}ms ${SLIDE_EASING}, border ${TRANSFORM_MS}ms ${SLIDE_EASING}`,
+    transform: isAnimating ? 'scale(0.92)' : 'scale(1)',
     willChange: 'transform'
   };
 
@@ -110,28 +105,27 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Overlay (always mounted; fades; pointer toggles) */}
+      {/* Mobile Overlay with faster fade */}
       <div
         className="position-fixed top-0 start-0 w-100 h-100 d-md-none"
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           zIndex: 1020,
           backdropFilter: 'blur(2px)',
-          transition: `opacity ${OVERLAY_MS}ms ${EASING}`,
+          transition: `opacity ${OVERLAY_MS}ms ${SLIDE_EASING}`,
           opacity: sidebarVisible ? 1 : 0,
           pointerEvents: sidebarVisible ? 'auto' : 'none',
         }}
         onClick={toggleSidebar}
       />
 
-      {/* Hamburger Button */}
+      {/* Hamburger Button with enhanced animation */}
       <button
         type="button"
         className="position-fixed top-0 start-0 m-3 d-md-none"
         style={buttonStyles}
-        onClick={toggleSidebar}
+        onClick={() => setSidebarVisible((prev) => !prev)}
         aria-label="Toggle sidebar"
-        aria-expanded={sidebarVisible}
       >
         {[...Array(3)].map((_, i) => (
           <div
@@ -142,34 +136,32 @@ export default function Sidebar() {
               backgroundColor: barColor,
               margin: '3px 0',
               borderRadius: '1px',
-              transition: `background-color ${TRANSFORM_MS}ms ${EASING}`,
+              transition: `background-color ${TRANSFORM_MS}ms ${SLIDE_EASING}, transform 180ms ${SLIDE_EASING}`,
+              transform: sidebarVisible && i === 1 ? 'scaleX(0.8)' : 'scaleX(1)',
             }}
           />
         ))}
       </button>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar with improved animations */}
       <div
-        ref={sidebarRef}
         className="text-white position-fixed top-0 start-0 h-100 d-md-none"
         style={{
           width: '240px',
-          background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)',
+          background: 'linear-gradient(180deg, #0f172aff 0%, #1e293b 100%)', 
           transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
-          transition: `transform ${TRANSFORM_MS}ms ${EASING}, box-shadow ${Math.max(TRANSFORM_MS - 60, 200)}ms ${EASING}`,
+          transition: `transform ${TRANSFORM_MS}ms ${SLIDE_EASING}, box-shadow ${TRANSFORM_MS - 40}ms ${SLIDE_EASING}`,
           zIndex: 1025,
-          boxShadow: sidebarVisible ? '6px 0 24px rgba(0,0,0,0.28)' : 'none',
-          willChange: 'transform',
-          backfaceVisibility: 'hidden'
+          boxShadow: sidebarVisible ? '4px 0 20px rgba(0,0,0,0.25)' : 'none',
         }}
       >
-        {/* inner wrapper for subtle scale/opacity ease (no overshoot) */}
+        {/* Keep container motion if you like; items won't slide individually */}
         <div
           style={{
             height: '100%',
-            transform: sidebarVisible ? 'scale(1)' : 'scale(0.985)',
-            opacity: sidebarVisible ? 1 : 0.96,
-            transition: `transform ${Math.max(TRANSFORM_MS - 80, 220)}ms ${EASING}, opacity ${Math.max(TRANSFORM_MS - 80, 220)}ms ${EASING}`,
+            transform: sidebarVisible ? 'scale(1) translateX(0)' : 'scale(0.98) translateX(-12px)',
+            opacity: sidebarVisible ? 1 : 0,
+            transition: `transform ${TRANSFORM_MS - 20}ms ${SLIDE_EASING} 40ms, opacity ${TRANSFORM_MS - 60}ms ${SLIDE_EASING} 20ms`,
             transformOrigin: 'left center',
           }}
         >
@@ -184,18 +176,18 @@ export default function Sidebar() {
                 <li
                   className="nav-item p-0 m-0"
                   key={idx}
+                  // ✅ Removed per-item slide & stagger (no translate/scale, no delays)
                   style={{
-                    opacity: sidebarVisible ? 1 : 0,
-                    transform: sidebarVisible ? 'translateX(0)' : `translateX(-${ITEM_OFFSET}px)`,
-                    transition: `transform ${TRANSFORM_MS}ms ${EASING} ${idx * ITEM_STAGGER}ms, opacity ${TRANSFORM_MS}ms ${EASING} ${idx * ITEM_STAGGER}ms`,
-                    willChange: 'transform, opacity'
+                    opacity: 1,
+                    transform: 'none',
+                    transition: 'none'
                   }}
                 >
                   <Link
                     className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
                     onClick={() => {
-                      toggleSidebar();            // reversible mid-way
+                      toggleSidebar();
                       item.onClick && item.onClick();
                     }}
                   >
@@ -213,14 +205,16 @@ export default function Sidebar() {
       {/* Desktop Sidebar */}
       <nav
         className="navbar align-items-start p-0 sidebar sidebar-dark accordion navbar-dark d-none d-md-block"
-        style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}
+        style={{ 
+          background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+        }}
       >
         <div className="container-fluid d-flex flex-column p-0 ">
           <hr className="my-0 sidebar-divider" />
           <ul className="navbar-nav text-light mt-4 w-100" id="accordionSidebar">
             {navItems.map((item, idx) => {
               const isActive =
-                item.href !== '/' && location.pathname.startsWith(item.href)
+                location.pathname.startsWith(item.href) && item.href !== '/'
                   ? true
                   : location.pathname === item.href;
 
@@ -242,8 +236,13 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Styles */}
+      {/* Enhanced Styles */}
       <style>{`
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -251,9 +250,9 @@ export default function Sidebar() {
   padding: 0 24px;
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.85);
   position: relative;
-  transition: background ${TRANSFORM_MS}ms ${EASING}, color ${TRANSFORM_MS}ms ${EASING};
+  transition: background 200ms ${SLIDE_EASING}, color 200ms ${SLIDE_EASING}, transform 160ms ${SLIDE_EASING};
   white-space: nowrap;
   text-decoration: none;
 }
@@ -261,10 +260,11 @@ export default function Sidebar() {
 .sidebar-link:hover {
   text-decoration: none;
   background: rgba(255, 255, 255, 0.10);
+  transform: translateX(2px);
 }
 
 .sidebar-link.active {
-  background: #7e90c64d;
+  background: #778fc24d;
   color: #fff !important;
 }
 
@@ -274,6 +274,7 @@ export default function Sidebar() {
 
 .sidebar-link.logout:hover {
   background: rgba(239, 68, 68, 0.12);
+  transform: translateX(2px);
 }
 
 .active-dot {
@@ -286,13 +287,13 @@ export default function Sidebar() {
   top: 50%;
   transform: translateY(-50%);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
-  animation: pulse 1s infinite ease-in-out;
+  animation: pulse 1.5s infinite ease-in-out;
 }
 
 @keyframes pulse {
-  0% { transform: translateY(-50%) scale(1); }
-  50% { transform: translateY(-50%) scale(1.2); }
-  100% { transform: translateY(-50%) scale(1); }
+  0% { transform: translateY(-50%) scale(1); opacity: 1; }
+  50% { transform: translateY(-50%) scale(1.15); opacity: 0.8; }
+  100% { transform: translateY(-50%) scale(1); opacity: 1; }
 }
 
 .sidebar-divider {
