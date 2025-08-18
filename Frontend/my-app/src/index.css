@@ -21,5 +21,6 @@ input[type="password"] {
 .btn-update {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem; /* matches Bootstrap gap-2 */
+  gap: 0.5rem;
+  /* matches Bootstrap gap-2 */
 }
