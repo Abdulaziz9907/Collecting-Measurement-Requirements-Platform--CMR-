@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -27,6 +27,16 @@ export default function Sidebar() {
 
   const user = getStoredUser();
   const role = user?.role?.trim().toLowerCase();
+
+  const confirmLogout = useCallback((e) => {
+    e.preventDefault();
+    if (window.confirm('هل تريد تسجيل الخروج؟')) {
+      window.dispatchEvent(new Event('cmr:logout'));
+      return true;
+    }
+    return false;
+  }, []);
+
   let navItems = [];
 
   if (role === 'admin' || role === 'administrator') {
@@ -37,21 +47,21 @@ export default function Sidebar() {
       { href: '/users', icon: faUsers, label: 'ادارة المستخدمين' },
       { href: '/departments', icon: faSitemap, label: 'ادارة الجهات' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => window.dispatchEvent(new Event('cmr:logout')), isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
     ];
   } else if (role === 'user') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/standards', icon: faList, label: 'معايير التحول' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => window.dispatchEvent(new Event('cmr:logout')), isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
     ];
   } else if (role === 'management') {
     navItems = [
       { href: '/home', icon: faHome, label: 'الرئيسية' },
       { href: '/reports', icon: faChartPie, label: 'الإحصائيات' },
       { href: '/profile', icon: faUser, label: 'الملف الشخصي' },
-      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: () => window.dispatchEvent(new Event('cmr:logout')), isLogout: true },
+      { href: '/', icon: faArrowRightFromBracket, label: 'تسجيل خروج', onClick: confirmLogout, isLogout: true },
     ];
   }
 
@@ -194,9 +204,9 @@ export default function Sidebar() {
                   <Link
                     className={`sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
-                    onClick={() => {
-                      toggleSidebar();            // reversible mid-way
-                      item.onClick && item.onClick();
+                    onClick={(e) => {
+                      const proceed = item.onClick ? item.onClick(e) : true;
+                      if (proceed) toggleSidebar();            // reversible mid-way
                     }}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
@@ -229,7 +239,7 @@ export default function Sidebar() {
                   <Link
                     className={`nav-link d-flex align-items-center sidebar-link ${isActive ? 'active' : ''} ${item.isLogout ? 'logout' : ''}`}
                     to={item.href}
-                    onClick={() => item.onClick && item.onClick()}
+                    onClick={(e) => item.onClick && item.onClick(e)}
                   >
                     <FontAwesomeIcon icon={item.icon} className="me-2" style={{ fontSize: '1.2rem' }} />
                     <span className="me-2" style={{ fontSize: '15px' }}>{item.label}</span>
