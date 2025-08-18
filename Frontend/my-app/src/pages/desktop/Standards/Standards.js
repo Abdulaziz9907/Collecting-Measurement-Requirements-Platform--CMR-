@@ -114,7 +114,7 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; }  /* ✅ keep the 200px content→footer gap */
+      .page-spacer{ height:200px; }
 
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
@@ -786,7 +786,6 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
-                {/* ✅ 200px gap above the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
