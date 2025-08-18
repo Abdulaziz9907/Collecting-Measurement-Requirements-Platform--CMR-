@@ -30,7 +30,7 @@ export default function DepartmentsEdit() {
   const normalizeName = (s = '') =>
     s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
 
-  /* ===== Minimal shell + sticky footer, zero gap under footer ===== */
+  /* ===== Minimal shell + skeleton + sticky footer (mobile-safe) ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -44,15 +44,16 @@ export default function DepartmentsEdit() {
         --skeleton-speed:1.2s;
       }
 
-      html, body { height:100%; margin:0; }
-
+      /* Full-height column so Footer sits at bottom on mobile */
       .page-bg {
         background:#f6f8fb;
         min-height:100dvh;
+        min-height:100svh;
         display:flex;
         flex-direction:column;
       }
 
+      /* Area under Header */
       #wrapper {
         flex:1 1 auto;
         min-height:0;
@@ -89,16 +90,6 @@ export default function DepartmentsEdit() {
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
 
-      /* No spacer at all on any screen */
-      .page-spacer { display:none !important; height:0 !important; }
-
-      /* Footer: no outside gap and don't shrink */
-      footer, .app-footer, #app-footer {
-        margin: 0 !important;
-        padding: 0 !important;
-        flex-shrink: 0;
-      }
-
       /* Skeleton */
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after {
@@ -118,6 +109,7 @@ export default function DepartmentsEdit() {
   );
 
   /* ===== Data fetching ===== */
+  // Load the department being edited
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -128,6 +120,7 @@ export default function DepartmentsEdit() {
     return () => { isMounted = false; };
   }, [API_BASE, id]);
 
+  // Load all departments to build a set of names EXCLUDING this department (for duplicate checks)
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -211,6 +204,7 @@ export default function DepartmentsEdit() {
 
       if (!res.ok) {
         if (res.status === 409) {
+          // Server says duplicate
           setErrorMessage('اسم الجهة موجود مسبقاً، لا يمكن تحديث الجهة باسم مكرر');
           setShowError(true);
           setNameIsDuplicate(true);
@@ -221,6 +215,7 @@ export default function DepartmentsEdit() {
         }
       } else {
         setShowSuccess(true);
+        // Update local set (if the name changed) to prevent immediate duplicates after edit
         if (!existingNames.has(normalizeName(rawName))) {
           setExistingNames(prev => new Set([...prev, normalizeName(rawName)]));
         }
@@ -276,6 +271,7 @@ export default function DepartmentsEdit() {
                     {/* Body */}
                     <div className="body-flat">
                       {isLoading ? (
+                        // Loading skeleton (mirrors form fields, no spinner)
                         <div className="row g-3">
                           <div className="col-12">
                             <div className="skel skel-line mb-2" style={{ width: '30%' }} />
@@ -367,11 +363,10 @@ export default function DepartmentsEdit() {
                 </div>
               </div>
 
-              {/* Spacer removed entirely */}
-              {/* <div className="page-spacer" /> */}
             </div>
           </div>
 
+          {/* Footer stays at bottom now on all screen sizes */}
           <Footer />
         </div>
       </div>

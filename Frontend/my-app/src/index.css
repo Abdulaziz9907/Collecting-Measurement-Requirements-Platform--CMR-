@@ -12,46 +12,42 @@ code {
     monospace;
 }
 
+/* Ensure password inputs preserve the user's casing */
 input[type="password"] {
   text-transform: none !important;
 }
 
+/* Consistent styling for all update/refresh buttons */
 .btn-update {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.5rem; /* matches Bootstrap gap-2 */
 }
 
+/* Ensure each page stretches to full viewport height so the footer
+   naturally sits at the bottom even when content is short */
 html,
 body,
 #root {
   min-height: 100vh;
 }
 
-html,
-body {
-  overscroll-behavior-y: none;
-}
-
-
-#wrapper {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: row;
-  min-height: 0;
-}
-
-#content-wrapper {
-  flex: 1 1 auto;
+body,
+#root {
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
-footer,
-.app-footer,
-#app-footer {
-  margin: 0 !important;
-  padding: 0 !important;
-  flex-shrink: 0;
+/* Main content wrapper should grow to fill remaining space */
+#wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Content area grows to push footer down */
+#content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
