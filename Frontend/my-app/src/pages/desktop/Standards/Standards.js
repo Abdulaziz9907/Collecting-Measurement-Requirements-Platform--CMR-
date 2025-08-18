@@ -24,6 +24,20 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // ✅ Stable viewport for iOS (prevents extra space under footer)
+  useEffect(() => {
+    const setVh = () => {
+      document.documentElement.style.setProperty('--vh-fix', `${window.innerHeight * 0.01}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
+    return () => {
+      window.removeEventListener('resize', setVh);
+      window.removeEventListener('orientationchange', setVh);
+    };
+  }, []);
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -59,6 +73,20 @@ export default function Standards() {
 
   const LocalTheme = () => (
     <style>{`
+      /* ---------- iOS-safe viewport ---------- */
+      :root{
+        --app-vh: 100svh; /* smallest visible viewport unit */
+      }
+      @supports not (height: 100svh) {
+        :root{ --app-vh: calc(var(--vh-fix, 1vh) * 100); }
+      }
+
+      /* Optional: avoid rubber band scroll creating phantom space */
+      body { overscroll-behavior-y: contain; }
+
+      /* Footer safe area so it sits flush to bottom on iOS with home indicator */
+      .footer-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
       :root {
         --radius: 14px;
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
@@ -86,7 +114,8 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; } /* keep the 200px gap above footer */
+      .page-spacer{ height:200px; }
+
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
       @keyframes shimmer{ 100%{ transform:translateX(100%);} }
@@ -505,9 +534,16 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* Single min-vh-100 on the outermost container to avoid iOS extra scroll;
-          inner wrappers just flex-grow. */}
-      <div dir="rtl" className="min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif', backgroundColor: '#f6f8fb' }}>
+      {/* ⬇️ use a stable viewport height; remove nested min-vh-100s */}
+      <div
+        dir="rtl"
+        className="d-flex flex-column"
+        style={{
+          minHeight: 'var(--app-vh)',
+          fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          backgroundColor: '#f6f8fb'
+        }}
+      >
         <Header />
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
@@ -516,6 +552,7 @@ export default function Standards() {
         )}
         <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
+          {/* ⬇️ drop min-vh-100 here to avoid double-counting height */}
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
             <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
               <div className="container-fluid d-flex flex-column">
@@ -749,12 +786,11 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
-                {/* Keep the designed spacing above the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
-            {/* Footer paints its own iOS safe-area; no extra wrappers/padding here */}
-            <div className="mt-auto">
+            {/* ✅ Footer gains safe-area padding; sits flush at bottom */}
+            <div className="mt-auto footer-safe">
               <Footer />
             </div>
           </div>
