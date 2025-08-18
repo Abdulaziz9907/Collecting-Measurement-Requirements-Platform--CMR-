@@ -796,8 +796,8 @@ export default function Standards() {
 
         <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          {/* Match Users: add min-vh-100 here too */}
-          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+          {/* Flex column that grows without forcing extra height on mobile */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
             <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
 
