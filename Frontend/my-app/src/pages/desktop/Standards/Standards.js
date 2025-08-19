@@ -23,8 +23,6 @@ export default function Standards() {
   const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile detection (<=576px) — same approach as your other pages
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -36,7 +34,6 @@ export default function Standards() {
       else mq.removeListener(update);
     };
   }, []);
-
   const [showModal, setShowModal] = useState(false);
   const [modalItem, setModalItem] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -57,7 +54,6 @@ export default function Standards() {
   const loadSeqRef = useRef(0);
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
-
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -68,7 +64,14 @@ export default function Standards() {
         --stroke: #eef2f7;
         --text: #0b2440;
         --text-muted: #6b7280;
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
       }
+      html { height: 100%; -webkit-text-size-adjust: 100%; }
+      body { height: 100%; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; padding-bottom: 0; margin-bottom: 0; }
+      #root { height: 100%; display: flex; flex-direction: column; }
+      .min-viewport { min-height: 100vh; min-height: 100svh; min-height: 100dvh; position: relative; }
+      .footer-container { margin-top: auto; padding-bottom: var(--safe-area-inset-bottom); background-color: inherit; position: relative; z-index: 1; }
+      @supports (-webkit-touch-callout: none) { .min-viewport { min-height: -webkit-fill-available; } .ios-fix { min-height: -webkit-fill-available; } }
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -87,8 +90,9 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; } /* ✅ intentional space ABOVE footer */
-
+      .page-spacer{ block-size: clamp(12px, 5vh, 64px); }
+      @media (max-width:576px){ .page-spacer{ block-size: clamp(8px, 4vh, 48px); } }
+      @supports (-webkit-touch-callout: none) { .page-spacer { block-size: max(12px, var(--safe-area-inset-bottom)); } }
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
       @keyframes shimmer{ 100%{ transform:translateX(100%);} }
@@ -98,7 +102,6 @@ export default function Standards() {
       .skel-chip{ height:28px; width:100%; border-radius:999px; }
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
       .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
-
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; }
@@ -107,6 +110,8 @@ export default function Standards() {
         .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
         .search-input{ max-width:100%; height:36px; line-height:36px; }
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .page-spacer { block-size: max(12px, var(--safe-area-inset-bottom)); }
+        .footer-container { padding-bottom: max(var(--safe-area-inset-bottom), 20px); }
       }
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .mobile-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
@@ -119,7 +124,6 @@ export default function Standards() {
       .s-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:700; }
     `}</style>
   );
-
   const popTemplateHelp = (
     <Popover id="pop-template-help" dir="rtl">
       <Popover.Header as="h6">طريقة استخدام قالب المعايير</Popover.Header>
@@ -137,13 +141,24 @@ export default function Standards() {
       </Popover.Body>
     </Popover>
   );
-
   useEffect(() => {
     if (!banner.type) return;
     const t = setTimeout(() => setBanner({ type: null, text: '' }), 10000);
     return () => clearTimeout(t);
   }, [banner.type]);
-
+  useEffect(() => {
+    const setViewportHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', setViewportHeight);
+    return () => {
+      window.removeEventListener('resize', setViewportHeight);
+      window.removeEventListener('orientationchange', setViewportHeight);
+    };
+  }, []);
   const dropdownPopper = useMemo(() => ({
     strategy: 'fixed',
     modifiers: [
@@ -152,7 +167,6 @@ export default function Standards() {
       { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, altAxis: true, tether: true } },
     ],
   }), []);
-
   const refreshData = async () => {
     setUseSkeleton(true);
     setLoading(true);
@@ -195,13 +209,10 @@ export default function Standards() {
       else finish();
     }
   };
-
   useEffect(() => { refreshData(); return () => abortRef.current?.abort(); }, [API_BASE]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, departmentFilter, pageSize, sortKey, sortDir]);
-
   const uniqueStatuses = [...new Set(data.map(i => i?.status).filter(Boolean))];
   const uniqueDepartments = departments.map(d => d?.department_name).filter(Boolean);
-
   const getStatusClass = (status) => {
     switch (status) {
       case 'معتمد': return 'success';
@@ -211,11 +222,9 @@ export default function Standards() {
       case 'لم يبدأ': default: return 'secondary';
     }
   };
-
   const handleCheckboxFilter = (value, current, setFunc) => {
     setFunc(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
   };
-
   const stripHidden = (s='') => String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
   const normalizeHeaderKey = (k='') => stripHidden(k);
   const HEADER_ALIASES = {
@@ -254,7 +263,6 @@ export default function Standards() {
     return parts.map(s => s.replace(/\\,/g, ',').trim()).filter(Boolean);
   };
   const escapeCommas = (str) => String(str).replace(/[,،]/g, '\\,');
-
   const filteredData = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
     return (data || []).filter(item => {
@@ -266,7 +274,6 @@ export default function Standards() {
       return okSearch && okStatus && okDept;
     });
   }, [data, searchTerm, statusFilter, departmentFilter]);
-
   const sortedData = useMemo(() => {
     if (sortDir === 'none' || !sortKey) return filteredData;
     const val = (item) => {
@@ -282,7 +289,6 @@ export default function Standards() {
     copy.sort((a,b)=>{ const av = val(a), bv = val(b); if (av < bv) return -1 * dir; if (av > bv) return 1 * dir; return (a.__i ?? 0) - (b.__i ?? 0); });
     return copy;
   }, [filteredData, sortKey, sortDir]);
-
   const toggleSort = (key) => {
     if (sortKey !== key) { setSortKey(key); setSortDir('asc'); return; }
     if (sortDir === 'asc') { setSortDir('desc'); return; }
@@ -290,7 +296,6 @@ export default function Standards() {
     setSortDir('asc');
   };
   const sortIcon = (key) => (sortKey !== key || sortDir === 'none') ? null : (sortDir === 'asc' ? ' ↑' : ' ↓');
-
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const showActions = !isViewer;
   const colCount = isViewer ? 6 : 8;
@@ -303,14 +308,12 @@ export default function Standards() {
   const skeletonCount = isAll ? 15 : numericPageSize;
   const baseRowsCount = hasPageData ? paginatedData.length : 1;
   const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
-
   const renderFillerRows = (count) =>
     Array.from({ length: count }).map((_, r) => (
       <tr key={`filler-${r}`} className="table-empty-row">
         {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
       </tr>
     ));
-
   const SkeletonRow = ({ idx }) => (
     <tr key={`sk-${idx}`}>
       {!isViewer && (<td className="td-select"><span className="skel skel-icon" /></td>)}
@@ -323,7 +326,6 @@ export default function Standards() {
       {!isViewer && (<td><span className="skel skel-icon" /></td>)}
     </tr>
   );
-
   const SkeletonCard = ({ idx }) => (
     <div className="mobile-card" key={`msc-${idx}`}>
       <div className="mobile-card-header">
@@ -336,10 +338,8 @@ export default function Standards() {
       {!isViewer && (<div className="mobile-row" style={{ marginTop: 8 }}><span className="skel skel-chip" style={{ width: '40%' }} /><span className="skel skel-chip" style={{ width: '30%' }} /></div>)}
     </div>
   );
-
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
-
   const exportDisabled = loading || skeletonMode || !hasLoadedOnce || filteredData.length === 0;
   const exportToExcel = () => {
     if (exportDisabled) return;
@@ -355,7 +355,6 @@ export default function Standards() {
     XLSX.utils.book_append_sheet(wb, ws, 'المعايير');
     XLSX.writeFile(wb, 'المعايير.xlsx');
   };
-
   const downloadTemplateExcel = () => {
     const ws = XLSX.utils.aoa_to_sheet([['رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات']]);
     ws['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 24 }];
@@ -363,19 +362,22 @@ export default function Standards() {
     XLSX.utils.book_append_sheet(wb, ws, 'قالب المعايير');
     XLSX.writeFile(wb, 'قالب_المعايير.xlsx');
   };
-
+  const buildHeaderMapForImport = buildHeaderMap;
+  const parseExcel = async (file) => {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const firstSheet = wb.SheetNames[0];
+    const ws = wb.Sheets[firstSheet];
+    return XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+  };
   const handleExcelImport = async (file) => {
     if (!file) return;
     setImporting(true);
     setBanner({ type: null, text: '' });
     try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const firstSheet = wb.SheetNames[0];
-      const ws = wb.Sheets[firstSheet];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+      const rows = await parseExcel(file);
       if (!rows.length) { setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' }); return; }
-      const headerMap = buildHeaderMap(rows[0]);
+      const headerMap = buildHeaderMapForImport(rows[0]);
       const required = ['رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات'];
       const missing = required.filter(k => !headerMap.get(k));
       if (missing.length) { setBanner({ type: 'danger', text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}.` }); return; }
@@ -434,7 +436,6 @@ export default function Standards() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-
   const pageIds = useMemo(() => paginatedData.map(r => r?.standard_id).filter(Boolean), [paginatedData]);
   const pageSelectedCount = pageIds.reduce((acc, id) => acc + (selectedIds.has(id) ? 1 : 0), 0);
   const pageAllSelected = !loading && pageIds.length > 0 && pageSelectedCount === pageIds.length;
@@ -476,9 +477,7 @@ export default function Standards() {
     if (res.failed === 0) setBanner({ type: 'success', text: `تم حذف ${ids.length} معيارًا بنجاح.` });
     else setBanner({ type: 'warning', text: `تم الحذف: ${res.ok} | فشل: ${res.failed}` });
   };
-
   const isUserRole = user?.role?.toLowerCase?.() === 'user';
-
   const MobileCard = ({ item, idx }) => {
     const id = item.standard_id;
     return (
@@ -504,36 +503,30 @@ export default function Standards() {
       </div>
     );
   };
-
   return (
     <>
       <LocalTheme />
-      {/* Match other pages: one min-vh-100 flex column at the page root */}
       <div
         dir="rtl"
-        className="min-vh-100 d-flex flex-column"
+        className="min-viewport ios-fix d-flex flex-column"
         style={{
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-          backgroundColor: '#f6f8fb'
+          backgroundColor: '#f6f8fb',
+          position: 'relative'
         }}
       >
         <Header />
-
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
-
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-
-          {/* Keep this simple (no extra min-vh-100) */}
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1 d-flex">
+          <div className="d-flex flex-column flex-grow-1 ios-fix" id="content-wrapper" style={{ minHeight:0 }}>
+            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
-
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
@@ -562,7 +555,6 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
-
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -583,9 +575,7 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
-
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
-
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
                                   <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</button>
@@ -595,7 +585,6 @@ export default function Standards() {
                                   </OverlayTrigger>
                                 </>
                               )}
-
                               <div className="d-flex align-items-center gap-2">
                                 {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
                                 <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
@@ -603,7 +592,6 @@ export default function Standards() {
                             </div>
                           </div>
                         )}
-
                         {isMobile && (
                           <div className="m-stack">
                             <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -626,7 +614,6 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
-
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-filter ms-1" /> تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -647,7 +634,6 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
-
                               {showActions && (
                                 <Dropdown align="start">
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات</Dropdown.Toggle>
@@ -664,7 +650,6 @@ export default function Standards() {
                                 </Dropdown>
                               )}
                             </div>
-
                             <div className="meta-row">
                               {(!loading || !useSkeleton) ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span className="skel skel-line" style={{ width: 80 }} />}
                               <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
@@ -672,7 +657,6 @@ export default function Standards() {
                           </div>
                         )}
                       </div>
-
                       {(!isViewer && anySelected) && (
                         <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
                           <div className="d-flex align-items-center gap-2">
@@ -688,7 +672,6 @@ export default function Standards() {
                           </div>
                         </div>
                       )}
-
                       {isMobile ? (
                         <div className="mobile-list">
                           {skeletonMode ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
@@ -744,7 +727,6 @@ export default function Standards() {
                           </table>
                         </div>
                       )}
-
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
@@ -771,20 +753,15 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
-
-                {/* ✅ keep this to preserve the space ABOVE the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
-
-            {/* ✅ footer without any wrapper padding below it */}
-            <div className="mt-auto">
+            <div className="footer-container">
               <Footer />
             </div>
           </div>
         </div>
       </div>
-
       <input
         ref={fileInputRef}
         type="file"
@@ -792,7 +769,6 @@ export default function Standards() {
         style={{ position:'absolute', width:0, height:0, opacity:0, pointerEvents:'none' }}
         onChange={(e) => handleExcelImport(e.target.files?.[0])}
       />
-
       <StandardModal
         show={showModal}
         onHide={() => setShowModal(false)}
@@ -801,7 +777,6 @@ export default function Standards() {
         canDeleteFiles={!(isUserRole && modalItem?.status === 'معتمد')}
         onUpdated={refreshData}
       />
-
       <DeleteModal
         show={showBulkDelete}
         onHide={closeBulkDelete}
