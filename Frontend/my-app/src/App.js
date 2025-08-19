@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import { initStoredUser, getStoredUser, clearUser } from './utils/auth';
@@ -292,6 +292,12 @@ function App() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }, [location.pathname, location.search, location.hash]);
 
   useEffect(() => {
     showTimeoutRef.current = showTimeout;
