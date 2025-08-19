@@ -24,7 +24,7 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // ✅ Mobile detection
+  // Mobile detection (<=576px) — same approach as your other pages
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -58,7 +58,6 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  // ✅ Local theme (unchanged styles except removed old vh hack + footer-safe)
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -70,9 +69,6 @@ export default function Standards() {
         --text: #0b2440;
         --text-muted: #6b7280;
       }
-
-      body { overscroll-behavior-y: contain; }
-
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -91,7 +87,7 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; } /* ✅ intentional space above footer */
+      .page-spacer{ height:200px; } /* ✅ intentional space ABOVE footer */
 
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
@@ -251,7 +247,7 @@ export default function Standards() {
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
-  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F9]+$/u;
+  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
   const parseProofs = (raw = '') => {
     const txt = String(raw).replace(/،/g, ',');
     const parts = txt.match(/(?:\\.|[^,])+/g) || [];
@@ -512,10 +508,10 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* ✅ Use a single viewport min height on the OUTER shell */}
+      {/* Match other pages: one min-vh-100 flex column at the page root */}
       <div
         dir="rtl"
-        className="min-viewport d-flex flex-column"
+        className="min-vh-100 d-flex flex-column"
         style={{
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           backgroundColor: '#f6f8fb'
@@ -529,12 +525,12 @@ export default function Standards() {
           </div>
         )}
 
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-          {/* ✅ no extra min-vh-100 here */}
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
-            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
+          {/* Keep this simple (no extra min-vh-100) */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+            <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
 
@@ -776,12 +772,12 @@ export default function Standards() {
                   </div>
                 </div>
 
-                {/* ✅ This keeps the intentional space above the footer */}
+                {/* ✅ keep this to preserve the space ABOVE the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
 
-            {/* ✅ Footer inside mt-auto, no extra wrappers */}
+            {/* ✅ footer without any wrapper padding below it */}
             <div className="mt-auto">
               <Footer />
             </div>
