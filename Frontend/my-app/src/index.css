@@ -1,26 +1,48 @@
+/* ==== iOS footer gap killer (use once, globally) ==== */
+html,
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  min-height: 100%;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+#root {
+  min-height: 100%;
 }
 
-/* Ensure password inputs preserve the user's casing */
-input[type="password"] {
-  text-transform: none !important;
+/* Use the modern viewport unit when available */
+@supports (height: 100dvh) {
+  .min-viewport {
+    min-height: 100dvh;
+  }
 }
 
-/* Consistent styling for all update/refresh buttons */
-.btn-update {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  /* matches Bootstrap gap-2 */
+/* Fallback for older iOS Safari */
+@supports not (height: 100dvh) {
+
+  html,
+  body {
+    height: -webkit-fill-available;
+  }
+
+  .min-viewport {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* No accidental bottom spacing */
+body {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Footer text truncation */
+.footer-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 576px) {
+  .footer-text {
+    font-size: 13px !important;
+  }
 }

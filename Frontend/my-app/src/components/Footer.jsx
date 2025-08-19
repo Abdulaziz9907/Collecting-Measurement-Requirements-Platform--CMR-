@@ -4,35 +4,23 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const Footer = () => {
   return (
-    <>
-      <style>{`
-        .footer-text {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        @media (max-width: 576px) {
-          .footer-text { font-size: 13px !important; }
-        }
-      `}</style>
-
-      <nav
-        className="navbar py-3 px-4 text-center"
-        style={{
-          backgroundColor: '#0f172a',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0px)'
-        }}
-      >
-        <div className="container-fluid d-flex align-items-center justify-content-center">
-          <h6
-            className="fw-light mt-1 mb-1 footer-text"
-            style={{ color: '#ddddddff', fontSize: '16px' }}
-          >
-            جميع الحقوق محفوظة للهيئة الملكية للجبيل وينبع 2025م
-          </h6>
-        </div>
-      </nav>
-    </>
+    <nav
+      className="navbar py-3 px-4 text-center"
+      style={{
+        backgroundColor: '#0f172a',
+        // ✅ safe-area padding is INSIDE the footer bar (prevents ghost gap on iOS)
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0px)',
+      }}
+    >
+      <div className="container-fluid d-flex align-items-center justify-content-center">
+        <h6
+          className="fw-light mt-1 mb-1 footer-text"
+          style={{ color: '#ddddddff', fontSize: 16 }}
+        >
+          جميع الحقوق محفوظة للهيئة الملكية للجبيل وينبع 2025م
+        </h6>
+      </div>
+    </nav>
   );
 };
 

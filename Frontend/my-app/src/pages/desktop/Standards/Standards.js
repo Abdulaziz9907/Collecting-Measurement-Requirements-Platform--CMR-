@@ -24,6 +24,7 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // ✅ Mobile detection
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -57,7 +58,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  // ⬇️ Local styles (removed .footer-safe and any custom vh hacks)
+  // ✅ Local theme (unchanged styles except removed old vh hack + footer-safe)
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -69,6 +70,9 @@ export default function Standards() {
         --text: #0b2440;
         --text-muted: #6b7280;
       }
+
+      body { overscroll-behavior-y: contain; }
+
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -87,7 +91,7 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; } /* ✅ space above the footer, as you wanted */
+      .page-spacer{ height:200px; } /* ✅ intentional space above footer */
 
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
@@ -98,6 +102,7 @@ export default function Standards() {
       .skel-chip{ height:28px; width:100%; border-radius:999px; }
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
       .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
+
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; }
@@ -246,7 +251,7 @@ export default function Standards() {
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
-  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
+  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F9]+$/u;
   const parseProofs = (raw = '') => {
     const txt = String(raw).replace(/،/g, ',');
     const parts = txt.match(/(?:\\.|[^,])+/g) || [];
@@ -507,27 +512,32 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* Make shell identical to your other pages */}
+      {/* ✅ Use a single viewport min height on the OUTER shell */}
       <div
         dir="rtl"
-        className="min-vh-100 d-flex flex-column"
+        className="min-viewport d-flex flex-column"
         style={{
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           backgroundColor: '#f6f8fb'
         }}
       >
         <Header />
+
         {banner.type && (
           <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
             <div className={`alert alert-${banner.type} mb-0`} role="alert">{banner.text}</div>
           </div>
         )}
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
+
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1 d-flex">
+
+          {/* ✅ no extra min-vh-100 here */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
+            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
+
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
@@ -556,6 +566,7 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount style={{ maxHeight: 360, overflowY: 'auto' }}>
@@ -576,7 +587,9 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Link className="btn btn-outline-success btn-sm" to="/standards_create">إضافة معيار</Link>
+
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
                                   <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</button>
@@ -586,6 +599,7 @@ export default function Standards() {
                                   </OverlayTrigger>
                                 </>
                               )}
+
                               <div className="d-flex align-items-center gap-2">
                                 {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
                                 <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
@@ -593,6 +607,7 @@ export default function Standards() {
                             </div>
                           </div>
                         )}
+
                         {isMobile && (
                           <div className="m-stack">
                             <input className="form-control form-control-sm search-input" type="search" placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -615,6 +630,7 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-filter ms-1" /> تصفية</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -635,6 +651,7 @@ export default function Standards() {
                                   ))}
                                 </Dropdown.Menu>
                               </Dropdown>
+
                               {showActions && (
                                 <Dropdown align="start">
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات</Dropdown.Toggle>
@@ -651,6 +668,7 @@ export default function Standards() {
                                 </Dropdown>
                               )}
                             </div>
+
                             <div className="meta-row">
                               {(!loading || !useSkeleton) ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span className="skel skel-line" style={{ width: 80 }} />}
                               <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
@@ -757,12 +775,13 @@ export default function Standards() {
                     </div>
                   </div>
                 </div>
-                {/* ✅ keep the intentional space ABOVE the footer */}
+
+                {/* ✅ This keeps the intentional space above the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
 
-            {/* ✅ no footer-safe wrapper; just push footer with mt-auto */}
+            {/* ✅ Footer inside mt-auto, no extra wrappers */}
             <div className="mt-auto">
               <Footer />
             </div>
@@ -789,7 +808,7 @@ export default function Standards() {
 
       <DeleteModal
         show={showBulkDelete}
-        onHide={() => setShowBulkDelete(false)}
+        onHide={closeBulkDelete}
         onConfirm={performBulkDelete}
         subject={`حذف ${selectedIds.size} معيار`}
         requireCount={selectedIds.size}
