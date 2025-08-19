@@ -42,11 +42,19 @@ export default function Users() {
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
+  const prevPageSizeRef = useRef(pageSize);
+  const prevPageRef = useRef(currentPage);
 
   useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
+    const prevPageSize = prevPageSizeRef.current;
+    const prevPage = prevPageRef.current;
+    if (pageSize < prevPageSize || (currentPage !== prevPage && pageSize === prevPageSize)) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
+    prevPageSizeRef.current = pageSize;
+    prevPageRef.current = currentPage;
   }, [pageSize, currentPage]);
   const LOAD_MIN_MS = 450;
   const abortRef = useRef(null);
