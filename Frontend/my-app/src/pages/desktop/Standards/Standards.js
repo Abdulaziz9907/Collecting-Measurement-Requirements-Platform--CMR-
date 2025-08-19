@@ -24,7 +24,7 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // ✅ Mobile detection
+  // Mobile detection (<=576px) — same approach as your other pages
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -58,7 +58,6 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
-  // ✅ Enhanced iOS-specific fixes
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -69,60 +68,7 @@ export default function Standards() {
         --stroke: #eef2f7;
         --text: #0b2440;
         --text-muted: #6b7280;
-        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
       }
-
-      /* ✅ iOS-specific fixes */
-      html {
-        height: 100%;
-        -webkit-text-size-adjust: 100%;
-      }
-
-      body { 
-        height: 100%;
-        overscroll-behavior-y: contain;
-        -webkit-overflow-scrolling: touch;
-        /* ✅ Prevent iOS Safari bottom bar issues */
-        padding-bottom: 0;
-        margin-bottom: 0;
-      }
-
-      #root {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* ✅ iOS-specific viewport fixes */
-      .min-viewport {
-        min-height: 100vh;
-        min-height: 100svh; /* Small viewport height for iOS */
-        min-height: 100dvh; /* Dynamic viewport height for iOS */
-        position: relative;
-      }
-
-      /* ✅ Ensure footer sticks properly on iOS */
-      .footer-container {
-        margin-top: auto;
-        padding-bottom: var(--safe-area-inset-bottom);
-        /* ✅ Prevent white space under footer on iOS */
-        background-color: inherit;
-        position: relative;
-        z-index: 1;
-      }
-
-      /* ✅ iOS Safari address bar compensation */
-      @supports (-webkit-touch-callout: none) {
-        .min-viewport {
-          min-height: -webkit-fill-available;
-        }
-        
-        /* ✅ Fix for iOS keyboard/viewport issues */
-        .ios-fix {
-          min-height: -webkit-fill-available;
-        }
-      }
-
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -141,9 +87,7 @@ export default function Standards() {
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      
-      /* ✅ Reduced spacer for better iOS handling */
-      .page-spacer{ height: 100px; }
+      .page-spacer{ height:200px; } /* ✅ intentional space ABOVE footer */
 
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
@@ -163,12 +107,7 @@ export default function Standards() {
         .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
         .search-input{ max-width:100%; height:36px; line-height:36px; }
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        
-        /* ✅ iOS-specific mobile fixes */
-        .page-spacer { height: 60px; }
-        .footer-container { padding-bottom: max(var(--safe-area-inset-bottom), 20px); }
       }
-      
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .mobile-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .mobile-card-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -204,23 +143,6 @@ export default function Standards() {
     const t = setTimeout(() => setBanner({ type: null, text: '' }), 10000);
     return () => clearTimeout(t);
   }, [banner.type]);
-
-  // ✅ iOS viewport height fix
-  useEffect(() => {
-    const setViewportHeight = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-
-    setViewportHeight();
-    window.addEventListener('resize', setViewportHeight);
-    window.addEventListener('orientationchange', setViewportHeight);
-
-    return () => {
-      window.removeEventListener('resize', setViewportHeight);
-      window.removeEventListener('orientationchange', setViewportHeight);
-    };
-  }, []);
 
   const dropdownPopper = useMemo(() => ({
     strategy: 'fixed',
@@ -325,7 +247,7 @@ export default function Standards() {
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
   const normalizeStandardNumber = (raw = '') => normalizeDigits(raw).replace(/[٫۔]/g, '.').replace(/\s+/g, '');
-  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F9]+$/u;
+  const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+$/u;
   const parseProofs = (raw = '') => {
     const txt = String(raw).replace(/،/g, ',');
     const parts = txt.match(/(?:\\.|[^,])+/g) || [];
@@ -586,14 +508,13 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* ✅ Enhanced iOS-specific structure */}
+      {/* Match other pages: one min-vh-100 flex column at the page root */}
       <div
         dir="rtl"
-        className="min-viewport ios-fix d-flex flex-column"
+        className="min-vh-100 d-flex flex-column"
         style={{
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-          backgroundColor: '#f6f8fb',
-          position: 'relative'
+          backgroundColor: '#f6f8fb'
         }}
       >
         <Header />
@@ -604,12 +525,12 @@ export default function Standards() {
           </div>
         )}
 
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-          {/* ✅ Content wrapper with proper iOS handling */}
-          <div className="d-flex flex-column flex-grow-1 ios-fix" id="content-wrapper" style={{ minHeight:0 }}>
-            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
+          {/* Keep this simple (no extra min-vh-100) */}
+          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
+            <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
 
@@ -851,13 +772,13 @@ export default function Standards() {
                   </div>
                 </div>
 
-                {/* ✅ Reduced spacer for better iOS handling */}
+                {/* ✅ keep this to preserve the space ABOVE the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
 
-            {/* ✅ Enhanced footer with iOS safe area handling */}
-            <div className="footer-container">
+            {/* ✅ footer without any wrapper padding below it */}
+            <div className="mt-auto">
               <Footer />
             </div>
           </div>
