@@ -24,7 +24,6 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection (<=576px)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -45,6 +44,7 @@ export default function Standards() {
   const [sortDir, setSortDir] = useState('none');
   const [importing, setImporting] = useState(false);
   const [banner, setBanner] = useState({ type: null, text: '' });
+
   const fileInputRef = useRef(null);
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => getStoredUser(), []);
@@ -58,6 +58,7 @@ export default function Standards() {
   const headerCbRef = useRef(null);
   const lastPageIndexRef = useRef(null);
 
+  /* ========= Local Theme: matches your other pages (no footer-safe) ========= */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -70,9 +71,22 @@ export default function Standards() {
         --text-muted: #6b7280;
       }
 
-      /* Card/table styling */
-      .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
-      .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
+      .table-card {
+        background:#fff;
+        border:1px solid var(--stroke);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow:hidden;
+        margin-bottom: 56px; /* space above footer */
+      }
+
+      .head-flat {
+        padding:10px 12px;
+        background:var(--surface-muted);
+        border-bottom:1px solid var(--stroke);
+        color:var(--text);
+      }
+
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
       .search-block { flex:1 1 320px; min-width:240px; }
@@ -90,13 +104,11 @@ export default function Standards() {
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
       .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
 
-      /* Keep intentional space ABOVE the footer (scrollable area) */
-      .page-spacer{ height:200px; }
-
-      /* Skeletons */
+      /* skeletons */
       .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
       .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
       @keyframes shimmer{ 100%{ transform:translateX(100%);} }
+      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
       .skel-line{ height:12px; }
       .skel-badge{ height:22px; width:72px; border-radius:999px; }
       .skel-icon{ height:16px; width:16px; border-radius:4px; }
@@ -104,7 +116,7 @@ export default function Standards() {
       .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
       .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
 
-      /* Mobile */
+      /* mobile */
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; }
@@ -121,8 +133,9 @@ export default function Standards() {
       .mobile-subtle{ color:#6b7280; font-size:.85rem; }
       .mobile-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
       .mobile-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; border:1px solid var(--stroke); font-size:.8rem; background:#f8fafc; }
-      .s-actions{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
-      .s-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:700; }
+
+      /* optional extra spacer above footer, like other pages */
+      .page-spacer { height: 200px; }
     `}</style>
   );
 
@@ -503,7 +516,7 @@ export default function Standards() {
         </div>
         <div className="mobile-row"><span className="mobile-subtle">الإدارة</span><span className="mobile-chip">{item.department?.department_name || '—'}</span></div>
         <div className="mobile-row"><span className="mobile-subtle">تاريخ الإنشاء</span><span className="mobile-chip">{new Date(item.created_at).toLocaleDateString('ar-SA')}</span></div>
-        <div className="s-actions" style={isViewer ? { gridTemplateColumns: '1fr' } : undefined}>
+        <div className="s-actions" style={isViewer ? { display:'grid', gridTemplateColumns:'1fr', gap:6 } : { display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
           <button className="btn btn-primary s-btn" onClick={(e) => { e.preventDefault(); setModalItem(item); setShowModal(true); }} title="إظهار التفاصيل" aria-label="إظهار التفاصيل"><i className="fas fa-eye ms-1" />إظهار</button>
           {!isViewer && (<button className="btn btn-success s-btn" onClick={() => navigate(`/standards_edit/${item.standard_id}`)} title="تعديل" aria-label="تعديل"><i className="fas fa-pen ms-1" />تعديل</button>)}
         </div>
@@ -514,13 +527,10 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-
-      {/* Page root: single reliable viewport height; no custom JS vh fixes */}
       <div
         dir="rtl"
-        className="d-flex flex-column"
+        className="min-vh-100 d-flex flex-column"
         style={{
-          minHeight: '100dvh',
           fontFamily: 'Noto Sans Arabic, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           backgroundColor: '#f6f8fb'
         }}
@@ -533,14 +543,16 @@ export default function Standards() {
           </div>
         )}
 
-        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1, minHeight:0 }}>
+        <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-          {/* Main column (flex-grow) — no extra min-vh layers */}
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper" style={{ minHeight:0 }}>
-            <div id="content" className="flex-grow-1 d-flex" style={{ minHeight:0 }}>
+          <div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+            <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
-                <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
+
+                <div className="row p-4">
+                  <div className="col-12"><Breadcrumbs /></div>
+                </div>
 
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
@@ -780,12 +792,11 @@ export default function Standards() {
                   </div>
                 </div>
 
-                {/* Keep this to preserve the intentional gap ABOVE the footer */}
                 <div className="page-spacer" />
               </div>
             </div>
 
-            {/* Footer sits at the bottom via flex; no extra safe-area padding */}
+            {/* like other pages: simple mt-auto without footer-safe */}
             <div className="mt-auto">
               <Footer />
             </div>
@@ -812,7 +823,7 @@ export default function Standards() {
 
       <DeleteModal
         show={showBulkDelete}
-        onHide={() => setShowBulkDelete(false)}
+        onHide={closeBulkDelete}
         onConfirm={performBulkDelete}
         subject={`حذف ${selectedIds.size} معيار`}
         requireCount={selectedIds.size}
