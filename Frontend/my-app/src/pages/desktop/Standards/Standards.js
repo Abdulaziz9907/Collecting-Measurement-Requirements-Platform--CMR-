@@ -238,31 +238,6 @@ export default function Standards() {
   };
 
   const stripHidden = (s='') => String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
-  const normalizeHeaderKey = (k='') => stripHidden(k);
-  const HEADER_ALIASES = {
-    'رقم المعيار': ['رقم المعيار','رقم','المعيار','standard number','standard no','std no','standard_number'],
-    'اسم المعيار': ['اسم المعيار','اسم','standard name','standard_name','name'],
-    'الهدف': ['الهدف','هدف','goal'],
-    'متطلبات التطبيق': ['متطلبات التطبيق','متطلبات','requirements','reqs','standard requirements'],
-    'الجهة': ['الجهة','الإدارة','القسم','department','assigned department'],
-    'مستندات الإثبات': ['مستندات الإثبات','الاثباتات','أدلة','proofs','evidence','attachments']
-  };
-  const buildHeaderMap = (firstRowObj) => {
-    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
-    const originalKeys = Object.keys(firstRowObj || {});
-    const lookup = new Map();
-    for (const canon in HEADER_ALIASES) {
-      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
-      let foundIndex = -1;
-      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
-      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
-    }
-    return lookup;
-  };
-  const getCell = (row, headerMap, canonKey) => {
-    const actual = headerMap.get(canonKey);
-    return stripHidden(row[actual] ?? '');
-  };
   const normalizeDigits = (str = '') => {
     const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
@@ -361,9 +336,8 @@ export default function Standards() {
       const ws = wb.Sheets[firstSheet];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
       if (!rows.length) { setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' }); return; }
-      const headerMap = buildHeaderMap(rows[0]);
       const required = ['رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات'];
-      const missing = required.filter(k => !headerMap.get(k));
+      const missing = required.filter(k => !(k in rows[0]));
       if (missing.length) { setBanner({ type: 'danger', text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}.` }); return; }
       const normalizeName = (name = '') => {
         const diacritics = /[\u064B-\u065F\u0670\u06D6-\u06ED]/g;
@@ -376,13 +350,12 @@ export default function Standards() {
       let ok = 0, dup = 0, fail = 0, skipped = 0, unknownDeptCount = 0;
       const unknownDeptNames = new Set();
       for (const r of rows) {
-        const get = (canon) => { const actual = headerMap.get(canon); return stripHidden(r[actual] ?? ''); };
-        const rawNum = get('رقم المعيار');
-        const name = get('اسم المعيار');
-        const goal = get('الهدف');
-        const reqs = get('متطلبات التطبيق');
-        const depRaw = get('الجهة');
-        const proofsRaw = get('مستندات الإثبات');
+        const rawNum = stripHidden(r['رقم المعيار'] ?? '');
+        const name = stripHidden(r['اسم المعيار'] ?? '');
+        const goal = stripHidden(r['الهدف'] ?? '');
+        const reqs = stripHidden(r['متطلبات التطبيق'] ?? '');
+        const depRaw = stripHidden(r['الجهة'] ?? '');
+        const proofsRaw = stripHidden(r['مستندات الإثبات'] ?? '');
         const proofsList = parseProofs(proofsRaw);
         if (!rawNum || !name || !goal || !reqs || !depRaw || proofsList.length === 0) { skipped++; continue; }
         const isStdValid = STD_RE.test(rawNum) || STD_RE.test(rawNum.replace(/\./g, '٫'));
@@ -816,7 +789,7 @@ export default function Standards() {
   ref={fileInputRef}
   type="file"
   accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-  style={{ display: 'none' }}               // <= important: no layout impact on iOS
+  style={{ display: 'none' }}
   onChange={(e) => handleExcelImport(e.target.files?.[0])}
 />
 
