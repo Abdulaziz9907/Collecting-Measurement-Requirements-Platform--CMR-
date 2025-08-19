@@ -16,7 +16,13 @@ const Footer = () => {
         }
       `}</style>
 
-      <nav className="navbar py-3 px-4 text-center" style={{ backgroundColor: '#0f172a' }}>
+      <nav
+        className="navbar py-3 px-4 text-center"
+        style={{
+          backgroundColor: '#0f172a',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0px)'
+        }}
+      >
         <div className="container-fluid d-flex align-items-center justify-content-center">
           <h6
             className="fw-light mt-1 mb-1 footer-text"
