@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: auto !important;
+}
+
 @supports (height: 100dvh) {
   .min-viewport {
     min-height: 100dvh;
