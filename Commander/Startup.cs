@@ -68,7 +68,6 @@ namespace Commander
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // Schema handled externally; no EF migrations run here.
 
             if (env.IsDevelopment())
             {
@@ -77,10 +76,8 @@ namespace Commander
 
             app.UseHttpsRedirection();
 
-            // Serve static files from wwwroot.
             app.UseStaticFiles();
 
-            // Serve React build from wwwroot/build at root if present.
             var buildPath = Path.Combine(env.WebRootPath ?? string.Empty, "build");
             var buildExists = Directory.Exists(buildPath);
 

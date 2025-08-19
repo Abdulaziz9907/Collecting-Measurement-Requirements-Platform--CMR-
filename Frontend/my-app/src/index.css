@@ -1,32 +1,9 @@
-/* ==== iOS footer gap killer (use once, globally) ==== */
-html,
-body {
-  min-height: 100%;
-}
-
-#root {
-  min-height: 100%;
-}
-
-/* Use the modern viewport unit when available */
 @supports (height: 100dvh) {
   .min-viewport {
     min-height: 100dvh;
   }
 }
 
-/* Fallback for older iOS Safari */
-@supports not (height: 100dvh) {
-
-  html,
-  body {
-    height: -webkit-fill-available;
-  }
-
-  .min-viewport {
-    min-height: -webkit-fill-available;
-  }
-}
 
 /* No accidental bottom spacing */
 body {

@@ -23,7 +23,6 @@ export default function Standards() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection (<=576px)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -72,6 +71,7 @@ export default function Standards() {
         --text-muted: #6b7280;
         --loading-color: rgba(150,150,150,1);
       }
+        
 
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
@@ -805,13 +805,14 @@ export default function Standards() {
 
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-        style={{ position:'absolute', width:0, height:0, opacity:0, pointerEvents:'none' }}
-        onChange={(e) => handleExcelImport(e.target.files?.[0])}
-      />
+     <input
+  id="excelImport"
+  ref={fileInputRef}
+  type="file"
+  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+  style={{ display: 'none' }}               // <= important: no layout impact on iOS
+  onChange={(e) => handleExcelImport(e.target.files?.[0])}
+/>
 
       <StandardModal
         show={showModal}
