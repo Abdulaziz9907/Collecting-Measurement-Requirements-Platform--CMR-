@@ -11,7 +11,7 @@ export default function UsersEdit() {
   const [validated, setValidated] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [user, setUser] = useState(null);
-  const [allUsers, setAllUsers] = useState([]); // for duplicate checks
+  const [allUsers, setAllUsers] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,20 +21,16 @@ export default function UsersEdit() {
   const [usernameError, setUsernameError] = useState('');
   const usernameRef = useRef(null);
 
-  const [employeeIdInput, setEmployeeIdInput] = useState(''); // raw (may include Arabic digits)
+  const [employeeIdInput, setEmployeeIdInput] = useState('');
   const [employeeIdError, setEmployeeIdError] = useState('');
   const employeeIdRef = useRef(null);
 
-  const originalRoleRef = useRef(''); // lock Admin if original role is admin
+  const originalRoleRef = useRef('');
 
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-
-  // Match login icon behavior
   const [showPassword, setShowPassword] = useState(false);
-
-  // Normalize Arabic/ASCII digits to ASCII
   const normalizeDigits = (str = '') => {
     const map = {
       '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -48,7 +44,7 @@ export default function UsersEdit() {
     return parseInt(ascii, 10);
   };
 
-  /* ===== Minimal theme + skeleton (matches other pages) ===== */
+  
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -97,14 +93,14 @@ export default function UsersEdit() {
       .skel-input { height:38px; width:100%; border-radius:8px; }
       .skel-btn   { height:38px; width:120px; border-radius:8px; }
 
-      /* === Password field (no lock icon) === */
+      
       .pwd-floating { position: relative; }
       .pwd-floating input.form-control {
-        /* space on LEFT for the eye button; normal padding on the RIGHT */
-        padding: .75rem 1rem .75rem 2.75rem; /* top right bottom left */
+        
+        padding: .75rem 1rem .75rem 2.75rem; 
         direction: rtl; text-align: right;
       }
-      /* removed the lock .field-icon usage */
+      
       .pwd-floating .toggle-password {
         position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
         background: transparent; border: none; padding: 0; line-height: 0; cursor: pointer;
@@ -112,8 +108,6 @@ export default function UsersEdit() {
       .pwd-floating .toggle-password i { color: #667eea; }
     `}</style>
   );
-
-  // Fetch departments, current user, and all users list (for duplicate checks)
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
@@ -149,16 +143,12 @@ export default function UsersEdit() {
     fetchData();
     return () => { isMounted = false; };
   }, [API_BASE, id]);
-
-  // Auto-hide alerts
   useEffect(() => {
     if (showError || showSuccess) {
       const timer = setTimeout(() => { setShowError(false); setShowSuccess(false); }, 5000);
       return () => clearTimeout(timer);
     }
   }, [showError, showSuccess]);
-
-  // Duplicate helpers
   const isUsernameDuplicate = (name) => {
     const trimmed = (name || '').trim();
     if (!trimmed) return false;
@@ -170,12 +160,10 @@ export default function UsersEdit() {
   };
   const isEmployeeIdDuplicate = (val) => {
     const num = toSevenDigitNumber(val);
-    if (!Number.isFinite(num)) return false; // format error handled separately
+    if (!Number.isFinite(num)) return false;
     const currentEmp = user?.employee_id;
     return (allUsers || []).some(u => u?.employee_id !== currentEmp && Number(u?.employee_id) === num);
   };
-
-  // Live checks
   const handleUsernameChange = (e) => {
     const input = e.target;
     input.setCustomValidity('');
@@ -192,15 +180,12 @@ export default function UsersEdit() {
     setEmployeeIdInput(val);
     input.setCustomValidity('');
     setEmployeeIdError('');
-
-    // format: exactly 7 digits (Arabic or ASCII)
     const ascii = normalizeDigits(val).replace(/\D/g, '');
     if (ascii.length !== 7) {
       input.setCustomValidity('رقم الموظف يجب أن يكون 7 أرقام');
       setEmployeeIdError('رقم الموظف يجب أن يكون 7 أرقام');
       return;
     }
-    // duplicate
     if (isEmployeeIdDuplicate(val)) {
       input.setCustomValidity('رقم الموظف مستخدم بالفعل');
       setEmployeeIdError('رقم الموظف مستخدم بالفعل');
@@ -212,14 +197,10 @@ export default function UsersEdit() {
     const form = e.currentTarget;
     setShowSuccess(false);
     setShowError(false);
-
-    // clear custom validity
     form.username.setCustomValidity('');
     setUsernameError('');
     form.employee_id.setCustomValidity('');
     setEmployeeIdError('');
-
-    // re-check at submit time
     const newUsername = (form.username.value || '').trim();
     if (isUsernameDuplicate(newUsername)) {
       form.username.setCustomValidity('اسم المستخدم مستخدم بالفعل');
@@ -247,26 +228,18 @@ export default function UsersEdit() {
     }
 
     setIsSubmitting(true);
-
-    // Use original employee_id in the URL so the backend can locate the record,
-    // and send the new employee_id in the payload (to update it).
     const originalEmpId = user?.employee_id;
 
     const newPassword = form.password ? (form.password.value || '').trim() : '';
     const selectedRole = form.role ? (form.role.value || '').trim() : (user?.role || '').trim();
-    const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock if originally admin
-
-    // Prevent privilege escalation: only keep Admin if the original role was Admin
+    const isAdminOriginal = (originalRoleRef.current === 'admin');
     let finalRole = selectedRole;
     if (isAdminOriginal) {
       finalRole = 'Admin';
     } else if (selectedRole.toLowerCase() === 'admin') {
-      // Revert to the original role if a non-admin tries to switch to Admin
       const original = originalRoleRef.current || 'user';
       finalRole = original.charAt(0).toUpperCase() + original.slice(1);
     }
-
-    // 🔒 If originally Admin, ignore any email changes and keep the stored value
     const emailToSend = isAdminOriginal
       ? (user?.email || null)
       : ((form.email.value || '').trim() || null);
@@ -279,7 +252,6 @@ export default function UsersEdit() {
       email: emailToSend,
       role: finalRole,
       department_id: parseInt(form.department.value, 10),
-      // Always include a password to satisfy backend requirements
       password: newPassword || user?.password || ''
     };
 
@@ -313,7 +285,6 @@ export default function UsersEdit() {
         if (!handled) setShowError(true);
       } else {
         setShowSuccess(true);
-        // refresh users cache (optional)
         try {
           const updated = await fetch(`${API_BASE}/api/users`).then(r => r.json());
           setAllUsers(Array.isArray(updated) ? updated : []);
@@ -326,10 +297,8 @@ export default function UsersEdit() {
       setIsSubmitting(false);
     }
   };
-
-  // UI logic:
-  const isAdminOriginal = (originalRoleRef.current === 'admin'); // lock role select & email if true
-  const isAdminNow = ((user?.role || '').toLowerCase() === 'admin'); // for password visibility
+  const isAdminOriginal = (originalRoleRef.current === 'admin');
+  const isAdminNow = ((user?.role || '').toLowerCase() === 'admin');
 
   return (
     <div dir="rtl" className="page-shell min-vh-100 d-flex flex-column" style={{ fontFamily: 'Noto Sans Arabic' }}>
@@ -386,7 +355,7 @@ export default function UsersEdit() {
                         </div>
                       ) : (
                         <form className={`needs-validation ${validated ? 'was-validated' : ''}`} noValidate onSubmit={handleSubmit}>
-                          {/* Employee ID (editable) */}
+                          
                           <div className="mb-3">
                             <label className="form-label">رقم الموظف</label>
                             <input
@@ -425,7 +394,7 @@ export default function UsersEdit() {
                             </div>
                           </div>
 
-                          {/* Password — hidden whenever current selection is Admin */}
+                          
                           {!isAdminNow && (
                             <div className="mb-3">
                               <label className="form-label">كلمة المرور</label>
@@ -468,7 +437,7 @@ export default function UsersEdit() {
                             <div className="invalid-feedback">يرجى إدخال الاسم الأخير</div>
                           </div>
 
-                  {/* 🔒 Email: block editing for Admin (original) */}
+                  
 <div className="mb-3">
   <label className="form-label">البريد الإلكتروني</label>
   <input
@@ -508,7 +477,7 @@ export default function UsersEdit() {
                               required
                               value={user?.role || ''}
                               onChange={e => setUser(prev => ({ ...(prev || {}), role: e.target.value }))}
-                              disabled={isAdminOriginal} // 🔒 lock if originally Admin
+                              disabled={isAdminOriginal}
                             >
                               <option value="">اختر الدور...</option>
                               <option value="User">User</option>

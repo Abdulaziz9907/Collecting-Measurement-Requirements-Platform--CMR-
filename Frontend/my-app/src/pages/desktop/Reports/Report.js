@@ -114,7 +114,7 @@ export default function Report() {
 
       .chart-wrap-md { height: 280px; }
       .chart-wrap-lg { height: 300px; }
-      .chart-wrap-taller { height: 340px; } /* taller for pie/users cards */
+      .chart-wrap-taller { height: 340px; } 
 
       .legend-inline { position:absolute; top:8px; inset-inline-start:12px; display:flex; gap:8px; flex-wrap:wrap; }
       .legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; color: var(--text); }
@@ -293,7 +293,6 @@ export default function Report() {
   useEffect(() => {
     loadData();
     return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE, progressMode]);
 
   const visibleDeptList = useMemo(() => {

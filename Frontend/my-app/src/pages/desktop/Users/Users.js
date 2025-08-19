@@ -27,8 +27,6 @@ export default function Users() {
   const user = useMemo(() => getStoredUser(), []);
   const isViewer = user?.role?.toLowerCase?.() === 'user';
   const navigate = useNavigate();
-
-  // Mobile detection (<=576px)
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
@@ -41,8 +39,6 @@ export default function Users() {
       else mq.removeListener(update);
     };
   }, []);
-
-  // Pagination
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,15 +48,11 @@ export default function Users() {
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
   }, [pageSize, currentPage]);
-
-  // Loading sync
   const LOAD_MIN_MS = 450;
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
-
-  // Sorting
-  const [sortKey, setSortKey] = useState(null);   // 'employee_id' | 'username' | 'first_name' | 'last_name' | 'role' | 'department'
-  const [sortDir, setSortDir] = useState('none'); // 'asc' | 'desc' | 'none'
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState('none');
 
   const dropdownPopper = useMemo(() => ({
     strategy: 'fixed',
@@ -71,7 +63,7 @@ export default function Users() {
     ],
   }), []);
 
-  /* ========= Local Theme ========= */
+  
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -152,7 +144,7 @@ export default function Users() {
 
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
-      /* Mobile Cards */
+      
       .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
       .u-card { border: 1px solid var(--stroke); border-radius: 14px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px 12px 12px; }
       .u-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -166,7 +158,7 @@ export default function Users() {
       .u-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:700; }
       .u-btn i { font-size: .85rem; }
 
-      /* Centered loader block */
+      
       .loader-block {
         padding: 24px 0;
         display:flex;
@@ -176,7 +168,7 @@ export default function Users() {
         color: rgba(150, 150, 150, 1);
       }
 
-      /* ✅ Match Departments/Standards dropdown look */
+      
       .dropdown-menu{
         --bs-dropdown-link-hover-bg:#f1f5f9;
         --bs-dropdown-link-active-bg:#e2e8f0;
@@ -233,7 +225,7 @@ export default function Users() {
     }
   };
 
-  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => { refreshData(); return () => abortRef.current?.abort();  }, [API_BASE]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, departmentFilter, pageSize, sortKey, sortDir]);
 
   const uniqueRoles = [...new Set(users.map(u => u?.role).filter(Boolean))];
@@ -283,8 +275,6 @@ export default function Users() {
   }, [filteredUsers, sortKey, sortDir, deptNameById]);
 
   const setSort = (key, dir='asc') => { setSortKey(key); setSortDir(dir); };
-
-  // Pagination
   const colCount = isViewer ? 6 : 8;
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (sortedUsers.length || 0) : Number(pageSize);
@@ -333,7 +323,7 @@ export default function Users() {
     setShowDelete(true);
   };
 
-  /* ===== Mobile Card pieces ===== */
+  
   const initials = (first = '', last = '') => {
     const a = String(first).trim()[0] || '';
     const b = String(last).trim()[0] || '';
@@ -422,9 +412,9 @@ export default function Users() {
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card flex-grow-0" aria-busy={loading}>
-                      {/* ===== Header ===== */}
+                      
                       <div className="head-flat">
-                        {/* Desktop header */}
+                        
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
@@ -531,7 +521,7 @@ export default function Users() {
                           </div>
                         )}
 
-                        {/* Mobile header */}
+                        
                         {isMobile && (
                           <div className="m-stack">
                             <div className="search-block">
@@ -647,7 +637,7 @@ export default function Users() {
                         )}
                       </div>
 
-                      {/* ===== CONTENT: Cards on mobile, table on desktop ===== */}
+                      
                       {isMobile ? (
                         <div className="mobile-list">
                           {loading ? (
@@ -731,7 +721,7 @@ export default function Users() {
                         </div>
                       )}
 
-                      {/* Footer */}
+                      
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start">

@@ -13,15 +13,13 @@ export default function DepartmentsCreate() {
   const [errorMessage, setErrorMessage] = useState('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
-
-  // Existing department names (normalized) for duplicate check
   const [existingNames, setExistingNames] = useState(new Set());
   const [nameIsDuplicate, setNameIsDuplicate] = useState(false);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const navigate = useNavigate();
 
-  /* ===== Layout fixes: full-height column + sticky footer ===== */
+  
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -32,19 +30,19 @@ export default function DepartmentsCreate() {
         --stroke:#eef2f7;
       }
 
-      /* Make whole page (below) fill the viewport and push Footer down */
+      
       .page-bg {
         background:#f6f8fb;
-        min-height: 100dvh;      /* modern mobile browsers */
-        min-height: 100svh;      /* small viewport unit fallback */
+        min-height: 100dvh;      
+        min-height: 100svh;      
         display:flex;
         flex-direction:column;
       }
 
-      /* The region under the Header should grow to fill remaining height */
+      
       #wrapper {
-        flex: 1 1 auto;          /* take up leftover space under header */
-        min-height: 0;           /* prevent overflow issues in nested flex */
+        flex: 1 1 auto;          
+        min-height: 0;           
         display:flex;
         flex-direction:row;
       }
@@ -53,11 +51,11 @@ export default function DepartmentsCreate() {
         flex: 1 1 auto;
         min-height: 0;
         display:flex;
-        flex-direction:column;   /* so Footer sits after #content */
+        flex-direction:column;   
       }
 
       #content {
-        flex: 1 1 auto;          /* grow to push Footer down */
+        flex: 1 1 auto;          
         min-height: 0;
       }
 
@@ -78,23 +76,19 @@ export default function DepartmentsCreate() {
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
 
-      /* Responsive spacer: small on phones, larger on desktop */
+      
       .page-spacer { height: 24px; }
       @media (min-width: 768px) { .page-spacer { height: 200px; } }
       @media (min-width: 1200px) { .page-spacer { height: 200px; } }
 
-      /* Safety net for RTL checkboxes if non-RTL Bootstrap leaks in */
+      
       [dir="rtl"] .form-check .form-check-input{
         float: right;
       }
     `}</style>
   );
-
-  // --- Helpers ---
   const normalizeName = (s = '') =>
     s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
-
-  // Load existing department names once (for client-side duplicate prevention)
   useEffect(() => {
     (async () => {
       try {
@@ -106,12 +100,9 @@ export default function DepartmentsCreate() {
         );
         setExistingNames(new Set(names.filter(Boolean).map(normalizeName)));
       } catch {
-        // ignore; server-side will still protect if implemented
       }
     })();
   }, [API_BASE]);
-
-  // Auto-hide error alert
   useEffect(() => {
     if (showError) {
       const timer = setTimeout(() => setShowError(false), 5000);
@@ -136,8 +127,6 @@ export default function DepartmentsCreate() {
     setShowSuccess(false);
     setShowError(false);
     setErrorMessage('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
-
-    // Re-check duplicate before submit
     const nameInput = form.department_name;
     const rawName = nameInput?.value ?? '';
     const normName = normalizeName(rawName);
@@ -200,7 +189,7 @@ export default function DepartmentsCreate() {
       <LocalTheme />
       <Header />
 
-      {/* Top alerts */}
+      
       {showSuccess && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className="alert alert-success mb-0" role="alert">
@@ -228,7 +217,7 @@ export default function DepartmentsCreate() {
                 </div>
               </div>
 
-              {/* Centered card like Standards/Users */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-11">
                   <div className="surface">
@@ -262,7 +251,7 @@ export default function DepartmentsCreate() {
                           <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
                         </div>
 
-                        {/* Proper RTL checkbox block */}
+                        
                         <div className="form-check pt-4 pb-4 m-0">
                           <input
                             type="checkbox"
@@ -279,7 +268,7 @@ export default function DepartmentsCreate() {
                           </div>
                         </div>
 
-                        {/* Submit on one side, Cancel on the other */}
+                        
                         <div className="d-flex justify-content-between align-items-center">
                           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                             {isSubmitting && (
@@ -303,12 +292,12 @@ export default function DepartmentsCreate() {
                 </div>
               </div>
 
-              {/* Responsive spacer (small on phones so the footer doesn't look "lifted") */}
+              
               <div className="page-spacer" />
             </div>
           </div>
 
-          {/* Footer will naturally sit at the bottom now */}
+          
           <Footer />
         </div>
       </div>

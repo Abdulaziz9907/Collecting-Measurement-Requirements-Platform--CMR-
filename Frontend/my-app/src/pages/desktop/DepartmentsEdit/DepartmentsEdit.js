@@ -17,20 +17,18 @@ export default function DepartmentsEdit() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Duplicate-check state
-  const [existingNames, setExistingNames] = useState(new Set()); // names of OTHER departments
+  const [existingNames, setExistingNames] = useState(new Set());
   const [nameIsDuplicate, setNameIsDuplicate] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
-  /* ===== Helpers ===== */
+  
   const normalizeName = (s = '') =>
     s.toString().trim().replace(/\s+/g, ' ').toLocaleLowerCase('ar');
 
-  /* ===== Minimal shell + skeleton + sticky footer (mobile-safe) ===== */
+  
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -44,7 +42,7 @@ export default function DepartmentsEdit() {
         --skeleton-speed:1.2s;
       }
 
-      /* Full-height column so Footer sits at bottom on mobile */
+      
       .page-bg {
         background:#f6f8fb;
         min-height:100dvh;
@@ -53,7 +51,7 @@ export default function DepartmentsEdit() {
         flex-direction:column;
       }
 
-      /* Area under Header */
+      
       #wrapper {
         flex:1 1 auto;
         min-height:0;
@@ -90,12 +88,12 @@ export default function DepartmentsEdit() {
       .head-match > * { margin:0; }
       .body-flat { padding:16px; }
 
-      /* Responsive spacer: small on phones so footer doesn't look "lifted" */
+      
       .page-spacer { height:24px; }
       @media (min-width: 768px) { .page-spacer { height:200px; } }
       @media (min-width: 1200px) { .page-spacer { height:200px; } }
 
-      /* Skeleton */
+      
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
       .skel::after {
         content:""; position:absolute; inset:0; transform:translateX(-100%);
@@ -108,13 +106,12 @@ export default function DepartmentsEdit() {
       .skel-input { height:38px; width:100%; border-radius:8px; }
       .skel-btn   { height:38px; width:120px; border-radius:8px; }
 
-      /* RTL checkbox safety if non-RTL Bootstrap leaks in */
+      
       [dir="rtl"] .form-check .form-check-input { float: right; }
     `}</style>
   );
 
-  /* ===== Data fetching ===== */
-  // Load the department being edited
+  
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -124,8 +121,6 @@ export default function DepartmentsEdit() {
       .catch(err => { console.error('Error fetching department', err); if (isMounted) { setDepartment(null); setIsLoading(false); } });
     return () => { isMounted = false; };
   }, [API_BASE, id]);
-
-  // Load all departments to build a set of names EXCLUDING this department (for duplicate checks)
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -143,13 +138,12 @@ export default function DepartmentsEdit() {
           .filter(Boolean);
         if (isMounted) setExistingNames(new Set(names.map(normalizeName)));
       } catch {
-        // ignore; server will still protect
       }
     })();
     return () => { isMounted = false; };
   }, [API_BASE, id]);
 
-  /* ===== UI behavior ===== */
+  
   useEffect(() => {
     if (showError) {
       const timer = setTimeout(() => setShowError(false), 5000);
@@ -171,8 +165,6 @@ export default function DepartmentsEdit() {
     setShowSuccess(false);
     setShowError(false);
     setErrorMessage('حدث خطأ، الرجاء التحقق من الحقول أو المحاولة مرة أخرى');
-
-    // Re-check duplicate before submit
     const nameInput = form.department_name;
     const rawName = nameInput?.value ?? '';
     const isDupNow = existingNames.has(normalizeName(rawName));
@@ -209,7 +201,6 @@ export default function DepartmentsEdit() {
 
       if (!res.ok) {
         if (res.status === 409) {
-          // Server says duplicate
           setErrorMessage('اسم الجهة موجود مسبقاً، لا يمكن تحديث الجهة باسم مكرر');
           setShowError(true);
           setNameIsDuplicate(true);
@@ -220,7 +211,6 @@ export default function DepartmentsEdit() {
         }
       } else {
         setShowSuccess(true);
-        // Update local set (if the name changed) to prevent immediate duplicates after edit
         if (!existingNames.has(normalizeName(rawName))) {
           setExistingNames(prev => new Set([...prev, normalizeName(rawName)]));
         }
@@ -264,19 +254,18 @@ export default function DepartmentsEdit() {
                 </div>
               </div>
 
-              {/* Centered card like other pages */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
                   <div className="surface" aria-busy={isLoading}>
-                    {/* Header */}
+                    
                     <div className="head-flat head-match">
                       <h5 className="m-0">تعديل جهة</h5>
                     </div>
 
-                    {/* Body */}
+                    
                     <div className="body-flat">
                       {isLoading ? (
-                        // Loading skeleton (mirrors form fields, no spinner)
                         <div className="row g-3">
                           <div className="col-12">
                             <div className="skel skel-line mb-2" style={{ width: '30%' }} />
@@ -328,7 +317,7 @@ export default function DepartmentsEdit() {
                             <div className="invalid-feedback">يرجى إدخال رقم المبنى</div>
                           </div>
 
-                          {/* Proper RTL checkbox block with validation */}
+                          
                           <div className="form-check pt-4 pb-4 m-0">
                             <input
                               type="checkbox"
@@ -343,7 +332,7 @@ export default function DepartmentsEdit() {
                             <div className="invalid-feedback">يرجى تأكيد صحة المعلومات</div>
                           </div>
 
-                          {/* Submit on one side, Cancel on the other */}
+                          
                           <div className="d-flex justify-content-between align-items-center">
                             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                               {isSubmitting && (
@@ -368,12 +357,12 @@ export default function DepartmentsEdit() {
                 </div>
               </div>
 
-              {/* Responsive spacer */}
+              
               <div className="page-spacer" />
             </div>
           </div>
 
-          {/* Footer stays at bottom now on all screen sizes */}
+          
           <Footer />
         </div>
       </div>

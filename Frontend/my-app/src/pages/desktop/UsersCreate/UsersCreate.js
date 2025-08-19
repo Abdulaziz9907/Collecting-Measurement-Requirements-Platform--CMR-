@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 export default function UsersCreate() {
   const [validated, setValidated] = useState(false);
   const [departments, setDepartments] = useState([]);
-  const [users, setUsers] = useState([]); // ✅ for username uniqueness check
+  const [users, setUsers] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,14 +18,13 @@ export default function UsersCreate() {
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const navigate = useNavigate();
 
-  /* ===== Helpers ===== */
-  // Normalize Arabic/ASCII digits to ASCII
+  
   const normalizeDigits = (str = '') => {
     const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
     return String(str).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
   };
 
-  /* ===== Minimal theme (card + exact header height). Does NOT change font. ===== */
+  
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -61,7 +60,6 @@ export default function UsersCreate() {
       .then(res => res.json())
       .then(setDepartments)
       .catch(() => setDepartments([]));
-    // ✅ fetch users once to validate duplicate usernames
     fetch(`${API_BASE}/api/users`)
       .then(res => res.json())
       .then(setUsers)
@@ -80,18 +78,12 @@ export default function UsersCreate() {
     const form = e.currentTarget;
     setShowSuccess(false);
     setShowError(false);
-
-    // --- Clear any previous custom validity ---
     form.employee_id.setCustomValidity('');
     form.username.setCustomValidity('');
-
-    // --- 7-digit employee number (Arabic/English digits allowed) ---
     const empRaw = normalizeDigits(form.employee_id.value || '').replace(/\D/g, '');
     if (!/^\d{7}$/.test(empRaw)) {
       form.employee_id.setCustomValidity('رقم الموظف يجب أن يتكون من 7 أرقام');
     }
-
-    // --- Username uniqueness (case-sensitive) ---
     const username = (form.username.value || '').trim();
     const usernameTaken = (users || []).some(u => (u?.username || '').trim() === username);
     if (usernameTaken) {
@@ -126,7 +118,6 @@ export default function UsersCreate() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        // If backend also enforces unique username and returns a conflict
         try {
           const err = await res.json();
           if (err?.message?.toLowerCase?.().includes('username')) {
@@ -139,7 +130,6 @@ export default function UsersCreate() {
         setShowSuccess(true);
         form.reset();
         setValidated(false);
-        // refresh users list so future dup checks are accurate
         try {
           const updated = await fetch(`${API_BASE}/api/users`).then(r => r.json());
           setUsers(Array.isArray(updated) ? updated : []);
@@ -199,10 +189,8 @@ export default function UsersCreate() {
                             pattern="^\d{7}$"
                             maxLength={7}
                             onInput={(e) => {
-                              // keep only digits (Arabic/English) and limit to 7
                               const v = normalizeDigits(e.target.value).replace(/\D/g, '').slice(0,7);
                               e.target.value = v;
-                              // clear custom validity while typing
                               e.currentTarget.setCustomValidity('');
                             }}
                             required
