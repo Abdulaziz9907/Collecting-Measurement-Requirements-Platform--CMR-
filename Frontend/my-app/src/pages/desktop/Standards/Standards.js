@@ -520,7 +520,7 @@ export default function Standards() {
         <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-<div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+<div className="d-flex flex-column flex-grow-1 " id="content-wrapper">
               <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>

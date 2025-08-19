@@ -15,7 +15,7 @@
   height: 100%;
   z-index: 1000000;
   background-color: #222;
-  background-color: rgba(0, 0, 0, .8);
+  background-color: rgba(0,0,0,.8);
   -webkit-transition: opacity .5s ease;
   transition: opacity .5s ease;
 }
@@ -45,9 +45,9 @@
   max-height: 100%;
   max-width: 100%;
   vertical-align: middle;
-  -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, .6);
-  -moz-box-shadow: 0 0 8px rgba(0, 0, 0, .6);
-  box-shadow: 0 0 8px rgba(0, 0, 0, .6);
+  -webkit-box-shadow: 0 0 8px rgba(0,0,0,.6);
+  -moz-box-shadow: 0 0 8px rgba(0,0,0,.6);
+  box-shadow: 0 0 8px rgba(0,0,0,.6);
 }
 
 #baguetteBox-overlay .full-image figcaption {
@@ -60,7 +60,7 @@
   white-space: normal;
   color: #ccc;
   background-color: #000;
-  background-color: rgba(0, 0, 0, .6);
+  background-color: rgba(0,0,0,.6);
   font-family: sans-serif;
 }
 
@@ -79,10 +79,10 @@
   height: 100%;
   width: 100%;
   white-space: nowrap;
-  -webkit-transition: left .4s ease, -webkit-transform .4s ease;
-  transition: left .4s ease, -webkit-transform .4s ease;
-  transition: left .4s ease, transform .4s ease;
-  transition: left .4s ease, transform .4s ease, -webkit-transform .4s ease, -moz-transform .4s ease;
+  -webkit-transition: left .4s ease,-webkit-transform .4s ease;
+  transition: left .4s ease,-webkit-transform .4s ease;
+  transition: left .4s ease,transform .4s ease;
+  transition: left .4s ease,transform .4s ease,-webkit-transform .4s ease,-moz-transform .4s ease;
 }
 
 #baguetteBox-slider.bounce-from-right {
@@ -96,31 +96,24 @@
 }
 
 @keyframes bounceFromRight {
-
-  0%,
-  100% {
+  0%, 100% {
     margin-left: 0;
   }
-
   50% {
     margin-left: -30px;
   }
 }
 
 @keyframes bounceFromLeft {
-
-  0%,
-  100% {
+  0%, 100% {
     margin-left: 0;
   }
-
   50% {
     margin-left: 30px;
   }
 }
 
-.baguetteBox-button#next-button,
-.baguetteBox-button#previous-button {
+.baguetteBox-button#next-button, .baguetteBox-button#previous-button {
   top: 50%;
   top: calc(50% - 30px);
   width: 44px;
@@ -137,16 +130,15 @@
   -moz-border-radius: 15%;
   border-radius: 15%;
   background-color: #323232;
-  background-color: rgba(50, 50, 50, .5);
+  background-color: rgba(50,50,50,.5);
   color: #ddd;
   font: 1.6em sans-serif;
   -webkit-transition: background-color .4s ease;
   transition: background-color .4s ease;
 }
 
-.baguetteBox-button:focus,
-.baguetteBox-button:hover {
-  background-color: rgba(50, 50, 50, .9);
+.baguetteBox-button:focus, .baguetteBox-button:hover {
+  background-color: rgba(50,50,50,.9);
 }
 
 .baguetteBox-button#next-button {
@@ -182,8 +174,7 @@
   margin-left: -20px;
 }
 
-.baguetteBox-double-bounce1,
-.baguetteBox-double-bounce2 {
+.baguetteBox-double-bounce1, .baguetteBox-double-bounce2 {
   width: 100%;
   height: 100%;
   -moz-border-radius: 50%;
@@ -203,14 +194,11 @@
 }
 
 @keyframes bounce {
-
-  0%,
-  100% {
+  0%, 100% {
     -webkit-transform: scale(0);
     -moz-transform: scale(0);
     transform: scale(0);
   }
-
   50% {
     -webkit-transform: scale(1);
     -moz-transform: scale(1);
@@ -223,8 +211,10 @@
   background-color: rgba(var(--bs-body-bg-rgb), var(--bs-bg-opacity));
 }
 
-.clean-block.clean-catalog .products .row:first-of-type {}
+.clean-block.clean-catalog .products .row:first-of-type {
+}
 
 .clean-product-item .product-name a {
   color: var(--bs-body-color);
 }
+

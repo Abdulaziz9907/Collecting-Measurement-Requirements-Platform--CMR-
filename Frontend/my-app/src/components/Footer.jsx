@@ -5,7 +5,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 const Footer = () => {
   return (
     <nav
-      className="navbar py-3 px-4 text-center"
+      className="navbar py-3 px-4 text-center "
       style={{
         backgroundColor: '#0f172a',
       }}
