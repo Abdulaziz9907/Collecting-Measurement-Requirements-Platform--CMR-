@@ -19,7 +19,6 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -66,7 +65,7 @@ export default function Users() {
     ],
   }), []);
 
-  /* ========= Local Theme (match Standards' mobile button sizing, fix gaps, new card look) ========= */
+  /* ========= Local Theme ========= */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -78,9 +77,6 @@ export default function Users() {
         --text: #0b2440;
         --text-muted: #6b7280;
         --brand: #4F7689;
-        --skeleton-bg: #e9edf3;
-        --skeleton-sheen: rgba(255,255,255,.6);
-        --skeleton-speed: 1.2s;
       }
 
       .table-card {
@@ -89,7 +85,7 @@ export default function Users() {
         border-radius: var(--radius);
         box-shadow: var(--shadow);
         overflow:hidden;
-        margin-bottom: 56px; /* space above footer */
+        margin-bottom: 56px;
       }
 
       .head-flat {
@@ -100,15 +96,11 @@ export default function Users() {
         font-weight:700;
       }
 
-      /* Header layout */
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-
       .search-block { flex:1 1 320px; min-width:240px; }
       .search-input { width:100%; max-width: 460px; margin:0 !important; }
-
       .toolbar-block { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* ===== Mobile header (exact idea from Standards; same button sizing via .m-btn) */
       @media (max-width: 576px) {
         .head-row { display:block; }
         .m-stack { display:grid; grid-template-columns: 1fr; row-gap:6px; margin:0; padding:0; }
@@ -119,10 +111,9 @@ export default function Users() {
           display:grid;
           grid-template-columns: repeat(3, 1fr);
           gap:6px;
-          margin:0; padding:0; /* ✅ removes any blank gap under search */
+          margin:0; padding:0;
         }
 
-        /* === Sizing identical to Standards' mobile buttons === */
         .m-btn.btn {
           padding: 5px 8px;
           min-height: 32px;
@@ -141,7 +132,6 @@ export default function Users() {
         }
       }
 
-      /* Table columns (desktop) */
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-eid   { min-width: 120px; }
       .th-uname { min-width: 180px; }
@@ -152,75 +142,50 @@ export default function Users() {
       .th-icon  { width: 60px; }
 
       .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
-      .page-spacer { height: 200px; } /* extra bottom spacing */
+      .page-spacer { height: 200px; }
 
       .table-card .table, .table-card .table-responsive { margin: 0 !important; }
 
-      /* Skeletons */
-      .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
-      .skel::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%); animation:shimmer var(--skeleton-speed) infinite; }
-      @keyframes shimmer { 100% { transform: translateX(100%); } }
-      @media (prefers-reduced-motion: reduce) { .skel::after { animation:none; } }
-
-      .skel-line  { height: 12px; }
-      .skel-badge { height: 22px; width: 72px; border-radius: 999px; }
-      .skel-link  { height: 12px; width: 48px; }
-      .skel-icon  { height: 16px; width: 16px; border-radius: 4px; }
-      .skel-chip  { height: 32px; width: 100%; border-radius: 999px; }
-
-      .table-empty-row td { height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
-
-      .dropdown-menu { --bs-dropdown-link-hover-bg:#f1f5f9; --bs-dropdown-link-active-bg:#e2e8f0; }
-      .dropdown-item { color:var(--text) !important; }
-      .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active { color:var(--text) !important; }
-
-      /* ===== Mobile Cards (no right/left accent line) ===== */
+      /* Mobile Cards */
       .mobile-list { padding: 10px 12px; display: grid; grid-template-columns: 1fr; gap: 10px; }
-      .u-card {
-        border: 1px solid var(--stroke);
-        border-radius: 14px;
-        background: #fff;
-        box-shadow: var(--shadow);
-        padding: 10px 12px 12px 12px;
-      }
-
-      .u-head {
-        display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;
-      }
-      .u-ident {
-        display:flex; align-items:center; gap:10px;
-      }
-      .u-avatar {
-        width: 36px; height: 36px;
-        border-radius: 999px;
-        background: #edf3f6;
-        color: var(--brand);
-        font-weight: 800;
-        display:grid; place-items:center;
-        font-size: .9rem;
-      }
+      .u-card { border: 1px solid var(--stroke); border-radius: 14px; background: #fff; box-shadow: var(--shadow); padding: 10px 12px 12px 12px; }
+      .u-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+      .u-ident { display:flex; align-items:center; gap:10px; }
+      .u-avatar { width: 36px; height: 36px; border-radius: 999px; background: #edf3f6; color: var(--brand); font-weight: 800; display:grid; place-items:center; font-size: .9rem; }
       .u-title { font-weight: 800; color: var(--text); font-size: .95rem; line-height:1.2; }
       .u-subtle { color: var(--text-muted); font-size: .8rem; margin-top:2px; }
-
       .u-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
-      .u-chip {
-        display:inline-flex; align-items:center; gap:6px;
-        padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.78rem;
-        background: #f8fafc;
-        max-width: 70%;
-        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-      }
-
-      .u-actions {
-        display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px;
-      }
+      .u-chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 8px; border-radius: 999px; border:1px solid var(--stroke); font-size:.78rem; background: #f8fafc; max-width: 70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .u-actions { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:10px; }
       .u-btn { min-height: 30px; padding: 5px 8px; font-size: .82rem; border-radius: 10px; font-weight:700; }
       .u-btn i { font-size: .85rem; }
+
+      /* Centered loader block */
+      .loader-block {
+        padding: 24px 0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color: rgba(150, 150, 150, 1);
+      }
+
+      /* ✅ Match Departments/Standards dropdown look */
+      .dropdown-menu{
+        --bs-dropdown-link-hover-bg:#f1f5f9;
+        --bs-dropdown-link-active-bg:#e2e8f0;
+      }
+      .dropdown-item{ color:var(--text) !important; }
+      .dropdown-item:hover,
+      .dropdown-item:focus,
+      .dropdown-item:active,
+      .dropdown-item.active{
+        color:var(--text) !important;
+      }
     `}</style>
   );
 
   const refreshData = async () => {
-    setUseSkeleton(true);
     setLoading(true);
 
     if (abortRef.current) abortRef.current.abort();
@@ -321,39 +286,7 @@ export default function Users() {
   const paginatedUsers = isAll ? sortedUsers : sortedUsers.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedUsers.length > 0;
 
-  // Skeleton state
-  const skeletonMode = loading && useSkeleton;
-  const skeletonCount = isAll ? 15 : Number(pageSize);
-
-  // Filler rows for stable height (desktop)
-  const baseRowsCount = hasPageData ? paginatedUsers.length : 1;
-  const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
-
-  const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
-  const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
-
-  // Skeleton row (desktop)
-  const SkeletonRow = ({ idx }) => (
-    <tr key={`sk-${idx}`}>
-      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '80%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '65%' }} /></td>
-      <td><span className="skel skel-badge" /></td>
-      <td><span className="skel skel-line" style={{ width: '75%' }} /></td>
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-    </tr>
-  );
-
-  const renderFillerRows = (count) =>
-    Array.from({ length: count }).map((_, r) => (
-      <tr key={`filler-${r}`} className="table-empty-row">
-        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
-      </tr>
-    ));
-
-  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || sortedUsers.length === 0;
+  const exportDisabled = loading || !hasLoadedOnce || sortedUsers.length === 0;
 
   const exportToExcel = () => {
     if (exportDisabled) return;
@@ -411,11 +344,9 @@ export default function Users() {
             <div className="u-avatar">{initials(u?.first_name, u?.last_name)}</div>
             <div>
               <div className="u-title">{u?.username}</div>
-              {/* ✅ Show clearly: Employee Number */}
               <div className="u-subtle">رقم الموظف: {u?.employee_id}</div>
             </div>
           </div>
-          {/* ✅ No badge/state look for role */}
         </div>
 
         <div className="u-row">
@@ -459,38 +390,6 @@ export default function Users() {
       </div>
     );
   };
-
-  const SkeletonCard = ({ idx }) => (
-    <div className="u-card" key={`usc-${idx}`}>
-      <div className="u-head">
-        <div className="u-ident" style={{ width:'70%' }}>
-          <span className="skel" style={{ width:36, height:36, borderRadius:'999px' }} />
-          <div style={{ flex:1 }}>
-            <div className="skel skel-line" style={{ width:'60%' }} />
-            <div className="skel skel-line" style={{ width:'40%', marginTop:6 }} />
-          </div>
-        </div>
-      </div>
-      <div className="u-row">
-        <span className="u-subtle">الاسم</span>
-        <span className="skel skel-line" style={{ width:'40%' }} />
-      </div>
-      <div className="u-row">
-        <span className="u-subtle">الإدارة</span>
-        <span className="skel skel-line" style={{ width:'30%' }} />
-      </div>
-      <div className="u-row">
-        <span className="u-subtle">الدور</span>
-        <span className="skel skel-line" style={{ width:'25%' }} />
-      </div>
-      {!isViewer && (
-        <div className="u-actions">
-          <span className="skel skel-chip" />
-          <span className="skel skel-chip" />
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <>
@@ -571,11 +470,8 @@ export default function Users() {
 
                                   <Dropdown align="end">
                                     <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
-                                    <Dropdown.Menu renderOnMount>
-                                      <Dropdown.Header>الهوية</Dropdown.Header>
-                                      <Dropdown.Item onClick={() => setSort('employee_id','asc')}  active={sortKey==='employee_id' && sortDir==='asc'}>رقم الموظف (تصاعدي)</Dropdown.Item>
-                                      <Dropdown.Item onClick={() => setSort('employee_id','desc')} active={sortKey==='employee_id' && sortDir==='desc'}>رقم الموظف (تنازلي)</Dropdown.Item>
-                                      <Dropdown.Divider />
+                                    <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
+                 
                                       <Dropdown.Header>الاسم</Dropdown.Header>
                                       <Dropdown.Item onClick={() => setSort('username','asc')}  active={sortKey==='username' && sortDir==='asc'}>اسم المستخدم (أ-ي)</Dropdown.Item>
                                       <Dropdown.Item onClick={() => setSort('username','desc')} active={sortKey==='username' && sortDir==='desc'}>اسم المستخدم (ي-أ)</Dropdown.Item>
@@ -608,7 +504,7 @@ export default function Users() {
                               )}
 
                               <div className="d-flex align-items-center gap-2 ms-2">
-                                {!skeletonMode && (
+                                {!loading && (
                                   <small className="text-muted">النتائج: {sortedUsers.length.toLocaleString('ar-SA')}</small>
                                 )}
                                 <button
@@ -618,7 +514,10 @@ export default function Users() {
                                   disabled={loading}
                                   aria-busy={loading}
                                 >
-                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                                  {loading
+                                    ? <span className="spinner-border spinner-border-sm ms-1" />
+                                    : <i className="fas fa-rotate-right" />
+                                  }
                                   تحديث
                                 </button>
                               </div>
@@ -626,7 +525,7 @@ export default function Users() {
                           </div>
                         )}
 
-                        {/* Mobile header (same button sizing as Standards via .m-btn) */}
+                        {/* Mobile header */}
                         {isMobile && (
                           <div className="m-stack">
                             <div className="search-block">
@@ -644,11 +543,8 @@ export default function Users() {
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount className="m-menu">
-                                  <Dropdown.Header>الهوية</Dropdown.Header>
-                                  <Dropdown.Item onClick={() => setSort('employee_id','asc')}  active={sortKey==='employee_id' && sortDir==='asc'}>رقم الموظف (تصاعدي)</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => setSort('employee_id','desc')} active={sortKey==='employee_id' && sortDir==='desc'}>رقم الموظف (تنازلي)</Dropdown.Item>
-                                  <Dropdown.Divider />
+                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
+            
                                   <Dropdown.Header>الاسم</Dropdown.Header>
                                   <Dropdown.Item onClick={() => setSort('username','asc')}  active={sortKey==='username' && sortDir==='asc'}>اسم المستخدم (أ-ي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => setSort('username','desc')} active={sortKey==='username' && sortDir==='desc'}>اسم المستخدم (ي-أ)</Dropdown.Item>
@@ -670,7 +566,7 @@ export default function Users() {
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                     <i className="fas fa-filter ms-1" /> تصفية
                                   </Dropdown.Toggle>
-                                  <Dropdown.Menu renderOnMount className="m-menu">
+                                  <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
                                     <Dropdown.Header>الدور</Dropdown.Header>
                                     <div className="px-2 pb-2">
                                       {uniqueRoles.map((r, idx) => (
@@ -708,7 +604,7 @@ export default function Users() {
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
                                 </Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount className="m-menu">
+                                <Dropdown.Menu renderOnMount className="m-menu" popperConfig={dropdownPopper}>
                                   {!isViewer && (
                                     <Dropdown.Item as={Link} to="/users_create">
                                       <i className="fas fa-user-plus ms-1" /> إضافة مستخدم
@@ -724,9 +620,9 @@ export default function Users() {
                             </div>
 
                             <div className="meta-row">
-                              {(!loading || !useSkeleton) ? (
+                              {!loading ? (
                                 <small className="text-muted">النتائج: {sortedUsers.length.toLocaleString('ar-SA')}</small>
-                              ) : <span className="skel skel-line" style={{ width: 80 }} />}
+                              ) : <span />}
                               <button
                                 className="btn btn-outline-primary btn-sm"
                                 onClick={refreshData}
@@ -734,7 +630,10 @@ export default function Users() {
                                 disabled={loading}
                                 aria-busy={loading}
                               >
-                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />}
+                                {loading
+                                  ? <span className="spinner-border spinner-border-sm ms-1" />
+                                  : <i className="fas fa-rotate-right" />
+                                }
                                 تحديث
                               </button>
                             </div>
@@ -745,8 +644,11 @@ export default function Users() {
                       {/* ===== CONTENT: Cards on mobile, table on desktop ===== */}
                       {isMobile ? (
                         <div className="mobile-list">
-                          {skeletonMode ? (
-                            Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
+                          {loading ? (
+                            <div className="loader-block">
+                              <span className="spinner-border" role="status" aria-hidden="true" />
+                              <span className="text-muted">جاري التحميل…</span>
+                            </div>
                           ) : hasPageData ? (
                             paginatedUsers.map(u => <MobileCard key={u?.employee_id} u={u} />)
                           ) : (
@@ -770,8 +672,15 @@ export default function Users() {
                             </thead>
 
                             <tbody>
-                              {skeletonMode ? (
-                                Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                              {loading ? (
+                                <tr>
+                                  <td colSpan={colCount}>
+                                    <div className="loader-block">
+                                      <span className="spinner-border" role="status" aria-hidden="true" />
+                                      <span className="text-muted">جاري التحميل…</span>
+                                    </div>
+                                  </td>
+                                </tr>
                               ) : hasPageData ? (
                                 paginatedUsers.map(u => {
                                   const depName = deptNameById.get(u?.department_id) || '';
@@ -811,8 +720,6 @@ export default function Users() {
                                   <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
                                 </tr>
                               )}
-
-                              {!skeletonMode && renderFillerRows(fillerCount)}
                             </tbody>
                           </table>
                         </div>
@@ -825,7 +732,7 @@ export default function Users() {
                             <Dropdown.Toggle size="sm" variant="outline-secondary">
                               عدد الصفوف: {isAll ? 'الكل' : pageSize}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu>
+                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item
                                   key={opt}
@@ -844,8 +751,8 @@ export default function Users() {
                           <div className="text-muted small">عرض {sortedUsers.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={skeletonMode || currentPage === totalPages}>التالي</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)} disabled={loading || currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)} disabled={loading || currentPage === totalPages}>التالي</button>
                             <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
                           </div>
                         )}

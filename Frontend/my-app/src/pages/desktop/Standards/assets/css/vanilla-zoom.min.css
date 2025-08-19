@@ -14,7 +14,8 @@
   opacity: .5;
 }
 
-.vanilla-zoom .sidebar img.small-preview.active, .vanilla-zoom .sidebar img.small-preview:hover {
+.vanilla-zoom .sidebar img.small-preview.active,
+.vanilla-zoom .sidebar img.small-preview:hover {
   opacity: 1;
 }
 
@@ -31,4 +32,3 @@
   background-size: contain;
   margin-bottom: 5px;
 }
-

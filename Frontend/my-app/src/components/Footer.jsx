@@ -8,8 +8,6 @@ const Footer = () => {
       className="navbar py-3 px-4 text-center"
       style={{
         backgroundColor: '#0f172a',
-        // ✅ safe-area padding is INSIDE the footer bar (prevents ghost gap on iOS)
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0px)',
       }}
     >
       <div className="container-fluid d-flex align-items-center justify-content-center">

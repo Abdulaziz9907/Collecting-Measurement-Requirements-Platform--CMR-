@@ -20,11 +20,10 @@ export default function Standards() {
   const [departments, setDepartments] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile detection (<=576px) — same approach as your other pages
+  // Mobile detection (<=576px)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 576px)');
     const update = () => setIsMobile(mq.matches);
@@ -46,12 +45,15 @@ export default function Standards() {
   const [importing, setImporting] = useState(false);
   const [banner, setBanner] = useState({ type: null, text: '' });
   const fileInputRef = useRef(null);
+
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
   const user = useMemo(() => getStoredUser(), []);
   const navigate = useNavigate();
+
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
+
   const LOAD_MIN_MS = 450;
   const abortRef = useRef(null);
   const loadSeqRef = useRef(0);
@@ -68,13 +70,16 @@ export default function Standards() {
         --stroke: #eef2f7;
         --text: #0b2440;
         --text-muted: #6b7280;
+        --loading-color: rgba(150,150,150,1);
       }
+
       .table-card { background:#fff; border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:0; }
       .head-flat { padding:10px 12px; background:var(--surface-muted); border-bottom:1px solid var(--stroke); color:var(--text); }
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
       .search-block { flex:1 1 320px; min-width:240px; }
       .search-input { width:100%; max-width:460px; margin:0 !important; }
+
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-select{ width:42px; text-align:center; }
       .td-select{ width:42px; text-align:center; }
@@ -86,18 +91,16 @@ export default function Standards() {
       .th-icon{ width:60px; }
       .th-sort{ background:transparent; border:0; padding:0; color:#6c757d; font-weight:600; cursor:pointer; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
-      .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
-      .page-spacer{ height:200px; } /* ✅ intentional space ABOVE footer */
 
-      .skel{ position:relative; overflow:hidden; background:#e9edf3; display:inline-block; border-radius:6px; }
-      .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.2s infinite; }
-      @keyframes shimmer{ 100%{ transform:translateX(100%);} }
-      .skel-line{ height:12px; }
-      .skel-badge{ height:22px; width:72px; border-radius:999px; }
-      .skel-icon{ height:16px; width:16px; border-radius:4px; }
-      .skel-chip{ height:28px; width:100%; border-radius:999px; }
-      .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
-      .selection-bar{ border-top:1px dashed var(--stroke); border-bottom:1px dashed var(--stroke); background:linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%); padding:8px 12px; }
+      .foot-flat{ padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
+      .page-spacer{ height:200px; } 
+
+      .dropdown-menu{
+        --bs-dropdown-link-hover-bg:#f1f5f9;
+        --bs-dropdown-link-active-bg:#e2e8f0;
+      }
+      .dropdown-item{ color:var(--text) !important; }
+      .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active{ color:var(--text) !important; }
 
       @media (max-width:576px){
         .head-row{ display:none; }
@@ -107,7 +110,11 @@ export default function Standards() {
         .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
         .search-input{ max-width:100%; height:36px; line-height:36px; }
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .m-menu{ width:min(92vw, 360px); max-width:92vw; }
+        .m-menu .dropdown-item{ padding:10px 12px; font-size:.95rem; }
+        .m-menu .dropdown-header{ font-size:.9rem; }
       }
+
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .mobile-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .mobile-card-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -117,6 +124,15 @@ export default function Standards() {
       .mobile-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; border:1px solid var(--stroke); font-size:.8rem; background:#f8fafc; }
       .s-actions{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
       .s-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:700; }
+
+      .loader-block{
+        padding:24px 0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color: var(--loading-color);
+      }
     `}</style>
   );
 
@@ -154,7 +170,6 @@ export default function Standards() {
   }), []);
 
   const refreshData = async () => {
-    setUseSkeleton(true);
     setLoading(true);
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -299,48 +314,11 @@ export default function Standards() {
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(sortedData.length / numericPageSize));
   const paginatedData = isAll ? sortedData : sortedData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedData.length > 0;
-  const skeletonMode = loading && useSkeleton;
-  const skeletonCount = isAll ? 15 : numericPageSize;
-  const baseRowsCount = hasPageData ? paginatedData.length : 1;
-  const fillerCount = isAll ? 0 : Math.max(0, numericPageSize - baseRowsCount);
-
-  const renderFillerRows = (count) =>
-    Array.from({ length: count }).map((_, r) => (
-      <tr key={`filler-${r}`} className="table-empty-row">
-        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
-      </tr>
-    ));
-
-  const SkeletonRow = ({ idx }) => (
-    <tr key={`sk-${idx}`}>
-      {!isViewer && (<td className="td-select"><span className="skel skel-icon" /></td>)}
-      <td><span className="skel skel-line" style={{ width: '60%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '85%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
-      <td><span className="skel skel-badge" /></td>
-      <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '55%' }} /></td>
-      {!isViewer && (<td><span className="skel skel-icon" /></td>)}
-    </tr>
-  );
-
-  const SkeletonCard = ({ idx }) => (
-    <div className="mobile-card" key={`msc-${idx}`}>
-      <div className="mobile-card-header">
-        <span className="skel skel-line" style={{ width: '65%' }} />
-        <span className="skel skel-badge" />
-      </div>
-      <div className="mobile-row"><span className="mobile-subtle">الإدارة</span><span className="skel skel-line" style={{ width: '40%' }} /></div>
-      <div className="mobile-row"><span className="mobile-subtle">رقم المعيار</span><span className="skel skel-line" style={{ width: '30%' }} /></div>
-      <div className="mobile-row"><span className="mobile-subtle">تاريخ الإنشاء</span><span className="skel skel-line" style={{ width: '30%' }} /></div>
-      {!isViewer && (<div className="mobile-row" style={{ marginTop: 8 }}><span className="skel skel-chip" style={{ width: '40%' }} /><span className="skel skel-chip" style={{ width: '30%' }} /></div>)}
-    </div>
-  );
 
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || filteredData.length === 0;
+  const exportDisabled = loading || !hasLoadedOnce || filteredData.length === 0;
   const exportToExcel = () => {
     if (exportDisabled) return;
     const exportData = filteredData.map(item => ({
@@ -357,7 +335,9 @@ export default function Standards() {
   };
 
   const downloadTemplateExcel = () => {
-    const ws = XLSX.utils.aoa_to_sheet([['رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات']]);
+    const ws = XLSX.utils.aoa_to_sheet([[
+      'رقم المعيار','اسم المعيار','الهدف','متطلبات التطبيق','الجهة','مستندات الإثبات'
+    ]]);
     ws['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 24 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'قالب المعايير');
@@ -440,7 +420,14 @@ export default function Standards() {
   const pageAllSelected = !loading && pageIds.length > 0 && pageSelectedCount === pageIds.length;
   const anySelected = selectedIds.size > 0;
   useEffect(() => { if (headerCbRef.current) headerCbRef.current.indeterminate = pageSelectedCount > 0 && !pageAllSelected; }, [pageSelectedCount, pageAllSelected]);
-  const setSelectForIds = (ids, checked) => { setSelectedIds(prev => { const next = new Set(prev); ids.forEach(id => { if (checked) next.add(id); else next.delete(id); }); return next; }); };
+
+  const setSelectForIds = (ids, checked) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => { if (checked) next.add(id); else next.delete(id); });
+      return next;
+    });
+  };
   const togglePageAll = (checked) => setSelectForIds(pageIds, checked);
   const toggleOne = (id, pageIndex, e) => {
     const checked = e.target.checked;
@@ -461,7 +448,13 @@ export default function Standards() {
   const tryBatchEndpoint = async (ids) => { try { const res = await fetch(`${API_BASE}/api/standards/batch-delete`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ids }) }); return res.ok; } catch { return false; } };
   const deleteManyFallback = async (ids) => {
     const CONCURRENCY = 6; let cursor = 0; let ok = 0, failed = 0;
-    const worker = async () => { while (cursor < ids.length) { const id = ids[cursor++]; try { const res = await fetch(`${API_BASE}/api/standards/${id}`, { method: 'DELETE' }); if (res.ok) ok++; else failed++; } catch { failed++; } } };
+    const worker = async () => {
+      while (cursor < ids.length) {
+        const id = ids[cursor++];
+        try { const res = await fetch(`${API_BASE}/api/standards/${id}`, { method: 'DELETE' }); if (res.ok) ok++; else failed++; }
+        catch { failed++; }
+      }
+    };
     const jobs = Array.from({ length: Math.min(CONCURRENCY, ids.length) }, () => worker());
     await Promise.all(jobs);
     return { ok, failed };
@@ -484,7 +477,7 @@ export default function Standards() {
     return (
       <div className="mobile-card" key={id}>
         <div className="mobile-card-header">
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ display: 'flex', alignItems:'center', gap:8 }}>
             {!isViewer && (
               <input type="checkbox" className="form-check-input m-0" checked={selectedIds.has(id)} onChange={(e) => toggleOne(id, idx, e)} aria-label="تحديد" />
             )}
@@ -508,7 +501,6 @@ export default function Standards() {
   return (
     <>
       <LocalTheme />
-      {/* Match other pages: one min-vh-100 flex column at the page root */}
       <div
         dir="rtl"
         className="min-vh-100 d-flex flex-column"
@@ -528,9 +520,8 @@ export default function Standards() {
         <div id="wrapper" style={{ display:'flex', flexDirection:'row', flex:1 }}>
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
-          {/* Keep this simple (no extra min-vh-100) */}
-          <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-            <div id="content" className="flex-grow-1 d-flex">
+<div className="d-flex flex-column flex-grow-1 min-vh-100" id="content-wrapper">
+              <div id="content" className="flex-grow-1 d-flex">
               <div className="container-fluid d-flex flex-column">
                 <div className="row p-4"><div className="col-12"><Breadcrumbs /></div></div>
 
@@ -546,7 +537,7 @@ export default function Standards() {
                             <div className="controls-inline">
                               <Dropdown align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper}>
                                   <Dropdown.Header>حسب التاريخ</Dropdown.Header>
                                   <Dropdown.Item onClick={() => {setSortKey('created_at'); setSortDir('desc');}} active={sortKey==='created_at' && sortDir==='desc'}>الأحدث أولًا</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('created_at'); setSortDir('asc');}} active={sortKey==='created_at' && sortDir==='asc'}>الأقدم أولًا</Dropdown.Item>
@@ -558,14 +549,12 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('standard_number'); setSortDir('desc');}} active={sortKey==='standard_number' && sortDir==='desc'}>رقم المعيار (تنازلي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('department'); setSortDir('asc');}} active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('department'); setSortDir('desc');}} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('asc');}} active={sortKey==='status' && sortDir==='asc'}>الحالة (أ-ي)</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
 
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">تصفية</Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount style={{ maxHeight: 360, overflowY: 'auto' }}>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 360, overflowY: 'auto' }}>
                                   <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={`st-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
@@ -588,17 +577,23 @@ export default function Standards() {
 
                               {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                 <>
-                                  <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</button>
-                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>{importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}</button>
-                                  <OverlayTrigger placement="bottom" delay={{ show: 200, hide: 100 }} overlay={popTemplateHelp}>
+                                  <button className="btn btn-success btn-sm" onClick={exportToExcel} disabled={exportDisabled} title={exportDisabled ? 'التصدير متاح بعد اكتمال التحميل ووجود نتائج' : 'تصدير Excel'} aria-disabled={exportDisabled}>
+                                    <i className="fas fa-file-excel ms-1" /> تصدير Excel
+                                  </button>
+                                  <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" style={{ color: 'rgba(150,150,150,1)' }} /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
+                                  </button>
+                                  <OverlayTrigger placement="bottom" delay={{ show: 200, hide: 100 }} overlay={popTemplateHelp} popperConfig={dropdownPopper}>
                                     <button className="btn btn-outline-secondary btn-sm" onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</button>
                                   </OverlayTrigger>
                                 </>
                               )}
 
                               <div className="d-flex align-items-center gap-2">
-                                {!skeletonMode && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
-                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                                {!loading && <small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>}
+                                <button className="btn btn-outline-primary btn-sm" onClick={refreshData} title="تحديث" disabled={loading} aria-busy={loading}>
+                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -610,7 +605,7 @@ export default function Standards() {
                             <div className={`m-toolbar ${showActions ? '' : 'cols-2'}`}>
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-sort ms-1" /> فرز</Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                   <Dropdown.Header>حسب التاريخ</Dropdown.Header>
                                   <Dropdown.Item onClick={() => {setSortKey('created_at'); setSortDir('desc');}} active={sortKey==='created_at' && sortDir==='desc'}>الأحدث أولًا</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('created_at'); setSortDir('asc');}} active={sortKey==='created_at' && sortDir==='asc'}>الأقدم أولًا</Dropdown.Item>
@@ -622,14 +617,13 @@ export default function Standards() {
                                   <Dropdown.Item onClick={() => {setSortKey('standard_number'); setSortDir('desc');}} active={sortKey==='standard_number' && sortDir==='desc'}>رقم المعيار (تنازلي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('department'); setSortDir('asc');}} active={sortKey==='department' && sortDir==='asc'}>الإدارة (أ-ي)</Dropdown.Item>
                                   <Dropdown.Item onClick={() => {setSortKey('department'); setSortDir('desc');}} active={sortKey==='department' && sortDir==='desc'}>الإدارة (ي-أ)</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('asc');}} active={sortKey==='status' && sortDir==='asc'}>الحالة (أ-ي)</Dropdown.Item>
-                                  <Dropdown.Item onClick={() => {setSortKey('status'); setSortDir('desc');}} active={sortKey==='status' && sortDir==='desc'}>الحالة (ي-أ)</Dropdown.Item>
+
                                 </Dropdown.Menu>
                               </Dropdown>
 
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-filter ms-1" /> تصفية</Dropdown.Toggle>
-                                <Dropdown.Menu renderOnMount>
+                                <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                   <Dropdown.Header>الحالة</Dropdown.Header>
                                   {uniqueStatuses.map((status, idx) => (
                                     <label key={`mst-${idx}`} className="dropdown-item d-flex align-items-center gap-2 m-0" onClick={(e) => e.stopPropagation()}>
@@ -651,7 +645,7 @@ export default function Standards() {
                               {showActions && (
                                 <Dropdown align="start">
                                   <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn"><i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات</Dropdown.Toggle>
-                                  <Dropdown.Menu renderOnMount>
+                                  <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} className="m-menu">
                                     <Dropdown.Item as={Link} to="/standards_create"><i className="fas fa-square-plus ms-1" /> إضافة معيار</Dropdown.Item>
                                     {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                       <>
@@ -666,15 +660,17 @@ export default function Standards() {
                             </div>
 
                             <div className="meta-row">
-                              {(!loading || !useSkeleton) ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span className="skel skel-line" style={{ width: 80 }} />}
-                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>{loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث</button>
+                              {!loading ? (<small className="text-muted">النتائج: {filteredData.length.toLocaleString('ar-SA')}</small>) : <span />}
+                              <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
+                                {loading ? <span className="spinner-border spinner-border-sm ms-1"  /> : <i className="fas fa-rotate-right" />} تحديث
+                              </button>
                             </div>
                           </div>
                         )}
                       </div>
 
                       {(!isViewer && anySelected) && (
-                        <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div className="selection-bar d-flex flex-wrap align-items-center justify-content-between gap-2" style={{ borderTop:'1px dashed var(--stroke)', borderBottom:'1px dashed var(--stroke)', background:'linear-gradient(180deg, #f9fbff 0%, #f5f8fc 100%)', padding:'8px 12px' }}>
                           <div className="d-flex align-items-center gap-2">
                             <strong>{selectedIds.size.toLocaleString('ar-SA')}</strong>
                             <span className="text-muted">عنصر/عناصر محددة</span>
@@ -691,28 +687,44 @@ export default function Standards() {
 
                       {isMobile ? (
                         <div className="mobile-list">
-                          {skeletonMode ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
-                          : hasPageData ? paginatedData.map((item, idx) => (<MobileCard key={item.standard_id} item={item} idx={idx} />))
-                          : <div className="text-muted text-center py-3">لا توجد نتائج</div>}
+                          {loading ? (
+                            <div className="loader-block">
+                              <span className="spinner-border" role="status" aria-hidden="true" />
+                              <span className="text-muted">جاري التحميل…</span>
+                            </div>
+                          ) : hasPageData ? (
+                            paginatedData.map((item, idx) => (<MobileCard key={item.standard_id} item={item} idx={idx} />))
+                          ) : (
+                            <div className="text-muted text-center py-3">لا توجد نتائج</div>
+                          )}
                         </div>
                       ) : (
                         <div className="table-responsive">
                           <table className="table table-hover text-center align-middle">
                             <thead>
                               <tr>
-                                {!isViewer && (<th className="th-select"><div className="d-flex justify-content-center align-items-center"><input ref={headerCbRef} type="checkbox" className="form-check-input" checked={pageAllSelected} onChange={(e) => togglePageAll(e.target.checked)} disabled={skeletonMode} /></div></th>)}
-                                <th className="th-num"><button type="button" className="th-sort" onClick={() => toggleSort('standard_number')} disabled={skeletonMode}>رقم المعيار{sortIcon('standard_number')}</button></th>
-                                <th className="th-name"><button type="button" className="th-sort" onClick={() => toggleSort('standard_name')} disabled={skeletonMode}>اسم المعيار{sortIcon('standard_name')}</button></th>
-                                <th className="th-dept"><button type="button" className="th-sort" onClick={() => toggleSort('department')} disabled={skeletonMode}>الإدارة{sortIcon('department')}</button></th>
-                                <th className="th-status"><button type="button" className="th-sort" onClick={() => toggleSort('status')} disabled={skeletonMode}>حالة المعيار{sortIcon('status')}</button></th>
+                                {!isViewer && (<th className="th-select"><div className="d-flex justify-content-center align-items-center"><input ref={headerCbRef} type="checkbox" className="form-check-input" checked={pageAllSelected} onChange={(e) => togglePageAll(e.target.checked)} disabled={loading} /></div></th>)}
+                                <th className="th-num"><button type="button" className="th-sort" onClick={() => toggleSort('standard_number')} disabled={loading}>رقم المعيار{sortIcon('standard_number')}</button></th>
+                                <th className="th-name"><button type="button" className="th-sort" onClick={() => toggleSort('standard_name')} disabled={loading}>اسم المعيار{sortIcon('standard_name')}</button></th>
+                                <th className="th-dept"><button type="button" className="th-sort" onClick={() => toggleSort('department')} disabled={loading}>الإدارة{sortIcon('department')}</button></th>
+                                <th className="th-status"><button type="button" className="th-sort" onClick={() => toggleSort('status')} disabled={loading}>حالة المعيار{sortIcon('status')}</button></th>
                                 <th>تفاصيل</th>
-                                <th className="th-date"><button type="button" className="th-sort" onClick={() => toggleSort('created_at')} disabled={skeletonMode}>تاريخ الإنشاء{sortIcon('created_at')}</button></th>
+                                <th className="th-date"><button type="button" className="th-sort" onClick={() => toggleSort('created_at')} disabled={loading}>تاريخ الإنشاء{sortIcon('created_at')}</button></th>
                                 {user?.role?.toLowerCase?.() !== 'user' && <th className="th-icon">تعديل</th>}
                               </tr>
                             </thead>
                             <tbody>
-                              {skeletonMode ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
-                              : hasPageData ? paginatedData.map((item, idx) => {
+                              {loading ? (
+                                <tr>
+                                  <td colSpan={colCount}>
+                                    <div className="loader-block">
+                                      <span className="spinner-border" role="status" aria-hidden="true" />
+                                      <span className="text-muted">جاري التحميل…</span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : hasPageData ? (
+                                paginatedData.map((item, idx) => {
                                   const id = item.standard_id;
                                   const checked = selectedIds.has(id);
                                   return (
@@ -738,8 +750,11 @@ export default function Standards() {
                                     </tr>
                                   );
                                 })
-                              : <tr className="table-empty-row"><td colSpan={colCount} className="text-muted">لا توجد نتائج</td></tr>}
-                              {!skeletonMode && renderFillerRows(fillerCount)}
+                              ) : (
+                                <tr>
+                                  <td colSpan={colCount} className="text-muted text-center py-4">لا توجد نتائج</td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>
@@ -749,7 +764,7 @@ export default function Standards() {
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
                             <Dropdown.Toggle size="sm" variant="outline-secondary">عدد الصفوف: {isAll ? 'الكل' : pageSize}</Dropdown.Toggle>
-                            <Dropdown.Menu renderOnMount style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+                            <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                               {PAGE_OPTIONS.map(opt => (
                                 <Dropdown.Item key={opt} as="button" active={opt === pageSize} onClick={() => { setPageSize(opt); setCurrentPage(1); }}>
                                   {opt === 'all' ? 'الكل' : opt}
@@ -762,8 +777,8 @@ export default function Standards() {
                           <div className="text-muted small">عرض {sortedData.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={skeletonMode || currentPage === totalPages}>التالي</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={loading || currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={loading || currentPage === totalPages}>التالي</button>
                             <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
                           </div>
                         )}
@@ -772,17 +787,22 @@ export default function Standards() {
                   </div>
                 </div>
 
-                {/* ✅ keep this to preserve the space ABOVE the footer */}
                 <div className="page-spacer" />
               </div>
+
+              
             </div>
 
-            {/* ✅ footer without any wrapper padding below it */}
             <div className="mt-auto">
               <Footer />
             </div>
           </div>
+
+
+          
         </div>
+
+
       </div>
 
       <input

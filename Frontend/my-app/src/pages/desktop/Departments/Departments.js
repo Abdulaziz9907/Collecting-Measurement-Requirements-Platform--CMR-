@@ -17,7 +17,6 @@ export default function Departments() {
   const [buildingFilter, setBuildingFilter] = useState([]); // strings
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [useSkeleton, setUseSkeleton] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -66,7 +65,7 @@ export default function Departments() {
     ],
   }), []);
 
-  /* ===== Local Theme (aligned with Users) ===== */
+  /* ===== Local Theme (no skeletons; unified loading color) ===== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -74,8 +73,8 @@ export default function Departments() {
         --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
         --surface:#ffffff; --surface-muted:#fbfdff; --stroke:#eef2f7;
         --text:#0b2440; --text-muted:#6b7280; --brand:#4F7689;
-        --skeleton-bg:#e9edf3; --skeleton-sheen:rgba(255,255,255,.6); --skeleton-speed:1.2s;
-        --search-max: 460px; /* ✅ unified desktop search width */
+        --search-max: 460px;
+        --loading-color: rgba(150,150,150,1);
       }
 
       .table-card { background:var(--surface); border:1px solid var(--stroke); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:56px; }
@@ -83,30 +82,16 @@ export default function Departments() {
       .head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
       .controls-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
-      /* ✅ Desktop: identical width */
       .search-block { flex: 0 0 var(--search-max); }
       .search-input { width: var(--search-max); max-width: 100%; margin:0 !important; }
 
       .table thead th { white-space:nowrap; color:#6c757d; font-weight:600; }
       .th-name{ min-width:280px; } .th-bnum{ min-width:140px; } .th-icon{ width:60px; }
 
-      .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background:var(--surface-muted); }
+      .foot-flat { padding:10px 14px; border-top:1px solid var(--stroke); background: var(--surface-muted); }
       .page-spacer { height:200px; }
       .table-card .table, .table-card .table-responsive { margin:0 !important; }
 
-      /* Skeletons */
-      .skel{ position:relative; overflow:hidden; background:var(--skeleton-bg); display:inline-block; border-radius:6px; }
-      .skel::after{ content:""; position:absolute; inset:0; transform:translateX(-100%);
-        background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%);
-        animation:shimmer var(--skeleton-speed) infinite; }
-      @keyframes shimmer { 100% { transform: translateX(100%);} }
-      @media (prefers-reduced-motion: reduce){ .skel::after{ animation:none; } }
-      .skel-line{ height:12px; }
-      .skel-chip{ height:28px; width:100%; border-radius:999px; }
-      .skel-icon{ height:16px; width:16px; border-radius:4px; } /* ✅ match Users skeleton icon */
-      .table-empty-row td{ height:44px; padding:0; border-color:#eef2f7 !important; background:#fff; }
-
-      /* Dropdown look identical to Users */
       .dropdown-menu{
         --bs-dropdown-link-hover-bg:#f1f5f9;
         --bs-dropdown-link-active-bg:#e2e8f0;
@@ -114,19 +99,16 @@ export default function Departments() {
       .dropdown-item{ color:var(--text) !important; }
       .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active, .dropdown-item.active{ color:var(--text) !important; }
 
-      /* Mobile unified header sizing (like Users) */
       @media (max-width:576px){
         .head-row{ display:none; }
         .m-stack{ display:grid; grid-template-columns:1fr; row-gap:6px; margin:0; padding:0; }
         .m-toolbar{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:0; padding:0; }
         .m-btn.btn{ padding:5px 8px; min-height:32px; font-size:.85rem; border-radius:10px; font-weight:600; width:100%; }
 
-        /* ✅ Mobile: full width */
         .search-block{ flex:1 1 auto; min-width:0; }
         .search-input{ width:100%; max-width:100%; height:36px; line-height:36px; }
 
         .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        /* The special mobile dropdown menu sizing class */
         .m-menu{ width:min(92vw, 360px); max-width:92vw; }
         .m-menu .dropdown-item{ padding:10px 12px; font-size:.95rem; }
         .m-menu .dropdown-header{ font-size:.9rem; }
@@ -143,6 +125,16 @@ export default function Departments() {
       .d-actions{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
       .d-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:600; }
       .d-btn i{ font-size:.85rem; }
+
+      /* Centered loader (mobile & desktop) — spinner color via currentColor */
+      .loader-block{
+        padding:24px 0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color: var(--loading-color);
+      }
     `}</style>
   );
 
@@ -169,7 +161,6 @@ export default function Departments() {
   }, [banner.type]);
 
   const refreshData = async () => {
-    setUseSkeleton(true);
     setLoading(true);
 
     if (abortRef.current) abortRef.current.abort();
@@ -253,31 +244,8 @@ export default function Departments() {
   const paginatedData = isAll ? sortedData : sortedData.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
   const hasPageData = paginatedData.length > 0;
 
-  const skeletonMode = loading && useSkeleton;
-  const skeletonCount = isAll ? 15 : Number(pageSize);
-
-  const baseRowsCount = hasPageData ? paginatedData.length : 1;
-  const fillerCount = isAll ? 0 : Math.max(0, Number(pageSize) - baseRowsCount);
-
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
-
-  /* ✅ Skeleton row — edit/delete now use .skel-icon to match Users */
-  const SkeletonRow = ({ idx }) => (
-    <tr key={`sk-${idx}`}>
-      <td><span className="skel skel-line" style={{ width: '70%' }} /></td>
-      <td><span className="skel skel-line" style={{ width: '40%' }} /></td>
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-      {!isViewer && <td><span className="skel skel-icon" /></td>}
-    </tr>
-  );
-
-  const renderFillerRows = (count) =>
-    Array.from({ length: count }).map((_, r) => (
-      <tr key={`filler-${r}`} className="table-empty-row">
-        {Array.from({ length: colCount }).map((__, c) => <td key={`f-${r}-${c}`} />)}
-      </tr>
-    ));
 
   /* Block delete if an Admin is in THIS department */
   const hasAdminInDepartment = async (departmentId) => {
@@ -335,7 +303,7 @@ export default function Departments() {
     }
   };
 
-  const exportDisabled = loading || skeletonMode || !hasLoadedOnce || !sortedData.length;
+  const exportDisabled = loading || !hasLoadedOnce || !sortedData.length;
 
   const exportToExcel = () => {
     if (exportDisabled) return;
@@ -472,24 +440,6 @@ export default function Departments() {
     </div>
   );
 
-  const SkeletonCard = ({ idx }) => (
-    <div className="d-card" key={`dsk-${idx}`}>
-      <div className="d-head">
-        <span className="skel skel-line" style={{ width: '60%' }} />
-      </div>
-      <div className="d-row">
-        <span className="d-subtle">رقم المبنى</span>
-        <span className="skel skel-chip" style={{ width: '40%' }} />
-      </div>
-      {!isViewer && (
-        <div className="d-actions">
-          <span className="skel skel-chip" />
-          <span className="skel skel-chip" />
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <>
       <LocalTheme />
@@ -509,7 +459,6 @@ export default function Departments() {
             >
               {banner.text}
 
-              {/* Close (×) — black, not overlapping text */}
               <button
                 type="button"
                 className="btn-close"
@@ -532,7 +481,7 @@ export default function Departments() {
                 </div>
 
                 <div className="row justify-content-center flex-grow-1">
-                  <div className="col-12 col-xl-10 d-flex flex-column">
+                  <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
                       {/* Header */}
                       <div className="head-flat">
@@ -598,7 +547,16 @@ export default function Departments() {
                                   </button>
 
                                   <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-                                    {importing ? (<><span className="spinner-border spinner-border-sm ms-1" /> جارِ الاستيراد</>) : (<><i className="fas fa-file-upload ms-1" /> استيراد Excel</>)}
+                                    {importing ? (
+                                      <>
+                                        <span className="spinner-border spinner-border-sm ms-1" style={{ color: 'rgba(150,150,150,1)' }} />
+                                        جارِ الاستيراد
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="fas fa-file-upload ms-1" /> استيراد Excel
+                                      </>
+                                    )}
                                   </button>
 
                                   <OverlayTrigger
@@ -616,9 +574,12 @@ export default function Departments() {
                               )}
 
                               <div className="d-flex align-items-center gap-2">
-                                {!skeletonMode && <small className="text-muted">النتائج: {sortedData.length.toLocaleString('ar-SA')}</small>}
+                                {!loading && <small className="text-muted">النتائج: {sortedData.length.toLocaleString('ar-SA')}</small>}
                                 <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
-                                  {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                  {loading
+                                    ? <span className="spinner-border spinner-border-sm ms-1"  />
+                                    : <i className="fas fa-rotate-right" />
+                                  } تحديث
                                 </button>
                               </div>
                             </div>
@@ -685,7 +646,9 @@ export default function Departments() {
                                   {['admin','administrator'].includes(user?.role?.toLowerCase?.()) && (
                                     <>
                                       <Dropdown.Item onClick={exportToExcel} disabled={exportDisabled}><i className="fas fa-file-excel ms-1" /> تصدير Excel</Dropdown.Item>
-                                      <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}><i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}</Dropdown.Item>
+                                      <Dropdown.Item onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                                        <i className="fas fa-file-upload ms-1" /> {importing ? 'جارِ الاستيراد…' : 'استيراد Excel'}
+                                      </Dropdown.Item>
                                       <Dropdown.Item onClick={downloadTemplateExcel}><i className="fas fa-download ms-1" /> تحميل القالب</Dropdown.Item>
                                     </>
                                   )}
@@ -694,11 +657,14 @@ export default function Departments() {
                             </div>
 
                             <div className="meta-row">
-                              {(!loading || !useSkeleton) ? (
+                              {!loading ? (
                                 <small className="text-muted">النتائج: {sortedData.length.toLocaleString('ar-SA')}</small>
-                              ) : <span className="skel skel-line" style={{ width: 80 }} />}
+                              ) : <span />}
                               <button className="btn btn-outline-primary btn-sm" onClick={refreshData} disabled={loading} aria-busy={loading}>
-                                {loading ? <span className="spinner-border spinner-border-sm ms-1" /> : <i className="fas fa-rotate-right" />} تحديث
+                                {loading
+                                  ? <span className="spinner-border spinner-border-sm ms-1"  />
+                                  : <i className="fas fa-rotate-right" />
+                                } تحديث
                               </button>
                             </div>
                           </div>
@@ -708,8 +674,11 @@ export default function Departments() {
                       {/* Content */}
                       {isMobile ? (
                         <div className="mobile-list">
-                          {skeletonMode ? (
-                            Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} idx={i} />)
+                          {loading ? (
+                            <div className="loader-block">
+                              <span className="spinner-border" role="status" aria-hidden="true" />
+                              <span className="text-muted">جاري التحميل…</span>
+                            </div>
                           ) : hasPageData ? (
                             paginatedData.map(item => <MobileCard key={item.department_id} item={item} />)
                           ) : (
@@ -728,8 +697,15 @@ export default function Departments() {
                               </tr>
                             </thead>
                             <tbody>
-                              {skeletonMode ? (
-                                Array.from({ length: skeletonCount }).map((_, i) => <SkeletonRow key={i} idx={i} />)
+                              {loading ? (
+                                <tr>
+                                  <td colSpan={colCount}>
+                                    <div className="loader-block">
+                                      <span className="spinner-border" role="status" aria-hidden="true" />
+                                      <span className="text-muted">جاري التحميل…</span>
+                                    </div>
+                                  </td>
+                                </tr>
                               ) : hasPageData ? (
                                 paginatedData.map((item) => (
                                   <tr key={item.department_id}>
@@ -759,12 +735,10 @@ export default function Departments() {
                                   </tr>
                                 ))
                               ) : (
-                                <tr className="table-empty-row">
-                                  <td colSpan={colCount} className="text-muted">لا توجد نتائج</td>
+                                <tr>
+                                  <td colSpan={colCount} className="text-muted text-center py-4">لا توجد نتائج</td>
                                 </tr>
                               )}
-
-                              {!skeletonMode && renderFillerRows(fillerCount)}
                             </tbody>
                           </table>
                         </div>
@@ -796,8 +770,8 @@ export default function Departments() {
                           <div className="text-muted small">عرض {sortedData.length} صف</div>
                         ) : (
                           <div className="d-inline-flex align-items-center gap-2">
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={skeletonMode || currentPage === 1}>السابق</button>
-                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={skeletonMode || currentPage === totalPages}>التالي</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToPreviousPage} disabled={loading || currentPage === 1}>السابق</button>
+                            <button className="btn btn-outline-primary btn-sm" onClick={goToNextPage} disabled={loading || currentPage === totalPages}>التالي</button>
                             <div className="text-muted small">الصفحة {currentPage} من {totalPages}</div>
                           </div>
                         )}
