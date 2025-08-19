@@ -120,7 +120,6 @@ export default function Departments() {
         .m-menu .dropdown-header{ font-size:.9rem; }
       }
 
-      /* Mobile cards */
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .d-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .d-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
@@ -333,27 +332,6 @@ export default function Departments() {
 
   const stripHidden = (s='') =>
     String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
-  const normalizeHeaderKey = (k='') => stripHidden(k);
-  const HEADER_ALIASES = {
-    'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
-    'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
-  };
-  const buildHeaderMap = (firstRowObj) => {
-    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
-    const originalKeys = Object.keys(firstRowObj || {});
-    const lookup = new Map();
-    for (const canon in HEADER_ALIASES) {
-      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
-      let foundIndex = -1;
-      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
-      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
-    }
-    return lookup;
-  };
-  const getCell = (row, headerMap, canonKey) => {
-    const actual = headerMap.get(canonKey);
-    return stripHidden(row[actual] ?? '');
-  };
 
   const handleExcelImport = async (file) => {
     if (!file) return;
@@ -368,8 +346,7 @@ export default function Departments() {
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
       if (!rows.length) { setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' }); return; }
 
-      const headerMap = buildHeaderMap(rows[0]);
-      const missing = ['اسم الجهة','رقم المبنى'].filter(k => !headerMap.get(k));
+      const missing = ['اسم الجهة','رقم المبنى'].filter(k => !(k in rows[0]));
       if (missing.length) {
         setBanner({ type: 'danger', text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}.` });
         return;
@@ -394,10 +371,8 @@ export default function Departments() {
       let ok = 0, fail = 0, dup = 0, skipped = 0;
 
       for (const r of rows) {
-        const nameRaw = getCell(r, headerMap, 'اسم الجهة');
-        const bnumRaw = getCell(r, headerMap, 'رقم المبنى');
-        const department_name = String(nameRaw).trim();
-        const building_number = normalizeInt(bnumRaw);
+        const department_name = String(stripHidden(r['اسم الجهة'] ?? '')).trim();
+        const building_number = normalizeInt(stripHidden(r['رقم المبنى'] ?? ''));
         if (!department_name || !Number.isFinite(building_number)) { skipped++; continue; }
         const norm = normalizeName(department_name);
         if (!norm) { skipped++; continue; }
@@ -423,7 +398,6 @@ export default function Departments() {
     }
   };
 
-  /* Mobile card */
   const MobileCard = ({ item }) => (
     <div className="d-card" key={item.department_id}>
       <div className="d-head">
