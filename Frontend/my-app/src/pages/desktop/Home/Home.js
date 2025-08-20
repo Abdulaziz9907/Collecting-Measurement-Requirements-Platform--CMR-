@@ -24,8 +24,6 @@ export default function Home() {
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
   const [standardsRaw, setStandardsRaw] = useState([]);
-
-  // Departments map (for department chip)
   const [departmentsMap, setDepartmentsMap] = useState(new Map());
   const [deptLoading, setDeptLoading] = useState(false);
 
@@ -59,8 +57,6 @@ export default function Home() {
   }), []);
 
   const abortRef = useRef(null);
-
-  // === Smooth skeleton control
   const LOAD_MIN_MS = 450;
   const loadSeqRef = useRef(0);
 
@@ -115,10 +111,7 @@ export default function Home() {
   useEffect(() => {
     loadData();
     return () => { if (abortRef.current) abortRef.current.abort(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE]);
-
-  // Fetch departments to resolve department name for the chip
   useEffect(() => {
     let ac = new AbortController();
     (async () => {
@@ -136,7 +129,6 @@ export default function Home() {
         );
         setDepartmentsMap(map);
       } catch (_) {
-        // ignore, fallbacks below
       } finally {
         setDeptLoading(false);
       }
@@ -151,7 +143,7 @@ export default function Home() {
     return Math.max(0, Math.min(100, p));
   };
 
-  /* ---------- TIME ---------- */
+  
   const TIMEZONE = 'Asia/Riyadh';
   const parseToDate = (val) => {
     if (!val) return null;
@@ -192,12 +184,8 @@ export default function Home() {
       .filter(x => x && x[dateKey])
       .sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
   }, [standardsRaw, dateKey]);
-
-  // Roles
   const role = (user?.role || '').toString().toLowerCase();
   const isManagement = role === 'management' || role === 'managment';
-
-  // Chip shown only if role === 'user'
   const isUsersRole = role === 'user';
 
   const recentItems = useMemo(() => recentAll.slice(0, 5), [recentAll]);
@@ -209,8 +197,6 @@ export default function Home() {
     { key: 'notStarted', label: 'لم يبدأ',   value: summary.notStarted, color: summaryCardColors.notStarted, pct: pct(summary.notStarted, summary.total) },
     { key: 'rejected',   label: 'غير معتمد', value: summary.rejected,   color: summaryCardColors.rejected,   pct: pct(summary.rejected,  summary.total) },
   ]), [summary, summaryCardColors]);
-
-  // Department label (fallbacks if no map)
   const representedLabel =
     departmentsMap.get(user?.department_id) ||
     user?.department_name ||
@@ -251,7 +237,7 @@ export default function Home() {
         .stat-value { margin:0 0 4px; font-weight:800; font-size:1.35rem; }
         .stat-title { font-size:.9rem; opacity:.95; }
 
-        /* Skeletons */
+        
         .skeleton { position:relative; overflow:hidden; background:#e9edf3; border-radius: calc(var(--radius) - 2px); }
         .skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 100%); animation:shimmer 1.4s infinite; }
         @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -259,7 +245,7 @@ export default function Home() {
         .line-skel { height:10px; border-radius:999px; background:#e9edf3; position:relative; overflow:hidden; }
         .circle-skel { border-radius:50%; background:#e9edf3; position:relative; overflow:hidden; }
 
-        /* Distribution (Donut centered; legend centered in two aligned columns) */
+        
         .dist-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
         .donut-wrap { display:flex; justify-content:center; }
         .legend-grid {
@@ -293,7 +279,7 @@ export default function Home() {
           text-align: center;
         }
 
-        /* Recent table */
+        
         .table-card { background: var(--surface); border:1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
         .table-card .head { padding:12px 16px; border-bottom:1px solid var(--stroke); background: var(--surface-muted); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
         .table-card .body { padding:6px 0; }
@@ -330,7 +316,7 @@ export default function Home() {
         .row-skeleton .bottom { display:flex; justify-content:space-between; gap:12px; }
         .badge-skel { width:90px; height:22px; border-radius:999px; }
 
-        /* Small department chip inside the summary header */
+        
         .rep-chip{
           display:inline-flex; align-items:center; gap:8px;
           padding:4px 10px; border-radius:999px;
@@ -340,7 +326,7 @@ export default function Home() {
         .rep-chip .muted{ color:#6b7280; font-weight:600; }
         .rep-chip i{ font-size:14px; opacity:.9; }
 
-        /* Mobile: smaller department chip */
+        
         @media (max-width: 576px) {
           .rep-chip{
             padding: 2px 8px;
@@ -369,29 +355,29 @@ export default function Home() {
           }
         }
 
-        /* Spacer so short pages never let anything touch the footer */
+        
       .page-spacer { height:200px; }
       `}</style>
 
       <Header />
 
-      {/* FULL-HEIGHT ROW like Standards: Sidebar + Right Column */}
+      
       <div id="wrapper" style={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
         <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          {/* content area grows; footer sits at the bottom of this column */}
+          
           <div id="content" className="flex-grow-1 d-flex">
             <div className="container-fluid d-flex flex-column">
 
-              {/* Breadcrumbs */}
+              
               <div className="row p-4">
                 <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
 
-              {/* Summary */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
                   <div className="surface mb-4" aria-busy={loading}>
@@ -404,7 +390,7 @@ export default function Home() {
                             : 'جاري التحميل...'}
                         </small>
 
-                        {/* Chip only when role === 'user' */}
+                        
                         {isUsersRole && (
                           <div className="rep-chip mt-2" role="status" aria-live="polite">
                             <i className="fas fa-building" aria-hidden="true" />
@@ -486,7 +472,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Distribution */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10 mb-4">
                   <div className="surface" aria-busy={loading}>
@@ -541,7 +527,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Recent updates — show only for non-management roles */}
+              
               {!(role === 'management' || role === 'managment') && (
                 <div className="row justify-content-center">
                   <div className="col-12 col-xl-10 mb-4">
@@ -601,12 +587,12 @@ export default function Home() {
                 </div>
               )}
 
-              {/* keep a little breathing room above the footer */}
+              
               <div className="page-spacer" />
             </div>
           </div>
 
-          {/* Footer is inside the right column now (same as Standards) */}
+          
           <Footer />
         </div>
       </div>
@@ -614,7 +600,7 @@ export default function Home() {
   );
 }
 
-/* Donut helper */
+
 function Donut({ size = 260, thickness = 22, items = [], centerTop, centerBottom }) {
   const total = items.reduce((a, b) => a + (b.value || 0), 0);
   const r = size / 2 - thickness;

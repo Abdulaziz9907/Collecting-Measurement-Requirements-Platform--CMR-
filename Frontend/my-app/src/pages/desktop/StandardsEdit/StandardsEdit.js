@@ -15,9 +15,6 @@ function escapeInput(str) {
 function escapeCommas(str) {
   return String(str).replace(/[,،]/g, '\\,');
 }
-
-// ===== Helpers shared with "create" page =====
-// Normalize Arabic/ASCII digits & separators to ASCII ("." and 0-9)
 function normalizeStandardNumber(str = "") {
   const map = {
     '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
@@ -31,7 +28,6 @@ function normalizeStandardNumber(str = "") {
 function normalizeProofTitle(s = '') {
   return String(s).replace(/\s+/g, ' ').trim().toLowerCase();
 }
-// Split a comma-separated list where commas may be escaped as "\,"
 function splitEscapedCommaList(str = '') {
   if (!str) return [''];
   const normalized = String(str).replace(/،/g, ',');
@@ -49,8 +45,6 @@ export default function StandardsEdit() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [standard, setStandard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // New validation states (same behavior as "create")
   const [proofDupIdxs, setProofDupIdxs] = useState(new Set());
   const [proofEmptyIdxs, setProofEmptyIdxs] = useState(new Set());
   const [proofMinError, setProofMinError] = useState(false);
@@ -60,7 +54,6 @@ export default function StandardsEdit() {
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
 
-  /* ===== Theme to match Standards/Reports look (with skeleton) ===== */
   const LocalTheme = () => (
     <style>{`
       :root{
@@ -92,7 +85,7 @@ export default function StandardsEdit() {
       .body-flat { padding:16px; }
       .page-spacer { height:200px; }
 
-      /* Skeleton */
+      
       .skel { position:relative; overflow:hidden; background:var(--skeleton-bg); border-radius:10px; }
       .skel::after {
         content:""; position:absolute; inset:0; transform:translateX(-100%);
@@ -128,8 +121,6 @@ export default function StandardsEdit() {
         if (isMounted) {
           setDepartments(Array.isArray(departmentsData) ? departmentsData : []);
           setStandard(standardData || null);
-
-          // Parse proof_required safely (supports escaped commas)
           if (standardData?.proof_required) {
             const list = splitEscapedCommaList(standardData.proof_required).filter(Boolean);
             setProofRequired(list.length > 0 ? list : ['']);
@@ -162,8 +153,6 @@ export default function StandardsEdit() {
       return () => clearTimeout(t);
     }
   }, [showError, showSuccess]);
-
-  // Best-effort client-side uniqueness check (ignore current record)
   const standardNumberExistsElsewhere = async (normalized, currentStandard) => {
     try {
       const res = await fetch(`${API_BASE}/api/standards`);
@@ -174,7 +163,6 @@ export default function StandardsEdit() {
 
       return (Array.isArray(list) ? list : []).some(s => {
         const sNorm = normalizeStandardNumber(String(s?.standard_number ?? ''));
-        // Try to exclude by id if present; otherwise exclude by same original number
         const sid = Number(s?.standard_id ?? s?.id ?? NaN);
         const isSelf = Number.isFinite(sid) ? (sid === currentIdNum) : (sNorm === currentNorm);
         return !isSelf && sNorm === normalized;
@@ -192,8 +180,6 @@ export default function StandardsEdit() {
     setProofDupIdxs(new Set());
     setProofMinError(false);
     setStdError('');
-
-    // 1) Validate standard number (Arabic/ASCII digits allowed)
     const standardNumRaw = (form.standard_num.value || '').trim();
     const standardNumNorm = normalizeStandardNumber(standardNumRaw);
     const STD_RE = /^[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F0-\u06F9]+$/u;
@@ -210,8 +196,6 @@ export default function StandardsEdit() {
       return;
     }
     form.standard_num.setCustomValidity('');
-
-    // 2) Validate proofs: at least one non-empty, no duplicate titles, no empty fields
     const trimmed = proofRequired.map(p => p.trim());
     const nonEmptyProofs = trimmed.filter(Boolean);
 
@@ -247,8 +231,6 @@ export default function StandardsEdit() {
     setProofDupIdxs(new Set());
     setProofEmptyIdxs(new Set());
     setProofMinError(false);
-
-    // 3) Uniqueness across other standards
     setIsSubmitting(true);
     try {
       const existsElsewhere = await standardNumberExistsElsewhere(standardNumNorm, standard);
@@ -263,12 +245,9 @@ export default function StandardsEdit() {
         return;
       }
     } catch {
-      // ignore; server should enforce uniqueness as well
     } finally {
       if (!stdError) form.standard_num.setCustomValidity('');
     }
-
-    // 4) Prepare payload (escape + keep normalized number)
     const proofsJoined = nonEmptyProofs
       .map(text => escapeCommas(escapeInput(text)))
       .join(',');
@@ -332,7 +311,7 @@ export default function StandardsEdit() {
   const removeAttachment = idx =>
     setProofRequired(prev => prev.filter((_, i) => i !== idx));
 
-  /* ------- Skeleton renderer (matches form layout visually) ------- */
+  
   const FormSkeleton = () => (
     <div>
       <div className="mb-3">
@@ -399,18 +378,18 @@ export default function StandardsEdit() {
         <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
           <div id="content" className="flex-grow-1 d-flex">
             <div className="container-fluid">
-              {/* Breadcrumbs — same placement as Standards */}
+              
               <div className="row p-4">
                 <div className="col-12">
                   <Breadcrumbs />
                 </div>
               </div>
 
-              {/* Centered card — same grid as Standards (col-12 col-xl-10) */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-10">
                   <div className="surface" aria-busy={isSubmitting || isLoading}>
-                    {/* Header inside the card with exact height */}
+                    
                     <div className="head-flat head-match">
                       <h5 className="m-0">تعديل معيار</h5>
                     </div>
@@ -430,7 +409,6 @@ export default function StandardsEdit() {
                               inputMode="text"
                               defaultValue={standard?.standard_number || ''}
                               onChange={onStdNumChange}
-                              // Accept Arabic/ASCII digits & separators
                               pattern="[0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u0669\u06F0-\u06F9]+[.\u066B\u06D4][0-9\u0660-\u06F0-\u06F9]+"
                               required
                             />
@@ -575,7 +553,7 @@ export default function StandardsEdit() {
                 </div>
               </div>
 
-              {/* Spacer before footer to match other pages */}
+              
               <div className="page-spacer" />
             </div>
           </div>

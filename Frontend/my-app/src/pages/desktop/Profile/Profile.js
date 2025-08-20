@@ -12,8 +12,6 @@ export default function Profile() {
   const [user, setUser] = useState(stored);
 
   const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(new RegExp('/+$'), '');
-
-  // ---------- THEME ----------
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -27,7 +25,7 @@ export default function Profile() {
       .page-bg { background:#f6f8fb; min-height:100vh; }
       .page-spacer { height:200px; }
 
-      /* NEW: wrapper holds the shadow so it isn't masked */
+      
       .surface-wrap{
         border-radius: var(--radius);
         overflow: visible;
@@ -40,7 +38,7 @@ export default function Profile() {
         border: 1px solid var(--stroke);
         border-radius: var(--radius);
         overflow: hidden;
-        /* keep the Safari anti-alias hack on the INNER card only */
+        
         -webkit-mask-image: -webkit-radial-gradient(white, black);
       }
 
@@ -53,7 +51,7 @@ export default function Profile() {
       .step-line.active{background:#0d6efd}
       .rounded-soft{border-radius:var(--radius)!important;}
 
-      /* Skeleton */
+      
       .skel{position:relative;overflow:hidden;background:var(--skeleton-bg);display:block;border-radius:8px;min-height:1rem}
       .skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--skeleton-sheen) 50%, rgba(255,255,255,0) 100%);animation:shimmer var(--skeleton-speed) infinite}
       @keyframes shimmer{100%{transform:translateX(100%)}}
@@ -64,8 +62,6 @@ export default function Profile() {
       .skel-label{height:14px;width:140px}
     `}</style>
   );
-
-  // ---------- Global top banner (PROFILE only) — normal (auto-dismiss) ----------
   const [banner, setBanner] = useState({ type: null, text: '' });
   const showBanner = (type, text) => setBanner({ type, text });
 
@@ -74,20 +70,14 @@ export default function Profile() {
     const t = setTimeout(() => setBanner({ type: null, text: '' }), 8000);
     return () => clearTimeout(t);
   }, [banner.type]);
-
-  // ---------- Profile form ----------
   const [form, setForm] = useState({
     username: stored.username || '',
     first_name: stored.first_name || '',
     last_name: stored.last_name || '',
     email: stored.email || ''
   });
-
-  // === NEW: all users for duplicate checks ===
   const [allUsers, setAllUsers] = useState([]);
   const [usernameError, setUsernameError] = useState('');
-
-  // Load all users (for client-side duplicate detection). If it fails (e.g. permissions), we’ll still rely on server 409.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -106,17 +96,13 @@ export default function Profile() {
     setForm(prev => ({ ...prev, [name]: value }));
 
     if (name === 'username') {
-      // live check against allUsers (ignore current user)
       const trimmed = (value || '').trim();
       const currentId = user?.employee_id ?? user?.id;
       const currentUsername = (user?.username || '').trim();
-
-      // If not changed from original, no error
       if (trimmed === currentUsername) {
         setUsernameError('');
         return;
       }
-      // If we have users list, check duplicates
       if (allUsers.length) {
         const taken = allUsers.some(u =>
           (u?.employee_id ?? u?.id) !== currentId &&
@@ -124,13 +110,10 @@ export default function Profile() {
         );
         setUsernameError(taken ? 'اسم المستخدم مستخدم بالفعل' : '');
       } else {
-        // No list available → don’t block typing; server will enforce
         setUsernameError('');
       }
     }
   };
-
-  // Skeleton + refresh for profile block
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [useSkeleton, setUseSkeleton] = useState(false);
   const LOAD_MIN_MS = 450;
@@ -176,8 +159,6 @@ export default function Profile() {
       if (elapsed < LOAD_MIN_MS) setTimeout(finish, LOAD_MIN_MS - elapsed); else finish();
     }
   };
-
-  // ---------- Utilities ----------
   const normalizeDigits = (s = '') => {
     const map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9' };
     return String(s).replace(/[٠-٩۰-۹]/g, ch => map[ch] || ch);
@@ -198,8 +179,6 @@ export default function Profile() {
       showBanner('danger', 'معرّف المستخدم غير معروف.');
       return;
     }
-
-    // Final duplicate guard (client-side)
     const newName = (form.username || '').trim();
     const oldName = (user?.username || '').trim();
     if (newName !== oldName && allUsers.length) {
@@ -215,7 +194,6 @@ export default function Profile() {
     }
 
     try {
-      // Try PATCH
       let res = await fetch(`${API_BASE}/api/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json-patch+json' },
@@ -225,8 +203,6 @@ export default function Profile() {
           { op: 'replace', path: '/last_name',  value: form.last_name }
         ])
       });
-
-      // Fallback to PUT
       if (!res.ok) {
         const full = {
           employee_id: userId,
@@ -250,8 +226,6 @@ export default function Profile() {
         setUser(updated);
         storeUser(updated);
         showBanner('success', 'تم تحديث البيانات بنجاح.');
-
-        // Refresh users cache
         try {
           const list = await fetch(`${API_BASE}/api/users`).then(r => r.ok ? r.json() : []);
           if (Array.isArray(list)) setAllUsers(list);
@@ -269,15 +243,12 @@ export default function Profile() {
       showBanner('danger', 'فشل تحديث البيانات.');
     }
   };
-
-  // ---------- Email change (3 steps) ----------
-  // Steps: 1) send code to current email  2) verify current code  3) enter new email and save
-  const [emailStep, setEmailStep] = useState(1); // 1: send to current, 2: verify current, 3: new email
+  const [emailStep, setEmailStep] = useState(1);
   const [emailLoading, setEmailLoading] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [emailBanner, setEmailBanner] = useState({ type: null, text: '' });
-  const [currCooldown, setCurrCooldown] = useState(0);   // resend timer for current email code
+  const [currCooldown, setCurrCooldown] = useState(0);
   const showEmailBanner = (type, text) => setEmailBanner({ type, text });
 
   useEffect(() => {
@@ -389,9 +360,7 @@ export default function Profile() {
       setEmailLoading(false);
     }
   };
-
-  // ---------- Password change (3 steps, stacked) ----------
-  const [pwStep, setPwStep] = useState(1);        // 1 → 2 → 3
+  const [pwStep, setPwStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
@@ -399,8 +368,6 @@ export default function Profile() {
   const [lastMinute, setLastMinute] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-
-  // Password-section banner (persistent, inside the card)
   const [pwBanner, setPwBanner] = useState({ type: null, text: '' });
   const showPwBanner = (type, text) => setPwBanner({ type, text });
 
@@ -523,7 +490,7 @@ export default function Profile() {
       <LocalTheme />
       <Header />
 
-      {/* Global top banner — PROFILE section only (normal: auto-dismiss) */}
+      
       {banner.type && (
         <div className="fixed-top d-flex justify-content-center" style={{ top: 10, zIndex: 1050 }}>
           <div className={`alert alert-${banner.type} mb-0`} role="alert">
@@ -541,7 +508,7 @@ export default function Profile() {
                 <div className="col-12"><Breadcrumbs /></div>
               </div>
 
-              {/* Update info — full width */}
+              
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">
@@ -559,7 +526,7 @@ export default function Profile() {
                         </button>
                       </div>
 
-                      {/* Form or Skeleton */}
+                      
                       <form onSubmit={updateProfile} className="p-4">
                         {useSkeleton ? (
                           <>
@@ -632,14 +599,14 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Change email — full width */}
+              
               <div className="row justify-content-center mb-4">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">
                     <div className="surface">
                       <div className="head-flat">تغيير البريد الإلكتروني</div>
 
-                      {/* Stepper + banner */}
+                      
                       <div className="px-4 pt-3">
                         <div className="stepper">
                           <div className={`step-dot ${emailStep >= 1 ? 'active' : 'inactive'}`}>1</div>
@@ -772,14 +739,14 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Change password — full width below */}
+              
               <div className="row justify-content-center">
                 <div className="col-12 col-xl-11">
                   <div className="surface-wrap">
                     <div className="surface">
                       <div className="head-flat">تغيير كلمة المرور</div>
 
-                      {/* Stepper */}
+                      
                       <div className="px-4 pt-3">
                         <div className="stepper">
                           <div className={`step-dot ${pwStep >= 1 ? 'active' : 'inactive'}`}>1</div>
@@ -789,7 +756,7 @@ export default function Profile() {
                           <div className={`step-dot ${pwStep >= 3 ? 'active' : 'inactive'}`}>3</div>
                         </div>
 
-                        {/* Password-section banners (persistent) */}
+                        
                         {lastMinute && (
                           <div className="alert alert-warning py-2 text-center rounded-soft mb-2">
                             آخر دقيقة لاستخدام الرمز

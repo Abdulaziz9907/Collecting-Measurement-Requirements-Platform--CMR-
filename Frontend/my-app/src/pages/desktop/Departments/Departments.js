@@ -14,7 +14,7 @@ import { getStoredUser } from '../../../utils/auth';
 export default function Departments() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [buildingFilter, setBuildingFilter] = useState([]); // strings
+  const [buildingFilter, setBuildingFilter] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -32,7 +32,7 @@ export default function Departments() {
     };
   }, []);
 
-  const [sortKey, setSortKey] = useState(null); // 'name' | 'building'
+  const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('none');
 
   const [showDelete, setShowDelete] = useState(false);
@@ -51,11 +51,19 @@ export default function Departments() {
   const PAGE_OPTIONS = [15, 25, 50, 'all'];
   const [pageSize, setPageSize] = useState(15);
   const [currentPage, setCurrentPage] = useState(1);
+  const prevPageSizeRef = useRef(pageSize);
+  const prevPageRef = useRef(currentPage);
 
   useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
+    const prevPageSize = prevPageSizeRef.current;
+    const prevPage = prevPageRef.current;
+    if (pageSize < prevPageSize || (currentPage !== prevPage && pageSize === prevPageSize)) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
+    prevPageSizeRef.current = pageSize;
+    prevPageRef.current = currentPage;
   }, [pageSize, currentPage]);
 
   const LOAD_MIN_MS = 450;
@@ -71,7 +79,6 @@ export default function Departments() {
     ],
   }), []);
 
-  /* ===== Local Theme (no skeletons; unified loading color) ===== */
   const LocalTheme = () => (
     <style>{`
       :root {
@@ -120,7 +127,6 @@ export default function Departments() {
         .m-menu .dropdown-header{ font-size:.9rem; }
       }
 
-      /* Mobile cards */
       .mobile-list{ padding:10px 12px; display:grid; grid-template-columns:1fr; gap:10px; }
       .d-card{ border:1px solid var(--stroke); border-radius:12px; background:#fff; box-shadow:var(--shadow); padding:10px 12px; }
       .d-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
@@ -132,7 +138,7 @@ export default function Departments() {
       .d-btn{ min-height:30px; padding:5px 8px; font-size:.82rem; border-radius:10px; font-weight:600; }
       .d-btn i{ font-size:.85rem; }
 
-      /* Centered loader (mobile & desktop) — spinner color via currentColor */
+      
       .loader-block{
         padding:24px 0;
         display:flex;
@@ -198,7 +204,7 @@ export default function Departments() {
     }
   };
 
-  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); /* eslint-disable-next-line */ }, [API_BASE]);
+  useEffect(() => { refreshData(); return () => abortRef.current?.abort(); }, [API_BASE]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, buildingFilter, pageSize, sortKey, sortDir]);
 
   const uniqueBuildings = [...new Set((data || []).map(d => String(d?.building_number ?? '')).filter(Boolean))];
@@ -207,7 +213,6 @@ export default function Departments() {
     setBuildingFilter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   };
 
-  // Filter
   const filteredData = useMemo(() => {
     const q = (searchTerm || '').toLowerCase().trim();
     return (data || []).filter(item => {
@@ -220,7 +225,6 @@ export default function Departments() {
     });
   }, [data, searchTerm, buildingFilter]);
 
-  // Sort
   const sortedData = useMemo(() => {
     if (sortDir === 'none' || !sortKey) return filteredData;
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -242,7 +246,6 @@ export default function Departments() {
 
   const setSort = (key, dir='asc') => { setSortKey(key); setSortDir(dir); };
 
-  // Pagination
   const colCount = isViewer ? 2 : 4;
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? (sortedData.length || 0) : Number(pageSize);
@@ -253,7 +256,6 @@ export default function Departments() {
   const goToPreviousPage = () => { if (!isAll && currentPage > 1) setCurrentPage(currentPage - 1); };
   const goToNextPage = () => { if (!isAll && currentPage < totalPages) setCurrentPage(currentPage + 1); };
 
-  /* Block delete if an Admin is in THIS department */
   const hasAdminInDepartment = async (departmentId) => {
     const idNum = Number(departmentId);
     try {
@@ -333,27 +335,6 @@ export default function Departments() {
 
   const stripHidden = (s='') =>
     String(s).replace(/\u200f|\u200e|\ufeff/g, '').replace(/\u00A0/g, ' ').trim();
-  const normalizeHeaderKey = (k='') => stripHidden(k);
-  const HEADER_ALIASES = {
-    'اسم الجهة': ['اسم الجهة','الجهة','الإدارة','القسم','department','department name','dept name','department_name'],
-    'رقم المبنى': ['رقم المبنى','المبنى','building','building number','building_no','building_number']
-  };
-  const buildHeaderMap = (firstRowObj) => {
-    const keys = Object.keys(firstRowObj || {}).map(normalizeHeaderKey);
-    const originalKeys = Object.keys(firstRowObj || {});
-    const lookup = new Map();
-    for (const canon in HEADER_ALIASES) {
-      const candidates = HEADER_ALIASES[canon].map(normalizeHeaderKey);
-      let foundIndex = -1;
-      for (let i=0; i<keys.length && foundIndex === -1; i++) if (candidates.includes(keys[i])) foundIndex = i;
-      if (foundIndex !== -1) lookup.set(canon, originalKeys[foundIndex]);
-    }
-    return lookup;
-  };
-  const getCell = (row, headerMap, canonKey) => {
-    const actual = headerMap.get(canonKey);
-    return stripHidden(row[actual] ?? '');
-  };
 
   const handleExcelImport = async (file) => {
     if (!file) return;
@@ -368,8 +349,7 @@ export default function Departments() {
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
       if (!rows.length) { setBanner({ type: 'danger', text: 'الملف فارغ أو خالي من البيانات.' }); return; }
 
-      const headerMap = buildHeaderMap(rows[0]);
-      const missing = ['اسم الجهة','رقم المبنى'].filter(k => !headerMap.get(k));
+      const missing = ['اسم الجهة','رقم المبنى'].filter(k => !(k in rows[0]));
       if (missing.length) {
         setBanner({ type: 'danger', text: `الأعمدة المطلوبة مفقودة أو غير متطابقة: ${missing.join('، ')}.` });
         return;
@@ -394,10 +374,8 @@ export default function Departments() {
       let ok = 0, fail = 0, dup = 0, skipped = 0;
 
       for (const r of rows) {
-        const nameRaw = getCell(r, headerMap, 'اسم الجهة');
-        const bnumRaw = getCell(r, headerMap, 'رقم المبنى');
-        const department_name = String(nameRaw).trim();
-        const building_number = normalizeInt(bnumRaw);
+        const department_name = String(stripHidden(r['اسم الجهة'] ?? '')).trim();
+        const building_number = normalizeInt(stripHidden(r['رقم المبنى'] ?? ''));
         if (!department_name || !Number.isFinite(building_number)) { skipped++; continue; }
         const norm = normalizeName(department_name);
         if (!norm) { skipped++; continue; }
@@ -423,7 +401,6 @@ export default function Departments() {
     }
   };
 
-  /* Mobile card */
   const MobileCard = ({ item }) => (
     <div className="d-card" key={item.department_id}>
       <div className="d-head">
@@ -489,9 +466,9 @@ export default function Departments() {
                 <div className="row justify-content-center flex-grow-1">
                   <div className="col-12 col-xl-11 d-flex flex-column">
                     <div className="table-card" aria-busy={loading}>
-                      {/* Header */}
+                      
                       <div className="head-flat">
-                        {/* Desktop */}
+                        
                         {!isMobile && (
                           <div className="head-row">
                             <div className="search-block">
@@ -505,7 +482,7 @@ export default function Departments() {
                             </div>
 
                             <div className="controls-inline">
-                              {/* Sort */}
+                              
                               <Dropdown align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">ترتيب</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount>
@@ -519,7 +496,7 @@ export default function Departments() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filter building */}
+                              
                               <Dropdown autoClose="outside" align="end">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary">المبنى</Dropdown.Toggle>
                                 <Dropdown.Menu renderOnMount popperConfig={dropdownPopper} style={{ maxHeight: 320, overflowY: 'auto' }}>
@@ -592,7 +569,7 @@ export default function Departments() {
                           </div>
                         )}
 
-                        {/* Mobile (same look as Users via .m-menu & .m-btn) */}
+                        
                         {isMobile && (
                           <div className="m-stack">
                             <input
@@ -604,7 +581,7 @@ export default function Departments() {
                             />
 
                             <div className="m-toolbar">
-                              {/* Sort */}
+                              
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-sort ms-1" /> فرز
@@ -620,7 +597,7 @@ export default function Departments() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Filter */}
+                              
                               <Dropdown autoClose="outside" align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-filter ms-1" /> تصفية
@@ -642,7 +619,7 @@ export default function Departments() {
                                 </Dropdown.Menu>
                               </Dropdown>
 
-                              {/* Actions */}
+                              
                               <Dropdown align="start">
                                 <Dropdown.Toggle size="sm" variant="outline-secondary" className="m-btn">
                                   <i className="fas fa-wand-magic-sparkles ms-1" /> إجراءات
@@ -677,7 +654,7 @@ export default function Departments() {
                         )}
                       </div>
 
-                      {/* Content */}
+                      
                       {isMobile ? (
                         <div className="mobile-list">
                           {loading ? (
@@ -750,7 +727,7 @@ export default function Departments() {
                         </div>
                       )}
 
-                      {/* Footer */}
+                      
                       <div className="foot-flat d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div className="d-inline-flex align-items-center gap-2">
                           <Dropdown align="start" flip={isMobile}>
@@ -794,7 +771,7 @@ export default function Departments() {
         </div>
       </div>
 
-      {/* Hidden input for import */}
+      
       <input
         ref={fileInputRef}
         type="file"

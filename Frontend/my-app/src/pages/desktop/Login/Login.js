@@ -13,8 +13,6 @@ export default function Login({ onLogin }) {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  // CapsLock & visibility
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showCapsWarning, setShowCapsWarning] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,8 +29,6 @@ export default function Login({ onLogin }) {
     (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-  // mark <html> as iOS for targeted CSS
   useEffect(() => {
     if (typeof document === 'undefined') return;
     if (isIOS) {
@@ -40,14 +36,10 @@ export default function Login({ onLogin }) {
       return () => document.documentElement.classList.remove('ios');
     }
   }, [isIOS]);
-
-  // Smooth mount animation
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
-
-  // Prevent scrolling inside fields globally (wheel/touch over inputs) + PageUp/PageDown
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -81,8 +73,6 @@ export default function Login({ onLogin }) {
       window.removeEventListener('keydown', onKeyDownScroll);
     };
   }, []);
-
-  // Hard-lock input scroll even while selecting text (per-input handlers)
   useEffect(() => {
     const els = [usernameRef.current, passwordRef.current].filter(Boolean);
     const disposers = els.map((el) => {
@@ -107,8 +97,6 @@ export default function Login({ onLogin }) {
     });
     return () => disposers.forEach((fn) => fn && fn());
   }, []);
-
-  // iOS input zoom prevention
   useEffect(() => {
     if (!isIOS || typeof document === 'undefined') return;
     let meta = document.querySelector('meta[name="viewport"]');
@@ -147,8 +135,6 @@ export default function Login({ onLogin }) {
       if (original != null) meta.content = original;
     };
   }, [isIOS]);
-
-  // CapsLock tracking for physical keyboards
   useEffect(() => {
     let current = capsLockOn;
     const onKeyDown = (e) => {
@@ -169,17 +155,12 @@ export default function Login({ onLogin }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: true });
     return () => window.removeEventListener('keydown', onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pwdFocused, showPassword]);
-
-  // ===== Mobile heuristic (NO single-letter warning) =====
   const prevPasswordRef = useRef('');
   const mobileCapsHeuristic = (val) => {
     const letters = (val || '').replace(/[^A-Za-z]/g, '');
     const upper = (letters.match(/[A-Z]/g) || []).length;
     const lower = (letters.match(/[a-z]/g) || []).length;
-
-    // Only warn if there are at least 2 uppercase letters and 0 lowercase
     const warn = letters.length >= 2 && upper >= 2 && lower === 0;
 
     setShowCapsWarning(pwdFocused && !showPassword && warn);
@@ -188,9 +169,7 @@ export default function Login({ onLogin }) {
 
   const normalizeDigits = (s) => {
     const m = {
-      // Arabic-Indic digits
       '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
-      // Eastern Arabic-Indic (Persian) digits
       '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'
     };
     return (s || '').split('').map(ch => m[ch] ?? ch).join('');
@@ -212,8 +191,6 @@ export default function Login({ onLogin }) {
         return;
       }
       const data = await res.json();
-
-      // 🔒 Reset session namespace so timers/clocks start fresh on first render after login
       sessionStorage.removeItem('cmr:sessionId');
 
       storeUser(data);
@@ -234,9 +211,7 @@ export default function Login({ onLogin }) {
     <>
       <style>{`
 
-    /* =========================
-       Login Page Styles (RTL)
-       ========================= */
+    
 
 :root {
   --primary-color: #667eea;
@@ -251,7 +226,7 @@ export default function Login({ onLogin }) {
   --text-color: #343a40;
 }
 
-/* Animations */
+
 @keyframes fadeUp {
   0% { opacity: 0; transform: translateY(18px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -279,7 +254,7 @@ export default function Login({ onLogin }) {
   }
 }
 
-/* Background video & overlay */
+
 .video-background {
   position: relative;
   min-height: 100vh;
@@ -302,7 +277,7 @@ export default function Login({ onLogin }) {
   z-index: 1;
 }
 
-/* Foreground content layer */
+
 .content-layer {
   position: relative;
   z-index: 2;
@@ -313,7 +288,7 @@ export default function Login({ onLogin }) {
   padding: 1.5rem;
 }
 
-/* Card */
+
 .login-card {
   background: var(--card-bg);
   backdrop-filter: blur(20px);
@@ -325,7 +300,7 @@ export default function Login({ onLogin }) {
   width: 100%;
 }
 
-/* Card header */
+
 .card-header-custom {
   background: #fff;
   color: #050035;
@@ -335,10 +310,10 @@ export default function Login({ onLogin }) {
 }
 .welcome-text { margin: 0; }
 
-/* Card body */
+
 .card-body-custom { padding: 2rem 2.5rem 2.5rem; }
 
-/* Floating label group */
+
 .floating-label-container {
   position: relative;
   margin-bottom: 1.4rem;
@@ -349,13 +324,13 @@ export default function Login({ onLogin }) {
 }
 .floating-label { position: relative; }
 
-/* Inputs (RTL) */
+
 .floating-label input {
   background: var(--input-bg);
   border: 2px solid var(--input-border);
   border-radius: 8px;
   color: var(--text-color);
-  padding: 1rem 3.5rem 1rem 3.5rem; /* space for icons (RTL) */
+  padding: 1rem 3.5rem 1rem 3.5rem; 
   font-size: 1rem;
   width: 100%;
   transition: all .3s ease;
@@ -363,9 +338,9 @@ export default function Login({ onLogin }) {
   text-align: right;
   -webkit-text-size-adjust: 100%;
 
-  white-space: nowrap;        /* prevent line breaks */
-  overflow: hidden;           /* hide scrollbars */
-  text-overflow: ellipsis;    /* show ellipsis if long */
+  white-space: nowrap;        
+  overflow: hidden;           
+  text-overflow: ellipsis;    
   scrollbar-width: none;
   -ms-overflow-style: none;
   overscroll-behavior: contain;
@@ -373,7 +348,7 @@ export default function Login({ onLogin }) {
 }
 .floating-label input::-webkit-scrollbar { display: none; }
 
-/* Field icon (right side in RTL) */
+
 .floating-label i.field-icon {
   position: absolute;
   right: 1rem;
@@ -383,10 +358,10 @@ export default function Login({ onLogin }) {
   transition: color .3s ease;
 }
 
-/* Eye toggle (left side in RTL) — bigger hit target (≥44px) */
+
 .toggle-password {
   position: absolute;
-  left: .5rem;               /* closer to edge for easier thumb reach */
+  left: .5rem;               
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -395,27 +370,27 @@ export default function Login({ onLogin }) {
   cursor: pointer;
   line-height: 0;
 
-  /* Make it easy to press */
-  width: 2.75rem;            /* ~44px */
-  height: 2.75rem;           /* ~44px */
+  
+  width: 2.75rem;            
+  height: 2.75rem;           
   min-width: 2.75rem;
   min-height: 2.75rem;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;        /* subtle rounded touch area */
+  border-radius: 8px;        
 }
 .toggle-password:active { transform: translateY(-50%) scale(0.98); }
 .toggle-password i { font-size: 1.1rem; color: var(--primary-color); }
 
-/* Password field masking */
+
 .password-input { font-weight: 400; }
 @supports (-webkit-text-security: disc) {
   .password-input.masked { -webkit-text-security: disc; }
 }
 
-/* Caps warning (base) */
+
 .caps-warning {
   display: flex;
   align-items: center;
@@ -430,25 +405,25 @@ export default function Login({ onLogin }) {
   direction: rtl;
 }
 
-/* Global error message — smaller, centered, no border/outline */
+
 .global-error-message {
   display: block;
   width: 100%;
   margin: 8px 0 10px;
   padding: 8px 10px;
   text-align: center;
-  background: #fdecec;     /* soft pink */
-  color: #c62828;          /* clear red */
-  border: 0;               /* no border */
-  outline: 0;              /* no outline */
+  background: #fdecec;     
+  color: #c62828;          
+  border: 0;               
+  outline: 0;              
   border-radius: 10px;
-  font-weight: 400;        /* not bold */
-  font-size: 0.95rem;      /* a bit smaller */
+  font-weight: 400;        
+  font-size: 0.95rem;      
   line-height: 1.4;
   direction: rtl;
 }
 
-/* Primary login button — desktop/tablet default */
+
 .btn-login {
   background: var(--accent-color);
   border: none;
@@ -474,7 +449,7 @@ export default function Login({ onLogin }) {
   background: var(--accent-color);
 }
 
-/* Layout tuning for large screens */
+
 @media (min-width: 1260px) {
   .login-wrapper {
     max-width: 460px;
@@ -482,7 +457,7 @@ export default function Login({ onLogin }) {
     margin-right: -100px;
   }
 }
-/* Layout tuning for medium screens */
+
 @media (min-width: 768px) and (max-width: 991.98px) {
   .login-wrapper {
     max-width: 430px;
@@ -491,73 +466,70 @@ export default function Login({ onLogin }) {
   }
 }
 
-/* ===== Center row extracted from inline style so we can tweak on mobile ===== */
+
 .row-login-center {
   min-height: 100vh;
   align-items: center;
-  padding-bottom: 28vh; /* default desktop push */
+  padding-bottom: 28vh; 
 }
 
-/* =========================
-   Mobile (≤ 576.98px)
-   Lift the form higher + make button match fields
-   ========================= */
-@media (max-width: 576.98px) {
-  :root { --m-input-h: 46px; } /* adjust 40–46px as needed */
 
-  /* Lift the form higher on mobile by increasing bottom padding */
+@media (max-width: 576.98px) {
+  :root { --m-input-h: 46px; } 
+
+  
   .row-login-center {
-    padding-bottom: 38vh;  /* ↑ Raise the card (tweak 34–44vh to taste) */
+    padding-bottom: 38vh;  
   }
 
   .card-header-custom { padding: 1.4rem 1rem 1rem; }
   .card-body-custom { padding: 1.25rem 1.25rem 1.4rem; }
 
-  /* Inputs: fixed height + no zoom on iOS */
+  
   .floating-label input {
     box-sizing: border-box !important;
     height: var(--m-input-h);
-    padding: 0 3.5rem !important;   /* space for icons (RTL) */
+    padding: 0 3.5rem !important;   
     border-radius: 10px;
-    font-size: 16px;                 /* avoid iOS zoom */
+    font-size: 16px;                 
     line-height: var(--m-input-h);
   }
 
-  /* Password field exact match in both states */
+  
   .password-input { font-size: 16px; line-height: var(--m-input-h); }
   .ios .password-input { font-size: 16px; }
 
-  /* Eye toggle = full input height, ≥44px width */
+  
   .toggle-password {
     height: var(--m-input-h);
-    width: 2.75rem;                  /* ~44px */
+    width: 2.75rem;                  
     min-width: 2.75rem;
   }
-    /* Make the page container breathe wider on phones */
+    
 .content-layer .container {
   max-width: 100%;
   padding-left: 8px;
   padding-right: 8px;
 }
 
-/* Ensure the card itself can use all available width */
+
 .login-wrapper { max-width: 100% !important; }
 .login-card { width: 100%; }
 
 
   .floating-label-container { margin-bottom: 0.85rem; }
 
-  /* Button matches inputs on mobile */
+  
   .btn-login {
     height: var(--m-input-h);
       margin-top: 50px;
-    padding: 0 1rem;        /* compact like fields */
-    font-size: 0.95rem;     /* slightly smaller on mobile */
-    border-radius: 10px;    /* match inputs */
-    gap: .4rem;             /* tighter gap */
+    padding: 0 1rem;        
+    font-size: 0.95rem;     
+    border-radius: 10px;    
+    gap: .4rem;             
   }
 
-  /* Spinner scaled for 44px button */
+  
   .btn-login .spinner-border {
     width: 1rem !important;
     height: 1rem !important;
@@ -565,7 +537,7 @@ export default function Login({ onLogin }) {
 
   .caps-warning { font-size: .8rem; padding: .4rem .6rem; }
 
-  /* (Optional) Make the card taller on small screens */
+  
   .login-card {
     display: flex;
     flex-direction: column;
@@ -594,7 +566,7 @@ export default function Login({ onLogin }) {
           <div className="content-layer">
             <div className="container">
               <div className="row justify-content-center row-login-center">
-                {/* LEFT TEXT COLUMN — hidden on md and below */}
+                
                 <div className={`col-lg-7 d-none d-lg-block justify-content-center p-4 rounded anim-text ${mounted ? 'in' : ''}`} dir="rtl" lang="ar">
                   <h1 className="mb-3 text-lg-end" style={{ color: 'rgba(209, 209, 209, 1)' }}>أهمية معايير التحول الرقمي</h1>
                   <p className="fw-light mt-4" style={{ fontSize: 25, color: 'rgba(209, 209, 209, 1)', textAlign: 'justify', lineHeight: 1.8 }}>
@@ -604,7 +576,7 @@ export default function Login({ onLogin }) {
                   </p>
                 </div>
 
-                {/* RIGHT LOGIN COLUMN */}
+                
                 <div className="col-lg-5 col-md-8 col-sm-10 order-1 order-lg-2 login-wrapper mt-5 mt-lg-0">
                   <div className={`login-card anim-card ${mounted ? 'in' : ''}`}>
                     <div className="card-header-custom">
@@ -620,7 +592,7 @@ export default function Login({ onLogin }) {
                         }}
                         noValidate
                       >
-                        {/* Username */}
+                        
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
                           <div className="floating-label">
                             <input
@@ -640,7 +612,7 @@ export default function Login({ onLogin }) {
                           </div>
                         </div>
 
-                        {/* Password */}
+                        
                         <div className={`floating-label-container ${hasError ? 'has-error' : ''}`}>
                           <div className="floating-label">
                             <input
@@ -676,7 +648,7 @@ export default function Login({ onLogin }) {
                             />
                             <i className={`fas ${hasError ? 'fa-times-circle text-danger' : 'fa-lock'} field-icon`} />
 
-                            {/* Toggle password visibility (bigger hit target) */}
+                            
                             <button
                               type="button"
                               className="toggle-password"
@@ -745,7 +717,7 @@ export default function Login({ onLogin }) {
                     </div>
                   </div>
                 </div>
-                {/* END RIGHT LOGIN COLUMN */}
+                
               </div>
             </div>
           </div>
