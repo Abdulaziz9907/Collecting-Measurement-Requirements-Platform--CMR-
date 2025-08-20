@@ -408,7 +408,7 @@ export default function Home() {
                         {isUsersRole && (
                           <div className="rep-chip mt-2" role="status" aria-live="polite">
                             <i className="fas fa-building" aria-hidden="true" />
-                            <span className="muted">تمثيل الإدارة:</span>
+                            <span className="muted"> الإدارة:</span>
 
                             {(loading || deptLoading) ? (
                               <span className="d-inline-flex align-items-center">

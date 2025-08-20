@@ -911,7 +911,7 @@ export default function Report() {
                           <div className="text-center py-4 text-danger">{error}</div>
                         ) : (
                           <div className="table-responsive">
-                            <table className="table table-hover align-middle mb-0">
+                            <table className="table align-middle mb-0">
                               <thead>
                                 <tr>
                                   <th onClick={() => toggleSort('department')}>الإدارة</th>

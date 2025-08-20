@@ -38,6 +38,39 @@ export default function StandardModal({
   const normalizeProof = (s = '') =>
     String(s).replace(/\u060C/g, ',').normalize('NFC').replace(/\s+/g, ' ').trim();
 
+  // ---------- NEW: UI state for upload/delete + success ----------
+  // uploadingCounts[p] = number of files currently uploading for proof p
+  const [uploadingCounts, setUploadingCounts] = useState({});
+  // deleting[id] = true while that attachment id is being deleted
+  const [deleting, setDeleting] = useState({});
+  // successAt[p] = timestamp when last success ping happened (auto-clears)
+  const [successAt, setSuccessAt] = useState({});
+
+  const incUpload = (p) =>
+    setUploadingCounts(prev => ({ ...prev, [p]: (prev[p] || 0) + 1 }));
+  const decUpload = (p) =>
+    setUploadingCounts(prev => {
+      const next = { ...prev };
+      const n = (next[p] || 1) - 1;
+      if (n <= 0) delete next[p]; else next[p] = n;
+      return next;
+    });
+  const markSuccess = (p) => {
+    const stamp = Date.now();
+    setSuccessAt(prev => ({ ...prev, [p]: stamp }));
+    // auto-clear after ~1.8s if still the same stamp
+    setTimeout(() => {
+      setSuccessAt(prev => {
+        if (prev[p] === stamp) {
+          const copy = { ...prev };
+          delete copy[p];
+          return copy;
+        }
+        return prev;
+      });
+    }, 1800);
+  };
+
   // ---------- helpers ----------
   const parseProofs = (raw = '') => {
     const text = String(raw).replace(/،/g, ',');
@@ -165,23 +198,30 @@ export default function StandardModal({
     onHide();
   };
 
-  // ---------- file ops ----------
-  const uploadFile = async (proof, file) => {
+  // ---------- files ----------
+  const uploadFile = async (proof, file, { reload = true } = {}) => {
     if (!canManageFiles) return;
     const form = new FormData();
     form.append('file', file);
     form.append('proofName', normalizeProof(proof));
+
+    incUpload(proof);
     try {
       const res = await fetch(`${API_BASE}/api/standards/${standardId}/attachments`, { method: 'POST', body: form });
       if (!res.ok) {
-        const msg = (await res.text().catch(()=>'' )).trim();
+        const msg = (await res.text().catch(() => '' )).trim();
         setNotice(msg || `تعذّر رفع الملف (${res.status}).`);
         return;
       }
-      await loadData();
-      onUpdated && onUpdated();
+      markSuccess(proof);
+      if (reload) {
+        await loadData();
+        onUpdated && onUpdated();
+      }
     } catch {
-      setNotice('تعذّر الاتصال بالخادم أثناء الرفع.');
+      setNotice('(حدث خطأ).');
+    } finally {
+      decUpload(proof);
     }
   };
 
@@ -192,19 +232,32 @@ export default function StandardModal({
     input.multiple = true;
     input.onchange = async (e) => {
       const files = Array.from(e.target.files || []);
-      for (const file of files) await uploadFile(proof, file);
+      if (files.length === 0) return;
+      for (let i = 0; i < files.length; i++) {
+        const last = i === files.length - 1;
+        await uploadFile(proof, files[i], { reload: last });
+      }
     };
     input.click();
   };
 
-  const deleteFile = async (id) => {
+  const deleteFile = async (id, proofNameForSuccess) => {
     if (!canManageFiles) return;
-    await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, { method: 'DELETE' });
-    await loadData();
-    onUpdated && onUpdated();
+    setDeleting(prev => ({ ...prev, [id]: true }));
+    try {
+      await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, { method: 'DELETE' });
+      markSuccess(proofNameForSuccess);
+      await loadData();
+      onUpdated && onUpdated();
+    } finally {
+      setDeleting(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
   };
 
-  // ---------- load with race protection ----------
   const loadData = async () => {
     if (!standardId) return;
 
@@ -242,14 +295,13 @@ export default function StandardModal({
       if (myReqId === reqIdRef.current) {
         setStandard(null);
         setAttachments([]);
-        setLoadError('تعذّر تحميل البيانات.');
+        setLoadError('(حدث خطأ).');
       }
     } finally {
       if (myReqId === reqIdRef.current) setLoading(false);
     }
   };
 
-  // ---------- effects ----------
   useEffect(() => {
     if (show && standardId) {
       setReason('');
@@ -264,7 +316,6 @@ export default function StandardModal({
     return () => {
       abortRef.current?.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, standardId]);
 
   useEffect(() => {
@@ -282,7 +333,7 @@ export default function StandardModal({
         const ok = await putStandard({ status: 'تحت العمل' });
         setNotice(ok
           ? 'تم تحويل الحالة إلى "تحت العمل" لعدم اكتمال مستندات الإثبات.'
-          : 'تم اعتبار الحالة "تحت العمل" لعدم اكتمال الإثباتات (تعذر تحديث الخادم الآن).'
+          : '(حدث خطأ).'
         );
         onUpdated && onUpdated();
         await loadData();
@@ -308,7 +359,7 @@ export default function StandardModal({
         case 'لم يبدأ':  color = 'secondary'; text = 'ابدأ برفع مستندات الإثبات لبدء متابعة المعيار.'; break;
         case 'تحت العمل': color = 'warning'; text = 'يمكنك رفع أو حذف الملفات حتى يكتمل كل المطلوب.'; break;
         case 'مكتمل':   color = 'info'; text = 'تم رفع جميع الإثباتات المطلوبة. بانتظار المراجعة.'; break;
-        case 'معتمد':   color = 'success'; text = 'تم اعتماد هذا المعيار. لا يمكن رفع أو حذف ملفات.'; break;
+        case 'معتمد':   color = 'success'; text = 'تم اعتماد هذا المعيار. لا يمكن رفع أو حذف الملفات.'; break;
         case 'غير معتمد': color = 'danger'; text = 'تم رفض الاعتماد. يرجى مراجعة سبب الرفض مع تصحيح الملفات.'; break;
         default:        color = 'secondary'; text = 'حالة غير معروفة.';
       }
@@ -442,6 +493,9 @@ export default function StandardModal({
               {proofs.map((p, idx) => {
                 const atts = getAttachments(p);
                 const isDragging = dragOverProof === p;
+                const uploadingCount = uploadingCounts[p] || 0;
+                const isUploadingNow = uploadingCount > 0;
+                const successPing = !!successAt[p];
 
                 const onDragOver = (e) => {
                   if (!canManageFiles) return;
@@ -456,7 +510,11 @@ export default function StandardModal({
                   if (!canManageFiles) return;
                   e.preventDefault();
                   const files = Array.from(e.dataTransfer.files || []);
-                  for (const file of files) await uploadFile(p, file);
+                  if (files.length === 0) return;
+                  for (let i = 0; i < files.length; i++) {
+                    const last = i === files.length - 1;
+                    await uploadFile(p, files[i], { reload: last });
+                  }
                   setDragOverProof(null);
                 };
 
@@ -468,9 +526,24 @@ export default function StandardModal({
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
                   >
-                    <h6 className="fw-bold mb-3 text-primary proof-title">
-                      <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
-                    </h6>
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <h6 className="fw-bold m-0 text-primary proof-title">
+                        <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
+                      </h6>
+
+                      {isUploadingNow && (
+                        <span className="d-inline-flex align-items-center small text-muted">
+                          <Spinner animation="border" size="sm" className="ms-2 me-1" />
+                          <span>جارٍ الرفع{uploadingCount > 1 ? ` (${uploadingCount})` : ''}</span>
+                        </span>
+                      )}
+
+                      {successPing && (
+                        <span className="tiny-success-badge ms-2">
+                          <i className="fas fa-check"></i> تم
+                        </span>
+                      )}
+                    </div>
 
                     {atts.length === 0 && <div className="text-muted mb-2">لا يوجد ملفات مرفوعة لهذا المستند.</div>}
 
@@ -478,6 +551,8 @@ export default function StandardModal({
                       const id = a.attachment_id ?? a.Attachment_id;
                       const filename = a.fileName ?? a.FileName ?? '';
                       const url = `${API_BASE}/api/standards/${standardId}/attachments/${id}`;
+                      const isDeleting = !!deleting[id];
+
                       return (
                         <div className="d-flex align-items-start mb-2" key={id}>
                           <div className="input-group flex-grow-1">
@@ -486,8 +561,21 @@ export default function StandardModal({
                               عرض
                             </a>
                             {canManageFiles && (
-                              <Button variant="outline-danger" className="ms-2" size="sm" onClick={() => deleteFile(id)}>
-                                حذف
+                              <Button
+                                variant="outline-danger"
+                                className="ms-2"
+                                size="sm"
+                                disabled={isDeleting || isUploadingNow}
+                                onClick={() => deleteFile(id, p)}
+                              >
+                                {isDeleting ? (
+                                  <span className="d-inline-flex align-items-center gap-1">
+                                    <Spinner animation="border" size="sm" />
+                                    <span>يحذف...</span>
+                                  </span>
+                                ) : (
+                                  'حذف'
+                                )}
                               </Button>
                             )}
                           </div>
@@ -497,8 +585,22 @@ export default function StandardModal({
 
                     {canManageFiles ? (
                       <div className="mt-2">
-                        <Button variant="primary" size="sm" onClick={() => handleFileSelect(p)}>
-                          <i className="fas fa-upload me-1"></i> رفع ملفات
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={isUploadingNow}
+                          onClick={() => handleFileSelect(p)}
+                        >
+                          {isUploadingNow ? (
+                            <span className="d-inline-flex align-items-center gap-1">
+                              <Spinner animation="border" size="sm" />
+                              <span>جارٍ الرفع...</span>
+                            </span>
+                          ) : (
+                            <>
+                              <i className="fas fa-upload me-1"></i> رفع ملفات
+                            </>
+                          )}
                         </Button>
                         <Form.Text className="text-muted d-block mt-1">
                           يمكنك رفع ملف أو أكثر، أو سحبها وإفلاتها هنا.
@@ -507,7 +609,7 @@ export default function StandardModal({
                     ) : (
                       isUser && effectiveStatus === 'معتمد' && (
                         <Form.Text className="text-muted d-block mt-1">
-                          لا يمكنك رفع أو حذف ملفات بعد اعتماد المعيار.
+                          لا يمكنك رفع أو حذف الملفات بعد اعتماد المعيار.
                         </Form.Text>
                       )
                     )}
@@ -565,7 +667,6 @@ export default function StandardModal({
         </Modal.Footer>
       </Modal>
 
-      {/* Previous rejection reasons modal — topmost, darker backdrop */}
       <Modal
         show={showReasons}
         onHide={() => setShowReasons(false)}
@@ -647,6 +748,26 @@ export default function StandardModal({
           }
         }
 
+        /* Tiny success ping */
+        .tiny-success-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: .4rem;
+          font-size: .78rem;
+          background: #e7f7ed;
+          color: #137c3a;
+          border: 1px solid #bfe9cd;
+          padding: .15rem .45rem;
+          border-radius: 999px;
+          animation: pingFade 1.2s ease both;
+        }
+        @keyframes pingFade {
+          0%   { transform: scale(.95); opacity: 0; }
+          20%  { transform: scale(1); opacity: 1; }
+          80%  { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+
         /* Limit label width near actions */
         .form-label { display: inline-block; }
 
@@ -654,9 +775,9 @@ export default function StandardModal({
           .modal-content-animated { animation: none !important; }
           .underlay-dim-content { filter: none !important; }
           .modal-backdrop.stacked-backdrop.show { backdrop-filter: none !important; }
+          .tiny-success-badge { animation: none !important; }
         }
       `}</style>
     </>
   );
 }
- 
