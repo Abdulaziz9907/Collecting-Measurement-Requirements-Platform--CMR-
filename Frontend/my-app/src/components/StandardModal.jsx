@@ -30,7 +30,6 @@ export default function StandardModal({
   const [animTick, setAnimTick] = useState(0);
   const prevLoadingRef = useRef(false);
 
-  // previous reasons modal state
   const [showReasons, setShowReasons] = useState(false);
 
   const isStacked = showReject || showReasons;
@@ -55,7 +54,6 @@ export default function StandardModal({
   const markSuccess = (p) => {
     const stamp = Date.now();
     setSuccessAt(prev => ({ ...prev, [p]: stamp }));
-    // longer stay (~3.2s)
     setTimeout(() => {
       setSuccessAt(prev => {
         if (prev[p] === stamp) {
@@ -137,7 +135,6 @@ export default function StandardModal({
     return { current, history };
   }, [standard]);
 
-  // ---------- API ----------
   const buildUpdatePayload = (overrides = {}) => {
     const cur = standard || {};
     return {
@@ -193,7 +190,6 @@ export default function StandardModal({
     onHide();
   };
 
-  // ---------- files ----------
   const uploadFile = async (proof, file, { reload = true } = {}) => {
     if (!canManageFiles) return false;
     const form = new FormData();
@@ -302,7 +298,6 @@ export default function StandardModal({
     }
   };
 
-  // ---------- effects ----------
   useEffect(() => {
     if (show && standardId) {
       setReason('');
@@ -332,10 +327,7 @@ export default function StandardModal({
       autoDowngradedOnceRef.current = true;
       (async () => {
         const ok = await putStandard({ status: 'تحت العمل' });
-        setNotice(ok
-          ? 'تم تحويل الحالة إلى "تحت العمل" لعدم اكتمال مستندات الإثبات.'
-          : 'حدث خطأ'
-        );
+        setNotice(ok ? 'تم تحويل الحالة إلى "تحت العمل" لعدم اكتمال مستندات الإثبات.' : 'حدث خطأ');
         onUpdated && onUpdated();
         await loadData();
       })();
@@ -349,7 +341,6 @@ export default function StandardModal({
     prevLoadingRef.current = loading;
   }, [loading, standard]);
 
-  // ---------- Banner ----------
   const renderStatusBanner = () => {
     let color = 'secondary';
     let text = '';
@@ -359,7 +350,7 @@ export default function StandardModal({
         case 'لم يبدأ':  color = 'secondary'; text = 'ابدأ برفع مستندات الإثبات لبدء متابعة المعيار.'; break;
         case 'تحت العمل': color = 'warning'; text = 'يمكنك رفع أو حذف الملفات حتى يكتمل كل المطلوب.'; break;
         case 'مكتمل':   color = 'info'; text = 'تم رفع جميع الإثباتات المطلوبة. بانتظار المراجعة.'; break;
-        case 'معتمد':   color = 'success'; text = 'تم اعتماد هذا المعيار. لا يمكن رفع أو حذف الملفات.'; break;
+        case 'معتمد':   color = 'success'; text = 'تم اعتماد هذا المعيار. لا يمكن رفع أو حذف ملفات.'; break;
         case 'غير معتمد': color = 'danger'; text = 'تم رفض الاعتماد. يرجى مراجعة سبب الرفض مع تصحيح الملفات.'; break;
         default:        color = 'secondary'; text = 'حالة غير معروفة.';
       }
@@ -517,7 +508,6 @@ export default function StandardModal({
                     const ok = await uploadFile(p, files[i], { reload: last });
                     allOk = allOk && ok;
                   }
-                  // Success ping only once the whole drop batch completes successfully
                   if (allOk) markSuccess(p);
 
                   setDragOverProof(null);
@@ -535,14 +525,6 @@ export default function StandardModal({
                       <h6 className="fw-bold m-0 text-primary proof-title">
                         <i className="fas fa-file-alt me-2 text-secondary"></i>{p}
                       </h6>
-
-                      {isUploadingNow && (
-                        <span className="d-inline-flex align-items-center small text-muted">
-                          <Spinner animation="border" size="sm" className="ms-2 me-1" />
-                          <span>جارٍ الرفع{uploadingCount > 1 ? ` (${uploadingCount})` : ''}</span>
-                        </span>
-                      )}
-
                       {successPing && (
                         <span className="tiny-success-badge ms-2">
                           <i className="fas fa-check"></i> تم
@@ -576,7 +558,7 @@ export default function StandardModal({
                                 {isDeleting ? (
                                   <span className="d-inline-flex align-items-center gap-1">
                                     <Spinner animation="border" size="sm" />
-                              <span>جارٍ الحذف...</span>
+                                    <span>جارٍ الحذف...</span>
                                   </span>
                                 ) : (
                                   'حذف'
@@ -707,17 +689,14 @@ export default function StandardModal({
 
       <style>{`
         .drag-over { background-color: #f0f8ff; border: 2px dashed #007bff; }
-
-        /* Darker backdrop for top modal */
         .modal-backdrop.reject-backdrop.show,
         .modal-backdrop.stacked-backdrop.show {
           opacity: 0.85 !important;
           background-color: #000 !important;
           backdrop-filter: blur(2px);
         }
-
         .underlay-dim-content {
-          position: relative; /* anchor for ::after */
+          position: relative;
           filter: brightness(.72) saturate(.92) blur(.6px);
           transition: filter .18s ease;
         }
@@ -729,12 +708,10 @@ export default function StandardModal({
           border-radius: inherit;
           pointer-events: none;
         }
-
         .proof-title {
           overflow-wrap: anywhere;
           word-break: break-word;
         }
-
         .modal-content-animated {
           animation: modalPop .22s cubic-bezier(.22,.61,.36,1) both;
           will-change: transform, opacity, filter;
@@ -751,8 +728,6 @@ export default function StandardModal({
             filter: none;
           }
         }
-
-        /* Tiny success ping - longer duration */
         .tiny-success-badge {
           display: inline-flex;
           align-items: center;
@@ -771,9 +746,7 @@ export default function StandardModal({
           90%  { transform: scale(1); opacity: 1; }
           100% { transform: scale(1); opacity: 0; }
         }
-
         .form-label { display: inline-block; }
-
         @media (prefers-reduced-motion: reduce) {
           .modal-content-animated { animation: none !important; }
           .underlay-dim-content { filter: none !important; }
