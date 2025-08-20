@@ -38,12 +38,8 @@ export default function StandardModal({
   const normalizeProof = (s = '') =>
     String(s).replace(/\u060C/g, ',').normalize('NFC').replace(/\s+/g, ' ').trim();
 
-  // ---------- NEW: UI state for upload/delete + success ----------
-  // uploadingCounts[p] = number of files currently uploading for proof p
   const [uploadingCounts, setUploadingCounts] = useState({});
-  // deleting[id] = true while that attachment id is being deleted
   const [deleting, setDeleting] = useState({});
-  // successAt[p] = timestamp when last success ping happened (auto-clears)
   const [successAt, setSuccessAt] = useState({});
 
   const incUpload = (p) =>
@@ -55,10 +51,11 @@ export default function StandardModal({
       if (n <= 0) delete next[p]; else next[p] = n;
       return next;
     });
+
   const markSuccess = (p) => {
     const stamp = Date.now();
     setSuccessAt(prev => ({ ...prev, [p]: stamp }));
-    // auto-clear after ~1.8s if still the same stamp
+    // longer stay (~3.2s)
     setTimeout(() => {
       setSuccessAt(prev => {
         if (prev[p] === stamp) {
@@ -68,10 +65,9 @@ export default function StandardModal({
         }
         return prev;
       });
-    }, 1800);
+    }, 3200);
   };
 
-  // ---------- helpers ----------
   const parseProofs = (raw = '') => {
     const text = String(raw).replace(/،/g, ',');
     const parts = text.match(/(?:\\.|[^,])+/g) || [];
@@ -117,7 +113,6 @@ export default function StandardModal({
     }
   };
 
-  // ---------- Rejection log parsing ----------
   const parsedReject = useMemo(() => {
     const raw = standard?.rejection_reason ?? standard?.Rejection_reason ?? '';
     if (!raw) return { current: '', history: [] };
@@ -200,7 +195,7 @@ export default function StandardModal({
 
   // ---------- files ----------
   const uploadFile = async (proof, file, { reload = true } = {}) => {
-    if (!canManageFiles) return;
+    if (!canManageFiles) return false;
     const form = new FormData();
     form.append('file', file);
     form.append('proofName', normalizeProof(proof));
@@ -211,15 +206,16 @@ export default function StandardModal({
       if (!res.ok) {
         const msg = (await res.text().catch(() => '' )).trim();
         setNotice(msg || `تعذّر رفع الملف (${res.status}).`);
-        return;
+        return false;
       }
-      markSuccess(proof);
       if (reload) {
         await loadData();
         onUpdated && onUpdated();
       }
+      return true;
     } catch {
-      setNotice('(حدث خطأ).');
+      setNotice('حدث خطأ');
+      return false;
     } finally {
       decUpload(proof);
     }
@@ -233,10 +229,14 @@ export default function StandardModal({
     input.onchange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
+
+      let allOk = true;
       for (let i = 0; i < files.length; i++) {
         const last = i === files.length - 1;
-        await uploadFile(proof, files[i], { reload: last });
+        const ok = await uploadFile(proof, files[i], { reload: last });
+        allOk = allOk && ok;
       }
+      if (allOk) markSuccess(proof);
     };
     input.click();
   };
@@ -246,9 +246,9 @@ export default function StandardModal({
     setDeleting(prev => ({ ...prev, [id]: true }));
     try {
       await fetch(`${API_BASE}/api/standards/${standardId}/attachments/${id}`, { method: 'DELETE' });
-      markSuccess(proofNameForSuccess);
       await loadData();
       onUpdated && onUpdated();
+      markSuccess(proofNameForSuccess);
     } finally {
       setDeleting(prev => {
         const copy = { ...prev };
@@ -295,13 +295,14 @@ export default function StandardModal({
       if (myReqId === reqIdRef.current) {
         setStandard(null);
         setAttachments([]);
-        setLoadError('(حدث خطأ).');
+        setLoadError('تعذّر تحميل البيانات.');
       }
     } finally {
       if (myReqId === reqIdRef.current) setLoading(false);
     }
   };
 
+  // ---------- effects ----------
   useEffect(() => {
     if (show && standardId) {
       setReason('');
@@ -333,13 +334,12 @@ export default function StandardModal({
         const ok = await putStandard({ status: 'تحت العمل' });
         setNotice(ok
           ? 'تم تحويل الحالة إلى "تحت العمل" لعدم اكتمال مستندات الإثبات.'
-          : '(حدث خطأ).'
+          : 'حدث خطأ'
         );
         onUpdated && onUpdated();
         await loadData();
       })();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [standard, hasAllProofs, apiStatus, effectiveStatus]);
 
   useEffect(() => {
@@ -449,7 +449,6 @@ export default function StandardModal({
                 </div>
               </Form.Group>
 
-              {/* === FIXED: move the button OUT of the label so only the button is clickable === */}
               {effectiveStatus === 'غير معتمد' && Boolean(parsedReject.current) && (
                 <Form.Group className="mb-3">
                   <div className="d-flex justify-content-between align-items-center gap-2">
@@ -511,10 +510,16 @@ export default function StandardModal({
                   e.preventDefault();
                   const files = Array.from(e.dataTransfer.files || []);
                   if (files.length === 0) return;
+
+                  let allOk = true;
                   for (let i = 0; i < files.length; i++) {
                     const last = i === files.length - 1;
-                    await uploadFile(p, files[i], { reload: last });
+                    const ok = await uploadFile(p, files[i], { reload: last });
+                    allOk = allOk && ok;
                   }
+                  // Success ping only once the whole drop batch completes successfully
+                  if (allOk) markSuccess(p);
+
                   setDragOverProof(null);
                 };
 
@@ -571,7 +576,7 @@ export default function StandardModal({
                                 {isDeleting ? (
                                   <span className="d-inline-flex align-items-center gap-1">
                                     <Spinner animation="border" size="sm" />
-                                    <span>يحذف...</span>
+                              <span>جارٍ الحذف...</span>
                                   </span>
                                 ) : (
                                   'حذف'
@@ -639,7 +644,6 @@ export default function StandardModal({
         </Modal.Footer>
       </Modal>
 
-      {/* Reject reason modal — topmost, darker backdrop */}
       <Modal
         show={showReject}
         onHide={() => setShowReject(false)}
@@ -748,7 +752,7 @@ export default function StandardModal({
           }
         }
 
-        /* Tiny success ping */
+        /* Tiny success ping - longer duration */
         .tiny-success-badge {
           display: inline-flex;
           align-items: center;
@@ -759,16 +763,15 @@ export default function StandardModal({
           border: 1px solid #bfe9cd;
           padding: .15rem .45rem;
           border-radius: 999px;
-          animation: pingFade 1.2s ease both;
+          animation: pingFade 2.8s ease both;
         }
         @keyframes pingFade {
-          0%   { transform: scale(.95); opacity: 0; }
-          20%  { transform: scale(1); opacity: 1; }
-          80%  { transform: scale(1); opacity: 1; }
+          0%   { transform: scale(.96); opacity: 0; }
+          10%  { transform: scale(1); opacity: 1; }
+          90%  { transform: scale(1); opacity: 1; }
           100% { transform: scale(1); opacity: 0; }
         }
 
-        /* Limit label width near actions */
         .form-label { display: inline-block; }
 
         @media (prefers-reduced-motion: reduce) {

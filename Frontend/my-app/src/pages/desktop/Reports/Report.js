@@ -112,9 +112,24 @@ export default function Report() {
       .skeleton-card { height:92px; }
       .skeleton-block { height: 280px; }
 
+      /* table skeleton bits */
+      .skeleton-table-row {
+        height: 42px;
+        border-radius: 10px;
+        margin: 8px 0;
+      }
+      .skeleton-pill {
+        height: 12px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      .skeleton-pill.short { width: 72px; }
+      .skeleton-pill.med   { width: 110px; }
+      .skeleton-pill.long  { width: 160px; }
+
       .chart-wrap-md { height: 280px; }
       .chart-wrap-lg { height: 300px; }
-      .chart-wrap-taller { height: 340px; } 
+      .chart-wrap-taller { height: 340px; } /* taller for pie/users cards */
 
       .legend-inline { position:absolute; top:8px; inset-inline-start:12px; display:flex; gap:8px; flex-wrap:wrap; }
       .legend-chip { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; color: var(--text); }
@@ -293,6 +308,7 @@ export default function Report() {
   useEffect(() => {
     loadData();
     return () => abortRef.current?.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_BASE, progressMode]);
 
   const visibleDeptList = useMemo(() => {
@@ -580,8 +596,8 @@ export default function Report() {
           <Sidebar sidebarVisible={sidebarVisible} setSidebarVisible={setSidebarVisible} />
 
           <div className="d-flex flex-column flex-grow-1" id="content-wrapper">
-          <div id="content" className="flex-grow-1 d-flex">
-            <div className="container-fluid d-flex flex-column">
+            <div id="content" className="flex-grow-1 d-flex">
+              <div className="container-fluid d-flex flex-column">
 
                 <div className="row p-4">
                   <div className="col-12">
@@ -901,10 +917,30 @@ export default function Report() {
                       </div>
                       <div className="body">
                         {loading ? (
-                          <div className="p-3" aria-hidden={!loading}>
-                            {Array.from({ length: 8 }).map((_, i) => (
-                              <div key={i} className="skeleton skeleton-table-row" />
-                            ))}
+                          <div className="table-responsive" aria-hidden={!loading} role="status" aria-label="جاري التحميل">
+                            <table className="table align-middle mb-0">
+                              <thead>
+                                <tr>
+                                  <th><span className="skeleton skeleton-pill long" /></th>
+                                  <th><span className="skeleton skeleton-pill short" /></th>
+                                  <th><span className="skeleton skeleton-pill short" /></th>
+                                  <th><span className="skeleton skeleton-pill short" /></th>
+                                  <th><span className="skeleton skeleton-pill med" /></th>
+                                  <th><span className="skeleton skeleton-pill med" /></th>
+                                  <th><span className="skeleton skeleton-pill med" /></th>
+                                  <th><span className="skeleton skeleton-pill med" /></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                  <tr key={i}>
+                                    <td colSpan={8}>
+                                      <div className="skeleton skeleton-table-row" />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         ) : error ? (
                           <div className="text-center py-4 text-danger">{error}</div>
